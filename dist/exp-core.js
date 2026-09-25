@@ -1,4 +1,4 @@
-// Generated from the approved Dropper v3.2.24 install artifact. Do not edit.
+// Generated from the approved Dropper v3.2.25 install artifact. Do not edit.
 const DropperReference = (() => {
 const LAUNCHER_ORDER_KEY = "exp:v3:launcher-order";
 const LAUNCHER_GRID_DELTA_KEY = "exp:v3:launcher-grid-delta";
@@ -1387,8 +1387,8 @@ function createProductLifecycle(shared) {
 // Product engines own their settings, content, and actions. Core owns shared UI.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.2.23';
-  const sourceVersion = '3.2.24';
+  const version = '3.2.24';
+  const sourceVersion = '3.2.25';
   const protocol = 'exp-core-coordination-v1';
   const gridProtocol = 'exp-launcher-grid-v3';
   const GRID_ORDER = 'exp:v3:launcher-order';

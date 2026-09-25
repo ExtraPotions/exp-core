@@ -5,12 +5,12 @@ const crypto = require('node:crypto');
 const acorn = require('acorn');
 const root = path.resolve(__dirname, '..');
 const normalize = (text) => text.replace(/\r\n/g, '\n');
-const expected = '86f46cf5490dac082a583b15b3b6239d88c518db487752da9787030c493a2e5b';
-const expectedCommit = 'a1df13961db7ee56424ce1e7d3fa3923f6227894';
+const expected = '6f8ddae769f17aecd9cae723d0bc36359e64e06262ee15962782bcd12e8a7dd8';
+const expectedCommit = 'f9b2b837c9cb72c6a0d4d3404143f47af9a8d4df';
 const sourcePath = process.argv.find(value => value.startsWith('--source='))?.slice(9) || path.join(root, '..', 'Dropper', 'dropper.user.js');
 const bytes = fs.readFileSync(sourcePath);
 const digest = crypto.createHash('sha256').update(bytes).digest('hex');
-if (digest !== expected) throw new Error('Extraction requires the approved Dropper 3.2.24 install artifact; hash mismatch: ' + digest);
+if (digest !== expected) throw new Error('Extraction requires the approved Dropper 3.2.25 install artifact; hash mismatch: ' + digest);
 const source = bytes.toString('utf8');
 const tree = acorn.parse(source, { ecmaVersion: 'latest' });
 const nodes = [];
@@ -45,17 +45,17 @@ for (const name of functions) {
   pieces.push(body);
   entries.push({ name, kind: 'function', startLine: source.slice(0, node.start).split('\n').length, endLine: source.slice(0, node.end).split('\n').length });
 }
-const output = '// Generated from the approved Dropper v3.2.24 install artifact. Do not edit.\n' +
+const output = '// Generated from the approved Dropper v3.2.25 install artifact. Do not edit.\n' +
   'const DropperReference = (() => {\n' +
   'const LAUNCHER_ORDER_KEY = "exp:v3:launcher-order";\n' +
   'const LAUNCHER_GRID_DELTA_KEY = "exp:v3:launcher-grid-delta";\n' +
   pieces.join('\n\n') +
   '\nreturn Object.freeze({ ' + [...constants, ...functions].join(', ') + ' });\n})();\n';
-const metadata = { source: 'ExtraPotions/Dropper', sourceVersion: '3.2.24', commit: expectedCommit, path: 'dropper.user.js', sha256: digest, entries };
+const metadata = { source: 'ExtraPotions/Dropper', sourceVersion: '3.2.25', commit: expectedCommit, path: 'dropper.user.js', sha256: digest, entries };
 const targets = [[path.join(root, 'src', 'dropper-reference.js'), output], [path.join(root, 'source-provenance.json'), JSON.stringify(metadata, null, 2) + '\n']];
 for (const [target, content] of targets) {
   if (process.argv.includes('--check')) {
     if (!fs.existsSync(target) || normalize(fs.readFileSync(target, 'utf8')) !== content) throw new Error('Reference extraction is stale: ' + target);
   } else { fs.mkdirSync(path.dirname(target), { recursive: true }); fs.writeFileSync(target, content); }
 }
-console.log('Dropper 3.2.24 reference verified: ' + digest);
+console.log('Dropper 3.2.25 reference verified: ' + digest);
