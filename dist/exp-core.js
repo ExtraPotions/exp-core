@@ -2041,7 +2041,7 @@ const ExtraPotionsCore = (() => {
     const onError = typeof options.onError === 'function' ? options.onError : () => {};
     if (!productId || !repository || !currentVersion) throw new Error('Incomplete update checker configuration');
 
-    const ENDPOINT = 'https://api.github.com/repos/' + repository + '/releases/latest';
+    const ENDPOINT = String(options.endpoint || ('https://api.github.com/repos/' + repository + '/releases/latest'));
     const CACHE_KEY = 'exp:v3:' + productId + ':update-cache';
     const CHECK_INTERVAL = 15 * 60 * 1000;
     const CHECK_LEASE = 30 * 1000;
