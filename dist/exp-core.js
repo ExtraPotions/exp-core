@@ -1858,6 +1858,8 @@ const ExtraPotionsCore = (() => {
     const resize = new ResizeObserver(queueLayout);
     resize.observe(panel);
     resize.observe(notice);
+    const mutation = new MutationObserver(queueLayout);
+    mutation.observe(notice, { attributes:true, attributeFilter:['hidden'], childList:true, subtree:true });
     const coordination = () => queueLayout();
     dismiss.addEventListener('click', hide);
     versionButton?.addEventListener('click', versionClick);
@@ -1871,6 +1873,7 @@ const ExtraPotionsCore = (() => {
         cancelAnimationFrame(frame);
         clearTimer();
         resize.disconnect();
+        mutation.disconnect();
         dismiss.removeEventListener('click', hide);
         versionButton?.removeEventListener('click', versionClick);
         removeEventListener('resize', queueLayout);
