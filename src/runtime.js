@@ -2,8 +2,8 @@
 // Product engines own their settings, content, and actions. Core owns shared UI.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.2.24';
-  const sourceVersion = '3.2.25';
+  const version = '3.2.25';
+  const sourceVersion = '3.2.31';
   const protocol = 'exp-core-coordination-v1';
   const gridProtocol = 'exp-launcher-grid-v3';
   const GRID_ORDER = 'exp:v3:launcher-order';
@@ -330,6 +330,125 @@ const ExtraPotionsCore = (() => {
     dismiss.addEventListener('click',hide);versionButton?.addEventListener('click',versionClick);addEventListener('resize',layout,{passive:true});document.addEventListener('exp-core:coordination',coordination);
     return Object.freeze({show,hide,toggle,layout,setMenuOpen,destroy(){destroyed=true;clearTimer();unregisterNotice();dismiss.removeEventListener('click',hide);versionButton?.removeEventListener('click',versionClick);removeEventListener('resize',layout);document.removeEventListener('exp-core:coordination',coordination);}});
   }
+  // Core-owned update and changelog cards use Dropper's menu-width notice
+  // geometry directly. The legacy floating-notice coordinator remains exported
+  // for compatibility, but it no longer owns these product notices.
+  function createMenuNotice(options = {}) {
+    const { shadow, panel, notice, versionButton = null } = options;
+    const host = options.host || shadow?.host;
+    if (!(shadow instanceof ShadowRoot) || !(panel instanceof Element) || !(notice instanceof Element)) {
+      return Object.freeze({ show() {}, hide() {}, toggle() {}, layout() {}, setMenuOpen() {}, destroy() {} });
+    }
+    const durationMs = Math.max(0, Number(options.durationMs ?? 30000));
+    const manageVersion = options.manageVersion !== false;
+    let timer = 0, menuOpen = false, destroyed = false, frame = 0;
+
+    if (!shadow.querySelector('style[data-exp-floating-notice]')) {
+      injectStyle(shadow, '.exp-floating-update{position:fixed;z-index:2147483647;box-sizing:border-box;width:min(312px,calc(100vw - 24px));max-width:calc(100vw - 24px);margin:0;padding:10px 32px 10px 10px;border:1px solid var(--exp-notice-border,var(--dropper-accent,#6f42b4));border-radius:10px;background:linear-gradient(180deg,var(--exp-notice-top,#251a35),var(--exp-notice-bottom,#18181d) 70%);color:var(--exp-notice-text,#f4f4f6);box-shadow:0 10px 28px #0008;font:500 9px/1.45 system-ui,sans-serif}.exp-floating-update[hidden]{display:none!important}.exp-floating-update-dismiss{position:absolute;top:7px;right:7px;width:23px;height:23px;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;color:inherit;cursor:pointer;font:15px/1 Arial,sans-serif}.exp-floating-update-dismiss:hover,.exp-floating-update-dismiss:focus-visible{border-color:var(--exp-notice-border,var(--dropper-accent,#6f42b4));outline:none}', { expFloatingNotice: '1' });
+    }
+    applyMatteToggleChrome(shadow);
+    notice.classList.add('update-notice', 'exp-floating-update');
+    notice.dataset.placement = 'menu';
+    delete notice.dataset.expFloatingNotice;
+    notice.setAttribute('role', 'status');
+
+    let dismiss = notice.querySelector(':scope > .exp-floating-update-dismiss,.update-dismiss');
+    if (!dismiss) {
+      dismiss = document.createElement('button');
+      dismiss.type = 'button';
+      dismiss.className = 'exp-floating-update-dismiss';
+      dismiss.setAttribute('aria-label', 'Dismiss changelog');
+      dismiss.textContent = '×';
+      notice.prepend(dismiss);
+    }
+
+    const themeSource = options.themeSource instanceof Element ? options.themeSource : panel;
+    function syncTheme() {
+      const theme = getComputedStyle(themeSource);
+      const first = (names, fallback) => names.map(name => theme.getPropertyValue(name).trim()).find(Boolean) || fallback;
+      notice.style.setProperty('--exp-notice-border', first(['--exp-notice-border','--theme-accent','--dropper-accent','--accent','--accent2','--teal','--mb-brand'], theme.borderTopColor || '#6f42b4'));
+      notice.style.setProperty('--exp-notice-top', first(['--exp-notice-top','--theme-panel','--surface','--panel','--raised','--mb-surface','--bg','--mb-bg'], theme.backgroundColor || '#251a35'));
+      notice.style.setProperty('--exp-notice-bottom', first(['--exp-notice-bottom','--theme-bg','--bg','--mb-bg','--surface','--mb-surface'], theme.backgroundColor || '#18181d'));
+      notice.style.setProperty('--exp-notice-text', first(['--exp-notice-text','--theme-text','--text','--mb-ink'], theme.color || '#f4f4f6'));
+    }
+    function widthForMode() {
+      const mode = host?.dataset.menuWidth || 'compact';
+      return mode === 'narrow' ? 220 : mode === 'full' ? 312 : 260;
+    }
+    function clearTimer() { clearTimeout(timer); timer = 0; }
+    function queueLayout() {
+      if (destroyed || frame) return;
+      frame = requestAnimationFrame(() => { frame = 0; layout(); });
+    }
+    function layout() {
+      if (destroyed || notice.hidden) return;
+      syncTheme();
+      const width = Math.min(widthForMode(), Math.max(0, innerWidth - 24));
+      notice.style.setProperty('width', width + 'px', 'important');
+
+      const panelBox = menuOpen && !panel.hidden && panel.getClientRects().length ? panel.getBoundingClientRect() : null;
+      const launcher = shadow.querySelector('[data-exp-part="launcher"],.ward-launcher,.launcher,#tdh-settings-launcher');
+      const launcherBox = launcher?.getBoundingClientRect?.();
+      const anchorBox = panelBox?.width && panelBox?.height ? panelBox : launcherBox;
+      if (!anchorBox?.width || !anchorBox?.height) return;
+
+      const height = notice.offsetHeight || notice.scrollHeight || 72;
+      const anchor = document.documentElement.dataset.expLauncherAnchor === 'top' ? 'top' : 'bottom';
+      let top;
+      if (panelBox?.width && panelBox?.height) {
+        const above = panelBox.top - height - 8;
+        top = above >= 8 ? above : Math.min(innerHeight - height - 8, panelBox.bottom + 8);
+      } else if (anchor === 'top') {
+        top = Math.min(innerHeight - height - 8, anchorBox.bottom + 8);
+      } else {
+        top = Math.max(8, anchorBox.top - height - 8);
+      }
+      const left = Math.max(8, Math.min(innerWidth - width - 8, anchorBox.right - width));
+      notice.style.setProperty('left', left + 'px', 'important');
+      notice.style.setProperty('right', 'auto', 'important');
+      notice.style.setProperty('top', Math.max(8, top) + 'px', 'important');
+      notice.style.setProperty('bottom', 'auto', 'important');
+    }
+    function hide() {
+      clearTimer();
+      notice.hidden = true;
+      versionButton?.setAttribute('aria-expanded', 'false');
+    }
+    function show() {
+      notice.hidden = false;
+      versionButton?.setAttribute('aria-expanded', 'true');
+      clearTimer();
+      if (durationMs) timer = setTimeout(hide, durationMs);
+      queueLayout();
+    }
+    function toggle() { if (notice.hidden) show(); else hide(); }
+    function versionClick() { if (manageVersion) toggle(); else if (!notice.hidden) show(); }
+    function setMenuOpen(value) { menuOpen = Boolean(value); queueLayout(); }
+
+    const resize = new ResizeObserver(queueLayout);
+    resize.observe(panel);
+    resize.observe(notice);
+    const coordination = () => queueLayout();
+    dismiss.addEventListener('click', hide);
+    versionButton?.addEventListener('click', versionClick);
+    addEventListener('resize', queueLayout, { passive:true });
+    document.addEventListener('exp-core:coordination', coordination);
+
+    return Object.freeze({
+      show, hide, toggle, layout, setMenuOpen,
+      destroy() {
+        destroyed = true;
+        cancelAnimationFrame(frame);
+        clearTimer();
+        resize.disconnect();
+        dismiss.removeEventListener('click', hide);
+        versionButton?.removeEventListener('click', versionClick);
+        removeEventListener('resize', queueLayout);
+        document.removeEventListener('exp-core:coordination', coordination);
+      },
+    });
+  }
+
   function applyTheme(host, value, choices) {
     const controller = controllers.get(host); if (!controller) return;
     controller.setTheme(value, choices);
@@ -393,7 +512,7 @@ const ExtraPotionsCore = (() => {
     applyContentDrivenMenuLayout(shadow);
     applyMatteToggleChrome(shadow);
     const versionButton=panel.querySelector('.version,[data-exp-part="version"]');
-    const floatingNotices=[...themeRoot.querySelectorAll('.update-notice,.changelog')].map(notice=>createFloatingNotice({host,shadow,panel,notice,versionButton:notice.classList.contains('changelog')?versionButton:null,manageVersion:false,durationMs:30000}));
+    const menuNotices=[...themeRoot.querySelectorAll('.update-notice,.changelog')].map(notice=>createMenuNotice({host,shadow,panel,notice,versionButton:notice.classList.contains('changelog')?versionButton:null,manageVersion:false,durationMs:30000}));
     if (launcherSrc) panel.querySelectorAll('.header-icon img').forEach(image => image.src = launcherSrc);
     host.dataset.coreVersion = version; host.dataset.coreSource = 'Dropper/3.2.10';
     let choices = themes(productTheme), selected = choices.at(-1), open = false, destroyed = false, timer = 0, deadline = 0, frame = 0;
@@ -456,7 +575,7 @@ const ExtraPotionsCore = (() => {
       const up = below < h+12 && above >= below;
       host.dataset.openDirection = up?'up':'down';
       panel.style.top = Math.max(8, up ? top-h-8 : Math.min(innerHeight-h-8,top+56))+'px';
-      floatingNotices.forEach(notice=>notice.layout());
+      menuNotices.forEach(notice=>notice.layout());
     }
     function queueLayout() { if (!frame && !destroyed) frame = requestAnimationFrame(() => { frame = 0; normalizeControls(panel); layout(); }); }
     let startX=0,startY=0,startDelta=0,pointer=null,dragged=false,axis='',order=[];
@@ -473,14 +592,176 @@ const ExtraPotionsCore = (() => {
     const mutation = new MutationObserver(records=>{if(records.some(r=>r.type==='childList'||r.attributeName==='hidden'))queueLayout();}); mutation.observe(panel,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
     const controller = {
       layout, setTheme,
-      state(value) {open=Boolean(value);panel.classList.toggle('fl-rail-open',open);floatingNotices.forEach(notice=>notice.setMenuOpen(open));if(open)scheduleDismiss();else clearTimer();queueLayout();},
+      state(value) {open=Boolean(value);panel.classList.toggle('fl-rail-open',open);menuNotices.forEach(notice=>notice.setMenuOpen(open));if(open)scheduleDismiss();else clearTimer();queueLayout();},
       update(){normalizeControls(panel);queueLayout();},
       get dismissAt(){return deadline;},
-      destroy(){destroyed=true;clearTimer();cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();dropperThemeObserver.disconnect();floatingNotices.forEach(notice=>notice.destroy());removers.forEach(f=>f());styles.dispose();controllers.delete(host);}
+      destroy(){destroyed=true;clearTimer();cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();dropperThemeObserver.disconnect();menuNotices.forEach(notice=>notice.destroy());removers.forEach(f=>f());styles.dispose();controllers.delete(host);}
     };
     controllers.set(host,controller);setTheme(getSettings().uiTheme || getSettings().theme || id);
     queueLayout();return controller;
   }
+  function createReleaseUpdateChecker(options = {}) {
+    const productId = String(options.productId || '').toLowerCase();
+    const repository = String(options.repository || '');
+    const currentVersion = String(options.currentVersion || '');
+    const enabled = typeof options.enabled === 'function' ? options.enabled : () => true;
+    const onError = typeof options.onError === 'function' ? options.onError : () => {};
+    if (!productId || !repository || !currentVersion) throw new Error('Incomplete update checker configuration');
+
+    const ENDPOINT = 'https://api.github.com/repos/' + repository + '/releases/latest';
+    const CACHE_KEY = 'exp:v3:' + productId + ':update-cache';
+    const CHECK_INTERVAL = 15 * 60 * 1000;
+    const CHECK_LEASE = 30 * 1000;
+    let memory = {};
+
+    function readState() {
+      try {
+        if (typeof GM_getValue === 'function') {
+          const value = GM_getValue(CACHE_KEY, null);
+          if (value && typeof value === 'object' && !Array.isArray(value)) return { ...value };
+        }
+      } catch {}
+      try {
+        const value = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+        if (value && typeof value === 'object' && !Array.isArray(value)) return { ...value };
+      } catch {}
+      return { ...memory };
+    }
+    function writeState(value) {
+      memory = { ...(value || {}) };
+      try { if (typeof GM_setValue === 'function') GM_setValue(CACHE_KEY, memory); } catch {}
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify(memory)); } catch {}
+    }
+    function releaseDetails(body) {
+      const details = [];
+      let section = false;
+      for (const line of String(body || '').split(/\r?\n/)) {
+        if (/^##\s+/.test(line)) { if (section) break; section = true; continue; }
+        if (!section) continue;
+        const match = line.match(/^\s*[-*]\s+(.+)/);
+        if (!match) continue;
+        const detail = match[1].replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[`*_]/g, '').trim();
+        if (detail) details.push(detail.slice(0, 220));
+        if (details.length === 4) break;
+      }
+      return details;
+    }
+    function normalize(state) {
+      const next = { ...(state || {}) };
+      if (!next.lastCheckAt && next.checkedAt) next.lastCheckAt = Number(next.checkedAt) || 0;
+      if (!next.lastRemoteVersion && next.latest) next.lastRemoteVersion = String(next.latest || '');
+      if (!Array.isArray(next.details)) next.details = [];
+      return next;
+    }
+    function snapshot(state, stateName) {
+      const next = normalize(state);
+      const latest = String(next.lastRemoteVersion || '');
+      return {
+        checkedAt: Number(next.lastCheckAt || 0),
+        latest: latest || null,
+        state: stateName || next.state || 'idle',
+        current: currentVersion,
+        available: Boolean(latest && DropperReference.compareVersions(latest, currentVersion) > 0),
+        details: next.details.slice(0, 4),
+        checkedForVersion: next.checkedForVersion || null,
+        lastRemoteVersion: latest || null,
+        lastHttpStatus: Number(next.lastHttpStatus || 0),
+        lastError: String(next.lastError || ''),
+      };
+    }
+    function request() {
+      return new Promise((resolve, reject) => {
+        if (typeof GM_xmlhttpRequest !== 'function') return reject(Object.assign(new Error('Update request capability unavailable'), { code:'UPDATE_CAPABILITY' }));
+        GM_xmlhttpRequest({
+          method:'GET',
+          url:ENDPOINT,
+          timeout:10000,
+          headers:{ Accept:'application/vnd.github+json', 'Cache-Control':'no-cache', Pragma:'no-cache' },
+          onload(response) {
+            if (response.status >= 200 && response.status < 300) return resolve(response);
+            reject(Object.assign(new Error('Update metadata request failed'), { code:'UPDATE_HTTP_' + response.status, status:response.status }));
+          },
+          onerror:() => reject(Object.assign(new Error('Update metadata request failed'), { code:'UPDATE_NETWORK' })),
+          ontimeout:() => reject(Object.assign(new Error('Update metadata request timed out'), { code:'UPDATE_TIMEOUT' })),
+        });
+      });
+    }
+    async function check(force = false) {
+      let state = normalize(readState());
+      if (!enabled() && !force) return snapshot(state, 'disabled');
+
+      const now = Date.now();
+      const checkedForCurrentVersion = state.checkedForVersion === currentVersion;
+      if (!checkedForCurrentVersion) {
+        state.checkedForVersion = currentVersion;
+        state.lastCheckAt = 0;
+        state.checkLeaseUntil = 0;
+        state.lastRemoteVersion = '';
+        state.lastHttpStatus = 0;
+        state.lastError = '';
+        state.details = [];
+        state.availableVersion = '';
+        state.availableAt = 0;
+      }
+      writeState(state);
+
+      if (!force && Number(state.checkLeaseUntil || 0) > now) return snapshot(state, 'checking');
+      if (!force && checkedForCurrentVersion && now - Number(state.lastCheckAt || 0) < CHECK_INTERVAL) return snapshot(state, 'cached');
+
+      state.checkedForVersion = currentVersion;
+      state.lastCheckAt = now;
+      state.checkLeaseUntil = now + CHECK_LEASE;
+      state.lastError = '';
+      state.state = 'checking';
+      writeState(state);
+
+      try {
+        const response = await request();
+        const payload = JSON.parse(String(response.responseText || '{}'));
+        const latest = String(payload.tag_name || '').replace(/^v/, '');
+        if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(latest)) throw Object.assign(new Error('Invalid update metadata'), { code:'UPDATE_METADATA' });
+
+        state = normalize(readState());
+        state.checkedForVersion = currentVersion;
+        state.lastCheckAt = Date.now();
+        state.checkLeaseUntil = 0;
+        state.lastRemoteVersion = latest;
+        state.lastHttpStatus = Number(response.status || 0);
+        state.lastError = '';
+        state.details = releaseDetails(payload.body);
+        state.state = 'checked';
+        if (DropperReference.compareVersions(latest, currentVersion) > 0) {
+          state.availableVersion = latest;
+          state.availableAt = Date.now();
+        } else {
+          state.availableVersion = '';
+          state.availableAt = 0;
+        }
+        writeState(state);
+        return snapshot(state, 'checked');
+      } catch (error) {
+        state = normalize(readState());
+        state.checkedForVersion = currentVersion;
+        state.lastCheckAt = Date.now();
+        state.checkLeaseUntil = 0;
+        state.lastError = String(error?.message || 'Update check failed');
+        state.state = 'failed';
+        writeState(state);
+        try { onError(error); } catch {}
+        return snapshot(state, 'failed');
+      }
+    }
+    function status() { return snapshot(readState()); }
+    return Object.freeze({
+      CURRENT_VERSION: currentVersion,
+      ENDPOINT,
+      CHECK_INTERVAL,
+      check,
+      status,
+      compare: DropperReference.compareVersions,
+    });
+  }
+
   function createDiagnosticsReport(product, details = {}) {
     return ExtraPotionsDiagnostics.createReport(product, details, { version, source: 'Dropper', sourceVersion });
   }
@@ -511,6 +792,6 @@ const ExtraPotionsCore = (() => {
   if(document.documentElement)startGrid();else addEventListener('DOMContentLoaded',startGrid,{once:true});
   document.addEventListener('exp-core:coordination',scheduleGrid);
   addEventListener('resize',scheduleGrid,{passive:true});
-  const api = Object.freeze({version,sourceVersion,protocol,gridProtocol,reference:DropperReference,css:canonicalCss,themes,create,createProduct,createLifecycle:()=>createProductLifecycle(api),registerLauncher,layout:layoutGrid,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct:ExtraPotionsDiagnostics.registerProduct,productCompatibility:ExtraPotionsDiagnostics.compatibility,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,compareVersions:DropperReference.compareVersions});
+  const api = Object.freeze({version,sourceVersion,protocol,gridProtocol,reference:DropperReference,css:canonicalCss,themes,create,createProduct,createLifecycle:()=>createProductLifecycle(api),registerLauncher,layout:layoutGrid,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct:ExtraPotionsDiagnostics.registerProduct,productCompatibility:ExtraPotionsDiagnostics.compatibility,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,compareVersions:DropperReference.compareVersions});
   return api;
 })();
