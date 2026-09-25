@@ -1,8 +1,15 @@
 {
-  "coreVersion": "3.2.24",
+  "coreVersion": "3.2.25",
   "source": {
     "source": "ExtraPotions/Dropper",
     "sourceVersion": "3.2.25",
+    "behaviorSourceVersion": "3.2.31",
+    "behaviorParity": [
+      "menu-width-notices",
+      "version-scoped-update-checks",
+      "diagnostic-resource-attribution",
+      "diagnostic-ui-geometry"
+    ],
     "commit": "f9b2b837c9cb72c6a0d4d3404143f47af9a8d4df",
     "path": "dropper.user.js",
     "sha256": "6f8ddae769f17aecd9cae723d0bc36359e64e06262ee15962782bcd12e8a7dd8",
@@ -51,11 +58,11 @@
       }
     ]
   },
-  "bundleSha256": "d15f3ccf9dc6207d362f6ec1334836ccd296257c857182a565f64debd68fde75",
+  "bundleSha256": "7aa7542d08eb2fca844db49d0eb6c54ad5a13d3ea1892dfff863095084c0ecc7",
   "files": {
     "dropper-reference.js": "50db343fc849a84d3e70c0935ed5a8331507ead0e5a789d70538523dc08383b0",
-    "diagnostic-report.js": "543f7f1d55c50bde34c01edd91e460b8175e3a3ddc570bccc466e8e41a4dea0c",
+    "diagnostic-report.js": "605abdecadfd11e7bf89d9937b67bc2a5eb2faa2f495035ca2505f3986ab5989",
     "lifecycle.js": "50a3584b708d155ce03c7d1a622d9be4f8345e91f6c4c71f8c42dc98f1ed5691",
-    "runtime.js": "d0517874b2bee4ba9ab516c3dd22e3935beaa9f8623e50d1794e1ce22df00a36"
+    "runtime.js": "a1a7eddc490751ac91dc9d0a56a55a7679f460060f17d66f8bb40aef10c21609"
   }
 }
