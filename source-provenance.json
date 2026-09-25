@@ -1,39 +1,39 @@
 {
   "source": "ExtraPotions/Dropper",
-  "sourceVersion": "3.2.23",
-  "commit": "da9e71d009591a3f8889c70d82dfae2820fe9e31",
+  "sourceVersion": "3.2.24",
+  "commit": "a1df13961db7ee56424ce1e7d3fa3923f6227894",
   "path": "dropper.user.js",
-  "sha256": "01a5ab2d96970c10d624d379c47c42786d03e3a6fdb0acfc945ca31a95e51e95",
+  "sha256": "86f46cf5490dac082a583b15b3b6239d88c518db487752da9787030c493a2e5b",
   "entries": [
     {
       "name": "PRIDE_RAINBOW",
       "kind": "constant",
-      "startLine": 747,
-      "endLine": 747
+      "startLine": 751,
+      "endLine": 751
     },
     {
       "name": "PRIDE_RAINBOW_VERTICAL",
       "kind": "constant",
-      "startLine": 748,
-      "endLine": 748
+      "startLine": 752,
+      "endLine": 752
     },
     {
       "name": "CRIMSON_THEME",
       "kind": "constant",
-      "startLine": 749,
-      "endLine": 749
+      "startLine": 753,
+      "endLine": 753
     },
     {
       "name": "UI_THEMES",
       "kind": "constant",
-      "startLine": 750,
-      "endLine": 759
+      "startLine": 754,
+      "endLine": 763
     },
     {
       "name": "css",
       "kind": "function",
-      "startLine": 11219,
-      "endLine": 11907
+      "startLine": 11223,
+      "endLine": 11911
     },
     {
       "name": "protectLauncherHost",
@@ -44,8 +44,8 @@
     {
       "name": "compareVersions",
       "kind": "function",
-      "startLine": 13659,
-      "endLine": 13663
+      "startLine": 13663,
+      "endLine": 13667
     }
   ]
 }

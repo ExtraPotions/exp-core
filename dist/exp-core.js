@@ -1,4 +1,4 @@
-// Generated from the approved Dropper v3.2.23 install artifact. Do not edit.
+// Generated from the approved Dropper v3.2.24 install artifact. Do not edit.
 const DropperReference = (() => {
 const LAUNCHER_ORDER_KEY = "exp:v3:launcher-order";
 const LAUNCHER_GRID_DELTA_KEY = "exp:v3:launcher-grid-delta";
@@ -298,7 +298,7 @@ function css() {
       #tdh-rail-close:hover { border-color:#9147ff; color:#fff; background:#211b2b; }
       .header-divider { height:1px; width:100%; margin:5px 0; background:linear-gradient(90deg,transparent,#9147ff88 50%,transparent); }
       .update-notice {
-        position:relative; display:block; width:100%; max-width:calc(100vw - 24px); margin:0 0 8px; padding:10px;
+        position:fixed; display:block; width:100%; max-width:calc(100vw - 24px); margin:0; padding:10px;
         box-sizing:border-box;
         border:1px solid color-mix(in srgb,var(--theme-accent) 62%,var(--theme-line)); border-radius:10px;
         background:
@@ -1387,8 +1387,8 @@ function createProductLifecycle(shared) {
 // Product engines own their settings, content, and actions. Core owns shared UI.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.2.22';
-  const sourceVersion = '3.2.23';
+  const version = '3.2.23';
+  const sourceVersion = '3.2.24';
   const protocol = 'exp-core-coordination-v1';
   const gridProtocol = 'exp-launcher-grid-v3';
   const GRID_ORDER = 'exp:v3:launcher-order';
