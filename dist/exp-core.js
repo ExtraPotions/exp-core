@@ -2081,8 +2081,8 @@ const ExtraPotionsCore = (() => {
     }
     function normalize(state) {
       const next = { ...(state || {}) };
-      if (!next.lastCheckAt && next.checkedAt) next.lastCheckAt = Number(next.checkedAt) || 0;
-      if (!next.lastRemoteVersion && next.latest) next.lastRemoteVersion = String(next.latest || '');
+      if (!Object.hasOwn(next, 'lastCheckAt') && next.checkedAt) next.lastCheckAt = Number(next.checkedAt) || 0;
+      if (!Object.hasOwn(next, 'lastRemoteVersion') && next.latest) next.lastRemoteVersion = String(next.latest || '');
       if (!Array.isArray(next.details)) next.details = [];
       return next;
     }
