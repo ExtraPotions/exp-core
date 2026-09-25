@@ -1,6 +1,13 @@
 {
   "source": "ExtraPotions/Dropper",
   "sourceVersion": "3.2.25",
+  "behaviorSourceVersion": "3.2.31",
+  "behaviorParity": [
+    "menu-width-notices",
+    "version-scoped-update-checks",
+    "diagnostic-resource-attribution",
+    "diagnostic-ui-geometry"
+  ],
   "commit": "f9b2b837c9cb72c6a0d4d3404143f47af9a8d4df",
   "path": "dropper.user.js",
   "sha256": "6f8ddae769f17aecd9cae723d0bc36359e64e06262ee15962782bcd12e8a7dd8",
