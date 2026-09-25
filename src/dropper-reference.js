@@ -1,4 +1,4 @@
-// Generated from the approved Dropper v3.2.21 install artifact. Do not edit.
+// Generated from the approved Dropper v3.2.22 install artifact. Do not edit.
 const DropperReference = (() => {
 const LAUNCHER_ORDER_KEY = "exp:v3:launcher-order";
 const LAUNCHER_GRID_DELTA_KEY = "exp:v3:launcher-grid-delta";
@@ -59,11 +59,13 @@ function css() {
         width:min(var(--dropper-width, 312px), calc(100vw - 24px));
       }
       .progress-stack.badge-only .badge-row { justify-content:flex-end; min-height:48px!important; }
-      .progress-stack.badge-only #tdh-drop-card { display:none !important; }
       .progress-stack.badge-only #tdh-settings-launcher {
         border-radius:12px;
         border-left:1px solid color-mix(in srgb, var(--theme-accent) 47%, transparent);
       }
+      .badge-only-progress-slot{display:block;margin:0 0 7px;min-width:0}
+      .badge-only-progress-slot[hidden]{display:none!important}
+      .badge-only-progress-slot #tdh-drop-card{position:relative!important;inset:auto!important;display:block!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important}
       .compact-line { height:auto; min-height:48px; padding:6px 10px; display:grid; grid-template-columns:6px minmax(0,1fr) auto auto; gap:7px; align-items:center; cursor:pointer; }
       .compact-dot { width:6px; height:6px; border-radius:2px; background:#9147ff; }
       .compact-reward { font-size:10px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

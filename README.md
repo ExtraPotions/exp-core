@@ -12,7 +12,7 @@
 
 <p align="center">
   <img alt="Shared Component" src="https://img.shields.io/badge/Distribution-Shared%20Component-334155?style=flat-square">
-  <img alt="Version 3.2.20" src="https://img.shields.io/badge/version-3.2.20-22C55E?style=flat-square">
+  <img alt="Version 3.2.21" src="https://img.shields.io/badge/version-3.2.21-22C55E?style=flat-square">
   <img alt="JavaScript" src="https://img.shields.io/badge/Language-JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=000000">
   <img alt="Public Repository" src="https://img.shields.io/badge/Repository-Public-22C55E?style=flat-square">
   <img alt="PolyForm Noncommercial 1.0.0" src="https://img.shields.io/badge/Code-PolyForm%20NC%201.0.0-6B7280?style=flat-square">

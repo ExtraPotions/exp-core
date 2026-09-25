@@ -1,41 +1,41 @@
 {
-  "coreVersion": "3.2.20",
+  "coreVersion": "3.2.21",
   "source": {
     "source": "ExtraPotions/Dropper",
-    "sourceVersion": "3.2.21",
-    "commit": "f07293cea7484ef58c3261975c8cbffbd1a06862",
+    "sourceVersion": "3.2.22",
+    "commit": "ff97281781fe0d133167ce731cd0214d57a5e9e1",
     "path": "dropper.user.js",
-    "sha256": "647239f324ac34d4ca091271538f8346a45d252dcc3a078566798b07f08bb4a1",
+    "sha256": "22315fe6e580bdb13ff329e68dfc2c44cc4f375a19d14d67d5a19d4362c0c6f9",
     "entries": [
       {
         "name": "PRIDE_RAINBOW",
         "kind": "constant",
-        "startLine": 738,
-        "endLine": 738
+        "startLine": 743,
+        "endLine": 743
       },
       {
         "name": "PRIDE_RAINBOW_VERTICAL",
         "kind": "constant",
-        "startLine": 739,
-        "endLine": 739
+        "startLine": 744,
+        "endLine": 744
       },
       {
         "name": "CRIMSON_THEME",
         "kind": "constant",
-        "startLine": 740,
-        "endLine": 740
+        "startLine": 745,
+        "endLine": 745
       },
       {
         "name": "UI_THEMES",
         "kind": "constant",
-        "startLine": 741,
-        "endLine": 750
+        "startLine": 746,
+        "endLine": 755
       },
       {
         "name": "css",
         "kind": "function",
-        "startLine": 11210,
-        "endLine": 11896
+        "startLine": 11215,
+        "endLine": 11903
       },
       {
         "name": "protectLauncherHost",
@@ -46,16 +46,16 @@
       {
         "name": "compareVersions",
         "kind": "function",
-        "startLine": 13629,
-        "endLine": 13633
+        "startLine": 13655,
+        "endLine": 13659
       }
     ]
   },
-  "bundleSha256": "943a1b7413916fa3c6a86c01ae28b126045d1b2986f4ecd7fca0e59b72a5d233",
+  "bundleSha256": "69038d065d3640b8da129c7a2b57017c302b3437f744f3d838f74198d3594257",
   "files": {
-    "dropper-reference.js": "5791b06fc2fd42913fdc4a09ac3083ac9616b817a6367a17a7fb2b909d4e4239",
+    "dropper-reference.js": "b0f871a9c148f3df285006d388ff37a0fc444e3a4f822b2582f3fc84a300c131",
     "diagnostic-report.js": "543f7f1d55c50bde34c01edd91e460b8175e3a3ddc570bccc466e8e41a4dea0c",
     "lifecycle.js": "50a3584b708d155ce03c7d1a622d9be4f8345e91f6c4c71f8c42dc98f1ed5691",
-    "runtime.js": "5d6249a03e173b7a84049caf80e55f56d6ad0773dfe288a1da2e488b98002320"
+    "runtime.js": "0c31727061e3115e82f803be5957f090e25ea15e430022168da02b621bcf6e4e"
   }
 }

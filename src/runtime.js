@@ -2,8 +2,8 @@
 // Product engines own their settings, content, and actions. Core owns shared UI.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.2.20';
-  const sourceVersion = '3.2.21';
+  const version = '3.2.21';
+  const sourceVersion = '3.2.22';
   const protocol = 'exp-core-coordination-v1';
   const gridProtocol = 'exp-launcher-grid-v3';
   const GRID_ORDER = 'exp:v3:launcher-order';
