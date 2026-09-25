@@ -221,17 +221,17 @@ test('Dropper progress visibility preserves the compact launcher grid', async (t
   });
 });
 
-test('floating changelogs live outside the menu and follow its edge', async (t) => {
+test('floating changelogs live outside the menu and follow the launcher grid', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage({ viewport: { width: 900, height: 700 } });
   await page.setContent('<!doctype html><html><body></body></html>');
   await page.addScriptTag({ content: source });
   const result = await page.evaluate(async () => {
-    const host=document.createElement('div');const shadow=host.attachShadow({mode:'open'});const panel=document.createElement('aside');const version=document.createElement('button');const notice=document.createElement('div');
-    panel.style.cssText='position:fixed;right:12px;top:300px;width:260px;height:180px;--accent:#22cc88;--surface:#123a2a;--bg:#071b13;--text:#edfff7';notice.hidden=true;notice.textContent='Version 3.0.1 changes';shadow.append(panel,version,notice);document.body.append(host);
+    const host=document.createElement('div');const shadow=host.attachShadow({mode:'open'});const panel=document.createElement('aside');const version=document.createElement('button');const launcher=document.createElement('button');const notice=document.createElement('div');
+    launcher.className='launcher';launcher.style.cssText='position:fixed;right:12px;bottom:12px;width:48px;height:48px';panel.style.cssText='position:fixed;right:12px;top:300px;width:260px;height:180px;--accent:#22cc88;--surface:#123a2a;--bg:#071b13;--text:#edfff7';notice.hidden=true;notice.textContent='Version 3.0.1 changes';notice.style.cssText='position:fixed;width:260px;height:80px';shadow.append(panel,version,launcher,notice);document.body.append(host);ExtraPotionsCore.registerLauncher(host,{productId:'ward'});
     const floating=ExtraPotionsCore.createFloatingNotice({shadow,panel,notice,versionButton:version});floating.setMenuOpen(true);version.click();await new Promise((resolve)=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-    const panelRect=panel.getBoundingClientRect(),noticeRect=notice.getBoundingClientRect();
-    return {outside:notice.parentNode===shadow,visible:!notice.hidden,expanded:version.getAttribute('aria-expanded'),aligned:noticeRect.right===panelRect.right,above:noticeRect.bottom<panelRect.top,hasDismiss:Boolean(notice.querySelector('.exp-floating-update-dismiss')),border:notice.style.getPropertyValue('--exp-notice-border'),top:notice.style.getPropertyValue('--exp-notice-top'),text:notice.style.getPropertyValue('--exp-notice-text')};
+    const launcherRect=launcher.getBoundingClientRect(),noticeRect=notice.getBoundingClientRect();
+    return {outside:notice.parentNode===shadow,visible:!notice.hidden,expanded:version.getAttribute('aria-expanded'),aligned:noticeRect.right===launcherRect.right,above:noticeRect.bottom<launcherRect.top,hasDismiss:Boolean(notice.querySelector('.exp-floating-update-dismiss')),border:notice.style.getPropertyValue('--exp-notice-border'),top:notice.style.getPropertyValue('--exp-notice-top'),text:notice.style.getPropertyValue('--exp-notice-text')};
   });
   assert.deepEqual(result,{outside:true,visible:true,expanded:'true',aligned:true,above:true,hasDismiss:true,border:'#22cc88',top:'#123a2a',text:'#edfff7'});
 });
@@ -396,4 +396,46 @@ test('launcher registration and swatches apply matte chrome to product shadows',
     return Boolean(shadow.querySelector('style[data-exp-matte-toggle-chrome]'));
   });
   assert.equal(swatched, true);
+});
+
+test('automatic notices are claimed once per product change across page loads', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage();
+  await page.route('https://notices.test/**', route => route.fulfill({ contentType:'text/html', body:'<!doctype html><html><body></body></html>' }));
+  await page.goto('https://notices.test/one');
+  await page.addScriptTag({ content: source });
+  assert.deepEqual(await page.evaluate(() => ({
+    first: ExtraPotionsCore.claimNotice('ward', 'available:4.0.0'),
+    repeat: ExtraPotionsCore.claimNotice('ward', 'available:4.0.0'),
+    other: ExtraPotionsCore.claimNotice('shift', 'available:4.0.0'),
+  })), { first: true, repeat: false, other: true });
+  await page.goto('https://notices.test/two');
+  await page.addScriptTag({ content: source });
+  assert.equal(await page.evaluate(() => ExtraPotionsCore.claimNotice('ward', 'available:4.0.0')), false);
+});
+
+test('simultaneous product notices stack beside the complete launcher grid', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage({ viewport: { width: 900, height: 700 } });
+  await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const facts = await page.evaluate(async () => {
+    for (const [id, priority] of [['shift',100],['ward',60]]) {
+      const host=document.createElement('div');
+      const shadow=host.attachShadow({mode:'open'});
+      shadow.innerHTML='<style>.launcher{position:fixed;right:calc(12px + var(--exp-launcher-x));bottom:12px;width:48px;height:48px}.notice{position:fixed;width:240px;height:70px;background:#111;color:white}</style><button class="launcher"></button><div class="notice">Update</div>';
+      document.documentElement.append(host);
+      ExtraPotionsCore.registerLauncher(host,{productId:id,priority});
+      ExtraPotionsCore.registerFloatingNotice(host,shadow.querySelector('.notice'));
+    }
+    ExtraPotionsCore.layout();
+    await new Promise((resolve)=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    ExtraPotionsCore.layoutFloatingNotices();
+    const launchers=[...document.querySelectorAll('[data-exp-product-launcher="1"]')].map(host=>host.shadowRoot.querySelector('.launcher').getBoundingClientRect());
+    const notices=[...document.querySelectorAll('[data-exp-product-launcher="1"]')].map(host=>host.shadowRoot.querySelector('.notice').getBoundingClientRect()).sort((a,b)=>a.top-b.top);
+    return { gridTop:Math.min(...launchers.map(box=>box.top)), notices:notices.map(box=>({top:box.top,bottom:box.bottom,right:box.right})) };
+  });
+  assert.equal(facts.notices.length, 2);
+  assert.ok(facts.notices[0].bottom <= facts.notices[1].top, JSON.stringify(facts));
+  assert.ok(facts.notices[1].bottom <= facts.gridTop, JSON.stringify(facts));
 });

@@ -1,6 +1,6 @@
 {
   "name": "@extrapotions/exp-core",
-  "version": "3.2.19",
+  "version": "3.2.20",
   "private": true,
   "scripts": {
     "extract": "node scripts/extract-dropper.cjs",

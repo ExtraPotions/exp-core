@@ -390,5 +390,12 @@ function createProductLifecycle(shared) {
   function focusMenuSurface(surface) { if (!(surface instanceof HTMLElement)) return false; if (!surface.hasAttribute('tabindex')) surface.setAttribute('tabindex', '-1'); surface.style.outline='none'; surface.focus({ preventScroll: true }); return true; }
 
   addEventListener('pagehide', () => { for (const cleanup of cleanups) { try { cleanup(); } catch {} } }, { once: true });
-  return Object.freeze({ VERSION, PROTOCOL, register, createScheduler, onNavigation, registerLauncher, announce, negotiate, safeError, diagnosticSnapshot, diagnostics: diagnosticSnapshot, focusMenuSurface, injectStyle });
+  return Object.freeze({
+    VERSION, PROTOCOL, register, createScheduler, onNavigation, registerLauncher, announce, negotiate, safeError,
+    diagnosticSnapshot, diagnostics: diagnosticSnapshot, focusMenuSurface, injectStyle,
+    registerFloatingNotice: shared.registerFloatingNotice,
+    layoutFloatingNotices: shared.layoutFloatingNotices,
+    claimNotice: shared.claimNotice,
+    consumeVersionChange: shared.consumeVersionChange,
+  });
 }
