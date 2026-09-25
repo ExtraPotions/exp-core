@@ -1,0 +1,61 @@
+{
+  "coreVersion": "3.2.17",
+  "source": {
+    "source": "ExtraPotions/Dropper",
+    "sourceVersion": "3.2.18",
+    "commit": "e8a608fc5883d790fbda6e4ec600d6278749450c",
+    "path": "dropper.user.js",
+    "sha256": "cf1e150680e19ea5046c896e80613963b3e0092c7e039eda5793b8d39a54fe4b",
+    "entries": [
+      {
+        "name": "PRIDE_RAINBOW",
+        "kind": "constant",
+        "startLine": 683,
+        "endLine": 683
+      },
+      {
+        "name": "PRIDE_RAINBOW_VERTICAL",
+        "kind": "constant",
+        "startLine": 684,
+        "endLine": 684
+      },
+      {
+        "name": "CRIMSON_THEME",
+        "kind": "constant",
+        "startLine": 685,
+        "endLine": 685
+      },
+      {
+        "name": "UI_THEMES",
+        "kind": "constant",
+        "startLine": 686,
+        "endLine": 695
+      },
+      {
+        "name": "css",
+        "kind": "function",
+        "startLine": 11155,
+        "endLine": 11839
+      },
+      {
+        "name": "protectLauncherHost",
+        "kind": "function",
+        "startLine": 235,
+        "endLine": 310
+      },
+      {
+        "name": "compareVersions",
+        "kind": "function",
+        "startLine": 13589,
+        "endLine": 13593
+      }
+    ]
+  },
+  "bundleSha256": "b479ac7117d48614c817ad957534646a84dda6e276caa93516adf7eb1bf3d1d0",
+  "files": {
+    "dropper-reference.js": "1da460a82f5f20bdd57634f970194583b111dc0ea0c328c784730256fbd43edf",
+    "diagnostic-report.js": "543f7f1d55c50bde34c01edd91e460b8175e3a3ddc570bccc466e8e41a4dea0c",
+    "lifecycle.js": "e73b10b5aa3e4ffb667c3421bd1ff5b397f17c7ff35a685a265504f2d309cb3c",
+    "runtime.js": "fe8ce06dc1005139246baaa4a615198529d9af8c04f070b7217eb93f5cd6ec37"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "source": "ExtraPotions/Dropper",
+  "sourceVersion": "3.2.18",
+  "commit": "e8a608fc5883d790fbda6e4ec600d6278749450c",
+  "path": "dropper.user.js",
+  "sha256": "cf1e150680e19ea5046c896e80613963b3e0092c7e039eda5793b8d39a54fe4b",
+  "entries": [
+    {
+      "name": "PRIDE_RAINBOW",
+      "kind": "constant",
+      "startLine": 683,
+      "endLine": 683
+    },
+    {
+      "name": "PRIDE_RAINBOW_VERTICAL",
+      "kind": "constant",
+      "startLine": 684,
+      "endLine": 684
+    },
+    {
+      "name": "CRIMSON_THEME",
+      "kind": "constant",
+      "startLine": 685,
+      "endLine": 685
+    },
+    {
+      "name": "UI_THEMES",
+      "kind": "constant",
+      "startLine": 686,
+      "endLine": 695
+    },
+    {
+      "name": "css",
+      "kind": "function",
+      "startLine": 11155,
+      "endLine": 11839
+    },
+    {
+      "name": "protectLauncherHost",
+      "kind": "function",
+      "startLine": 235,
+      "endLine": 310
+    },
+    {
+      "name": "compareVersions",
+      "kind": "function",
+      "startLine": 13589,
+      "endLine": 13593
+    }
+  ]
+}
