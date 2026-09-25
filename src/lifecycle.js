@@ -1,4 +1,4 @@
-/* exp-core 3.2.17: canonical ExtraPotions shared runtime. */
+/* exp-core 3.2.18: canonical ExtraPotions shared runtime. */
 function createProductLifecycle(shared) {
   const VERSION = shared.version;
   const PROTOCOL = 'exp-core-coordination-v1';

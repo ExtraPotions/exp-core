@@ -6,6 +6,6 @@ Official license:
 
 https://creativecommons.org/licenses/by-nc-sa/4.0/
 
-This includes `assets/exp-core.svg`, exp-core documentation, and repository artwork.
+This includes `assets/exp-core-launcher.svg`, exp-core documentation, and repository artwork.
 
 Copyright 2026 ExtraPotions.

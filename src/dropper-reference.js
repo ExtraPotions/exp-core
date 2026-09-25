@@ -1,4 +1,4 @@
-// Generated from the approved Dropper v3.2.18 install artifact. Do not edit.
+// Generated from the approved Dropper v3.2.19 install artifact. Do not edit.
 const DropperReference = (() => {
 const LAUNCHER_ORDER_KEY = "exp:v3:launcher-order";
 const LAUNCHER_GRID_DELTA_KEY = "exp:v3:launcher-grid-delta";
