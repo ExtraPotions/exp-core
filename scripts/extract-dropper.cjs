@@ -51,7 +51,7 @@ const output = '// Generated from the approved Dropper v3.2.25 install artifact.
   'const LAUNCHER_GRID_DELTA_KEY = "exp:v3:launcher-grid-delta";\n' +
   pieces.join('\n\n') +
   '\nreturn Object.freeze({ ' + [...constants, ...functions].join(', ') + ' });\n})();\n';
-const metadata = { source: 'ExtraPotions/Dropper', sourceVersion: '3.2.25', commit: expectedCommit, path: 'dropper.user.js', sha256: digest, entries };
+const metadata = { source: 'ExtraPotions/Dropper', sourceVersion: '3.2.25', behaviorSourceVersion: '3.2.31', behaviorParity: ['menu-width-notices','version-scoped-update-checks','diagnostic-resource-attribution','diagnostic-ui-geometry'], commit: expectedCommit, path: 'dropper.user.js', sha256: digest, entries };
 const targets = [[path.join(root, 'src', 'dropper-reference.js'), output], [path.join(root, 'source-provenance.json'), JSON.stringify(metadata, null, 2) + '\n']];
 for (const [target, content] of targets) {
   if (process.argv.includes('--check')) {
