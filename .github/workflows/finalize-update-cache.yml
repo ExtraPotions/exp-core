@@ -1,0 +1,60 @@
+name: Finalize update cache
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/finalize-update-cache.yml
+      - tests/update-version-regression.test.cjs
+
+permissions:
+  contents: write
+
+concurrency:
+  group: finalize-update-cache
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Correct legacy cache alias handling
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const file = 'src/runtime.js';
+          let source = fs.readFileSync(file, 'utf8');
+          const edits = [
+            ["if (!next.lastCheckAt && next.checkedAt)", "if (!Object.hasOwn(next, 'lastCheckAt') && next.checkedAt)"],
+            ["if (!next.lastRemoteVersion && next.latest)", "if (!Object.hasOwn(next, 'lastRemoteVersion') && next.latest)"],
+          ];
+          for (const [before, after] of edits) {
+            if (source.includes(after)) continue;
+            if (source.split(before).length !== 2) throw new Error('Unexpected cache normalization source');
+            source = source.replace(before, after);
+          }
+          fs.writeFileSync(file, source);
+          NODE
+      - name: Build and verify shared Core
+        run: |
+          npm run build
+          npm run build:check
+          node --check dist/exp-core.js
+          node --test tests/core.test.cjs tests/update-version-regression.test.cjs
+      - name: Commit verified source and generated artifacts
+        run: |
+          set -euo pipefail
+          git add src/runtime.js dist/exp-core.js dist/manifest.json
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Fix stale update aliases and rebuild verified Core'
+          git push origin HEAD:main
