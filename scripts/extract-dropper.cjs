@@ -5,8 +5,8 @@ const crypto = require('node:crypto');
 const acorn = require('acorn');
 const root = path.resolve(__dirname, '..');
 const normalize = (text) => text.replace(/\r\n/g, '\n');
-const expected = '0cdb1c402f55326e85f1e611108778f6cbafd061ca453afe19d363e271eeaa2b';
-const expectedCommit = 'd97e29b19418ef94d7e9e89d494781d4e963fe33';
+const expected = 'c3455a231b03ce9db018394ac98805e5dd29b472c2ab7d249af5ecccdb48af44';
+const expectedCommit = '3b6e1d12c4d0ce12303f6d76c3fe7607f18ee986';
 const sourcePath = process.argv.find(value => value.startsWith('--source='))?.slice(9) || path.join(root, '..', 'Dropper', 'dropper.user.js');
 const bytes = fs.readFileSync(sourcePath);
 const digest = crypto.createHash('sha256').update(bytes).digest('hex');
@@ -45,17 +45,17 @@ for (const name of functions) {
   pieces.push(body);
   entries.push({ name, kind: 'function', startLine: source.slice(0, node.start).split('\n').length, endLine: source.slice(0, node.end).split('\n').length });
 }
-const output = '// Generated from the approved Dropper v3.2.19 install artifact. Do not edit.\n' +
+const output = '// Generated from the approved Dropper v3.2.20 install artifact. Do not edit.\n' +
   'const DropperReference = (() => {\n' +
   'const LAUNCHER_ORDER_KEY = "exp:v3:launcher-order";\n' +
   'const LAUNCHER_GRID_DELTA_KEY = "exp:v3:launcher-grid-delta";\n' +
   pieces.join('\n\n') +
   '\nreturn Object.freeze({ ' + [...constants, ...functions].join(', ') + ' });\n})();\n';
-const metadata = { source: 'ExtraPotions/Dropper', sourceVersion: '3.2.19', commit: expectedCommit, path: 'dropper.user.js', sha256: digest, entries };
+const metadata = { source: 'ExtraPotions/Dropper', sourceVersion: '3.2.20', commit: expectedCommit, path: 'dropper.user.js', sha256: digest, entries };
 const targets = [[path.join(root, 'src', 'dropper-reference.js'), output], [path.join(root, 'source-provenance.json'), JSON.stringify(metadata, null, 2) + '\n']];
 for (const [target, content] of targets) {
   if (process.argv.includes('--check')) {
     if (!fs.existsSync(target) || normalize(fs.readFileSync(target, 'utf8')) !== content) throw new Error('Reference extraction is stale: ' + target);
   } else { fs.mkdirSync(path.dirname(target), { recursive: true }); fs.writeFileSync(target, content); }
 }
-console.log('Dropper 3.2.19 reference verified: ' + digest);
+console.log('Dropper 3.2.20 reference verified: ' + digest);
