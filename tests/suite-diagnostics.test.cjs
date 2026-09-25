@@ -10,12 +10,12 @@ test('built products share the same diagnostic controls and detect active peer p
  await page.evaluate(()=>{window.GM_getValue=(_key,fallback)=>fallback;window.GM_setValue=()=>{};window.GM_xmlhttpRequest=()=>{};Object.defineProperty(navigator,'clipboard',{value:{writeText:async text=>window.copiedDiagnostics=text}});});
  for(const name of ['Dropper','WARD','PRISMA','SHIFT'])await page.addScriptTag({content:fs.readFileSync(path.join(repos,name,`${name.toLowerCase()}.user.js`),'utf8')});
  for(const id of ['tdh-root','exp-ward-root','exp-prisma-root','exp-shift-root'])await page.waitForSelector(`#${id}`,{state:'attached'});
- for(const [id,route] of [['tdh-root','dropper'],['exp-ward-root','ward'],['exp-prisma-root','menu'],['exp-shift-root','recovery']]){
+ for(const [id,route] of [['tdh-root','dropper'],['exp-ward-root','system'],['exp-prisma-root','system'],['exp-shift-root','system']]){
   await page.locator(`#${id}`).evaluate((host,route)=>{
    const s=host.shadowRoot;
    s.querySelector('.launcher,.ward-launcher,#tdh-settings-launcher')?.click();
-   if(route==='ward')[...s.querySelectorAll('button')].find(n=>n.textContent==='Diagnostics').click();
-   else if(route==='dropper')s.querySelector('[data-panel="tdh-diagnostics-body"]').click();
+   if(route==='dropper')s.querySelector('[data-panel="tdh-diagnostics-body"]').click();
+   else if(host.id==='exp-ward-root')s.querySelector('[data-view="system"]').click();
    else s.querySelector(`[data-route="${route}"]`).click();
   },route);
   const host=page.locator(`#${id}`);
