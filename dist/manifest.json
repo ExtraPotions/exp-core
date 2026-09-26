@@ -1,5 +1,5 @@
 {
-  "coreVersion": "3.3.2",
+  "coreVersion": "3.3.3",
   "source": {
     "source": "ExtraPotions/Dropper",
     "sourceVersion": "3.3.2",
@@ -62,11 +62,11 @@
       }
     ]
   },
-  "bundleSha256": "518bd0e3fc65c9a2a29949782ece18a604a51a04c338b9acb0b23db639b2ec7b",
+  "bundleSha256": "3134134672f6eafed397f4810eb682bd69e56a0ff5ae872e824d455338306cf2",
   "files": {
     "dropper-reference.js": "6219241776f47505aa3794e1b677498617ed2c4e320fdafb54d6bfacc751c98b",
     "diagnostic-report.js": "605abdecadfd11e7bf89d9937b67bc2a5eb2faa2f495035ca2505f3986ab5989",
     "lifecycle.js": "50a3584b708d155ce03c7d1a622d9be4f8345e91f6c4c71f8c42dc98f1ed5691",
-    "runtime.js": "12407dbf72a78463de32ba278cdffa5df66492e62646d325b1c563b3ec262d30"
+    "runtime.js": "2a3b9960acb60ef02a3c721ed6f7791cdd599c36fa929258131e48f64f0411e8"
   }
 }

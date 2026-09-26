@@ -40,7 +40,7 @@ test('Core identifies the Dropper 3.3.2 baseline and canonical menu widths', asy
     },
   }));
   assert.deepEqual(state, {
-    version: '3.3.2',
+    version: pkg.version,
     sourceVersion: '3.3.2',
     widths: { full: 312, compact: 260, narrow: 220, fullWide: 340, fullSmall: 280 },
   });

@@ -2,7 +2,7 @@
 // Product engines own their settings, content, and actions. Core owns shared UI.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.3.2';
+  const version = '3.3.3';
   const sourceVersion = '3.3.2';
   const protocol = 'exp-core-coordination-v1';
   const gridProtocol = 'exp-launcher-grid-v3';
@@ -265,13 +265,18 @@ const ExtraPotionsCore = (() => {
     const id = options.productId || options.id || host.dataset.productId;
     Object.assign(host.dataset, { expProductLauncher:'1', productId:id, launcherPriority:String(options.priority ?? PRIORITY[id] ?? 0) });
     applyMatteToggleChrome(host);
+    // The launcher is non-modal: site-wide dialog backdrop styles must never
+    // paint over the page when the reference opens its manual popover.
+    const backdropStyle = host.shadowRoot ? injectStyle(host.shadowRoot,
+      ':host::backdrop{all:initial!important;display:none!important;background:transparent!important;pointer-events:none!important}',
+      { expLauncherBackdrop: '1' }) : null;
     const stopProtect = DropperReference.protectLauncherHost(host);
     let frame = 0;
     const refresh = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; layoutGrid(); controllers.get(host)?.layout(); }); };
     document.addEventListener('exp-core:coordination', refresh);
     addEventListener('resize', refresh);
     layoutGrid(); emit('launcher-added', id);
-    const dispose = () => { stopProtect(); cancelAnimationFrame(frame); document.removeEventListener('exp-core:coordination', refresh); removeEventListener('resize', refresh); delete host.dataset.expProductLauncher; registrations.delete(host); layoutGrid(); emit('launcher-removed', id); };
+    const dispose = () => { stopProtect(); backdropStyle?.dispose(); cancelAnimationFrame(frame); document.removeEventListener('exp-core:coordination', refresh); removeEventListener('resize', refresh); delete host.dataset.expProductLauncher; registrations.delete(host); layoutGrid(); emit('launcher-removed', id); };
     registrations.set(host, dispose);
     return dispose;
   }

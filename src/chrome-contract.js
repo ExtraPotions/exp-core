@@ -5,7 +5,7 @@
  * Product userscripts remain self-contained; this module defines the suite baseline
  * that product-local Core/MenuChrome implementations should mirror.
  */
-const VERSION = '3.3.2';
+const VERSION = '3.3.3';
 const UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 const UPDATE_NOTICE_DURATION_MS = 30 * 1000;
 const MENU_DISMISS_MS = 15 * 1000;

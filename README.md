@@ -12,7 +12,7 @@
 
 <p align="center">
   <img alt="Shared Component" src="https://img.shields.io/badge/Distribution-Shared%20Component-334155?style=flat-square">
-  <img alt="Version 3.3.2" src="https://img.shields.io/badge/version-3.3.2-22C55E?style=flat-square">
+  <img alt="Version 3.3.3" src="https://img.shields.io/badge/version-3.3.3-22C55E?style=flat-square">
   <img alt="JavaScript" src="https://img.shields.io/badge/Language-JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=000000">
   <img alt="Public Repository" src="https://img.shields.io/badge/Repository-Public-22C55E?style=flat-square">
   <img alt="PolyForm Noncommercial 1.0.0" src="https://img.shields.io/badge/Code-PolyForm%20NC%201.0.0-6B7280?style=flat-square">
@@ -21,7 +21,11 @@
 
 ## Purpose
 
-ExtraPotions Core supports the shared appearance, menus, diagnostics, and launcher behavior used by ExtraPotions products. The 3.3.2 contract is rebuilt from the approved Dropper 3.3.2 release baseline. It is not an end-user userscript; install the finished product userscripts instead.
+ExtraPotions Core supports the shared appearance, menus, diagnostics, and launcher behavior used by ExtraPotions products. The 3.3.3 contract is rebuilt from the approved Dropper 3.3.2 release baseline. It is not an end-user userscript; install the finished product userscripts instead.
+
+## 3.3.3
+
+Non-modal launcher backdrops are isolated from site dialog styles, preventing page-covering overlays. The pinned Dropper 3.3.2 reference remains unchanged.
 
 ## What exp-core Does
 
