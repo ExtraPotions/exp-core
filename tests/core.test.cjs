@@ -24,6 +24,28 @@ test('core is a private build-time bundle, not an installable userscript', () =>
   assert.doesNotMatch(bundle, /==UserScript==|@match|@downloadURL|@updateURL/);
 });
 
+test('Core identifies the Dropper 3.3.2 baseline and canonical menu widths', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const state = await page.evaluate(() => ({
+    version: ExtraPotionsCore.version,
+    sourceVersion: ExtraPotionsCore.sourceVersion,
+    widths: {
+      full: ExtraPotionsCore.menuWidthForMode('full'),
+      compact: ExtraPotionsCore.menuWidthForMode('compact'),
+      narrow: ExtraPotionsCore.menuWidthForMode('narrow'),
+      fullWide: ExtraPotionsCore.menuWidthForMode('full', 500),
+      fullSmall: ExtraPotionsCore.menuWidthForMode('full', 250),
+    },
+  }));
+  assert.deepEqual(state, {
+    version: '3.3.2',
+    sourceVersion: '3.3.2',
+    widths: { full: 312, compact: 260, narrow: 220, fullWide: 340, fullSmall: 280 },
+  });
+});
+
 test('build-time core advertises the product coordination protocols', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
