@@ -773,6 +773,119 @@ const ExtraPotionsCore = (() => {
     });
   }
 
+  function createSupportControl({ url, label = 'Support' } = {}) {
+    if (!url) return null;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'support-wrap';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'support-button';
+    button.setAttribute('aria-label', label);
+    button.setAttribute('aria-expanded', 'false');
+    button.title = label;
+    button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.2-4.35-9.55-8.45C.42 9.02 2.3 5 6.25 5c2.15 0 3.56 1.21 4.33 2.3C11.36 6.21 12.77 5 14.92 5c3.95 0 5.83 4.02 3.8 7.55C16.36 16.65 12 21 12 21Z"/></svg>';
+    const popover = document.createElement('div');
+    popover.className = 'support-popover';
+    popover.setAttribute('role', 'dialog');
+    popover.setAttribute('aria-label', label);
+    popover.hidden = true;
+    const strong = document.createElement('strong');
+    strong.textContent = label;
+    const copy = document.createElement('span');
+    copy.textContent = 'Donations are optional. All features stay free.';
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+    anchor.textContent = 'Open Ko-fi';
+    popover.append(strong, copy, anchor);
+    wrapper.append(button, popover);
+    const toggle = event => {
+      event?.stopPropagation?.();
+      popover.hidden = !popover.hidden;
+      button.setAttribute('aria-expanded', String(!popover.hidden));
+    };
+    const outside = event => {
+      if (popover.hidden || event.composedPath().includes(wrapper)) return;
+      popover.hidden = true;
+      button.setAttribute('aria-expanded', 'false');
+    };
+    button.addEventListener('click', toggle);
+    document.addEventListener('pointerdown', outside, true);
+    return Object.freeze({
+      element: wrapper,
+      button,
+      popover,
+      hide() { popover.hidden = true; button.setAttribute('aria-expanded', 'false'); },
+      destroy() { button.removeEventListener('click', toggle); document.removeEventListener('pointerdown', outside, true); wrapper.remove(); },
+    });
+  }
+
+  function createProductNotice(options = {}) {
+    const { host, shadow, panel, versionButton = null } = options;
+    if (!(host instanceof Element) || !(shadow instanceof ShadowRoot) || !(panel instanceof Element)) {
+      throw new Error('Product notice requires a mounted Core product');
+    }
+    const notice = document.createElement('div');
+    notice.className = 'update-notice';
+    notice.hidden = true;
+    notice.innerHTML = '<button type="button" class="update-dismiss" aria-label="Dismiss Update Notice">×</button><div class="update-head"><div class="update-heading"><div class="update-kicker">What\'s New</div><div class="update-title"></div></div><div class="update-version"></div></div><div class="update-text"></div><ul class="update-list"></ul><div class="update-footer"><a class="update-release" target="_blank" rel="noopener noreferrer">GitHub Release</a><a class="update-action" target="_blank" rel="noopener noreferrer">Install Update</a></div>';
+    (shadow.querySelector('.exp-core-theme') || shadow).append(notice);
+    const controller = createMenuNotice({
+      host,
+      shadow,
+      panel,
+      notice,
+      versionButton: null,
+      manageVersion: false,
+      durationMs: options.durationMs ?? 30000,
+    });
+    function show(state = {}) {
+      notice.querySelector('.update-kicker').textContent = state.kicker || "What's New";
+      notice.querySelector('.update-title').textContent = state.title || '';
+      notice.querySelector('.update-version').textContent = state.version ? 'v' + state.version : '';
+      notice.querySelector('.update-text').textContent = state.text || '';
+      const list = notice.querySelector('.update-list');
+      list.replaceChildren();
+      const details = Array.isArray(state.details) ? state.details.slice(0, 4) : [];
+      for (const detail of details) {
+        const item = document.createElement('li');
+        item.textContent = detail;
+        list.append(item);
+      }
+      list.hidden = !details.length;
+      const release = notice.querySelector('.update-release');
+      const releaseUrl = state.releaseUrl || options.releaseUrl || '';
+      release.hidden = !releaseUrl;
+      if (releaseUrl) release.href = releaseUrl;
+      const action = notice.querySelector('.update-action');
+      const actionUrl = state.actionUrl || options.installUrl || '';
+      action.hidden = !actionUrl || state.showAction === false;
+      if (actionUrl) action.href = actionUrl;
+      action.textContent = state.actionText || 'Install Update';
+      notice.dataset.noticeKind = state.kind || 'current';
+      controller.show();
+    }
+    const versionClick = () => {
+      if (typeof options.onVersion === 'function') options.onVersion();
+      else controller.toggle();
+    };
+    versionButton?.addEventListener('click', versionClick);
+    return Object.freeze({
+      element: notice,
+      show,
+      hide: controller.hide,
+      toggle: controller.toggle,
+      layout: controller.layout,
+      setMenuOpen: controller.setMenuOpen,
+      destroy() {
+        versionButton?.removeEventListener('click', versionClick);
+        controller.destroy();
+        notice.remove();
+      },
+    });
+  }
+
   function createDiagnosticsReport(product, details = {}) {
     return ExtraPotionsDiagnostics.createReport(product, details, { version, source: 'Dropper', sourceVersion });
   }
@@ -786,15 +899,15 @@ const ExtraPotionsCore = (() => {
     const area=document.createElement('textarea');area.value=text;area.style.cssText='position:fixed;left:-9999px';document.documentElement.append(area);area.select();const success=document.execCommand('copy');area.remove();if(!success)throw new Error('Clipboard unavailable');
   }
   function createDiagnosticsControls(getReport, notify = () => {}) { return ExtraPotionsDiagnostics.createControls(getReport, notify); }
-  function createProduct({id,name,version:productVersion,subtitle='',artwork,theme,sections=[],getSettings,onSettings=()=>{},priority}) {
-    const host=document.createElement('div');host.id='exp-'+id+'-root';const shadow=host.attachShadow({mode:'open'});const panel=document.createElement('aside');panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-label',name+' settings');
-    const header=document.createElement('header');header.className='menu-head';const brand=document.createElement('div');brand.className='header-brand';const image=document.createElement('img');image.src=artwork;image.alt='';const copy=document.createElement('div');const titleRow=document.createElement('div');const title=document.createElement('strong');title.textContent=name;const v=document.createElement('button');v.type='button';v.className='version';v.textContent='v'+productVersion;titleRow.append(title,v);const sub=document.createElement('small');sub.textContent=subtitle;copy.append(titleRow,sub);brand.append(image,copy);const close=document.createElement('button');close.className='close';close.textContent='×';close.setAttribute('aria-label','Close '+name);header.append(brand,close);const divider=document.createElement('div');divider.className='header-divider';const nav=document.createElement('nav');
+  function createProduct({id,name,version:productVersion,subtitle='',artwork,theme,sections=[],getSettings,onSettings=()=>{},priority,supportUrl=''}) {
+    const host=document.createElement('div');host.id='exp-'+id+'-root';host.dataset.expOwned='1';const shadow=host.attachShadow({mode:'open'});const panel=document.createElement('aside');panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-label',name+' settings');
+    const header=document.createElement('header');header.className='menu-head';const brand=document.createElement('div');brand.className='header-brand';const image=document.createElement('img');image.src=artwork;image.alt='';const copy=document.createElement('div');const titleRow=document.createElement('div');const title=document.createElement('strong');title.textContent=name;const v=document.createElement('button');v.type='button';v.className='version';v.textContent='v'+productVersion;titleRow.append(title,v);const sub=document.createElement('small');sub.textContent=subtitle;copy.append(titleRow,sub);brand.append(image,copy);const close=document.createElement('button');close.className='close';close.textContent='×';close.setAttribute('aria-label','Close '+name);const actions=document.createElement('div');actions.className='header-actions';const support=createSupportControl({url:supportUrl,label:'Support '+name});if(support)actions.append(support.element);actions.append(close);header.append(brand,actions);const divider=document.createElement('div');divider.className='header-divider';const nav=document.createElement('nav');
     let isOpen=false, last='';let chrome;
     function setOpen(value,focus=true){isOpen=Boolean(value);panel.hidden=!isOpen;launcher.setAttribute('aria-expanded',String(isOpen));if(isOpen)nav.querySelectorAll('.route-body').forEach(n=>n.hidden=true);chrome.state(isOpen);if(focus)(isOpen?focusMenuSurface(panel):launcher.focus());}
     for(const section of sections){const group=document.createElement('section');group.className='tool-panel';const button=document.createElement('button');button.type='button';button.textContent=section.label;button.dataset.section=section.id;const body=document.createElement('div');body.className='route-body';body.hidden=true;button.addEventListener('click',()=>{const opening=body.hidden;nav.querySelectorAll('.route-body').forEach(n=>n.hidden=true);nav.querySelectorAll('button[data-section]').forEach(n=>{n.classList.toggle('last-opened',n===button);n.setAttribute('aria-expanded',String(opening&&n===button));});body.hidden=!opening;if(opening){last=section.id;const content=section.render({core:api,onSettings});body.replaceChildren(content);}chrome.update();});group.append(button,body);nav.append(group);}
     const launcher=document.createElement('button');launcher.className='launcher';launcher.type='button';launcher.setAttribute('aria-label','Open '+name);const mark=image.cloneNode(true);launcher.append(mark);launcher.addEventListener('click',()=>setOpen(!isOpen));close.addEventListener('click',()=>setOpen(false));panel.append(header,divider,nav);shadow.append(panel,launcher);document.documentElement.append(host);chrome=create({id,host,shadow,panel,launcher,getSettings,setOpen,productTheme:theme});const unregister=registerLauncher(host,{productId:id,priority});
     const key=e=>{if(e.key==='Escape'&&isOpen)setOpen(false);};document.addEventListener('keydown',key);
-    return {host,shadow,panel,launcher,open:()=>setOpen(true),close:()=>setOpen(false),refresh:()=>chrome.update(),destroy(){document.removeEventListener('keydown',key);chrome.destroy();unregister();host.remove();}};
+    return {host,shadow,panel,launcher,versionButton:v,open:()=>setOpen(true),close:()=>setOpen(false),refresh:()=>chrome.update(),destroy(){document.removeEventListener('keydown',key);support?.destroy();chrome.destroy();unregister();host.remove();}};
   }
   let gridFrame=0;
   const scheduleGrid=()=>{if(!gridFrame)gridFrame=requestAnimationFrame(()=>{gridFrame=0;layoutGrid();});};
@@ -803,6 +916,6 @@ const ExtraPotionsCore = (() => {
   if(document.documentElement)startGrid();else addEventListener('DOMContentLoaded',startGrid,{once:true});
   document.addEventListener('exp-core:coordination',scheduleGrid);
   addEventListener('resize',scheduleGrid,{passive:true});
-  const api = Object.freeze({version,sourceVersion,protocol,gridProtocol,reference:DropperReference,css:canonicalCss,themes,create,createProduct,createLifecycle:()=>createProductLifecycle(api),registerLauncher,layout:layoutGrid,menuWidthForMode,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct:ExtraPotionsDiagnostics.registerProduct,productCompatibility:ExtraPotionsDiagnostics.compatibility,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,compareVersions:DropperReference.compareVersions});
+  const api = Object.freeze({version,sourceVersion,protocol,gridProtocol,reference:DropperReference,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),registerLauncher,layout:layoutGrid,menuWidthForMode,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct:ExtraPotionsDiagnostics.registerProduct,productCompatibility:ExtraPotionsDiagnostics.compatibility,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,compareVersions:DropperReference.compareVersions});
   return api;
 })();
