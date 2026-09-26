@@ -6,7 +6,10 @@ const source=`(()=>{\n${bundle}\nglobalThis.ExtraPotionsCore=ExtraPotionsCore;\n
 
 for(const viewport of [{width:1280,height:900},{width:360,height:640}])test(`${viewport.width}px: Core launcher grid stays stable when a Dropper-style progress surface toggles`,async t=>{
   const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage({viewport});
-  await page.setContent('<!doctype html><html><body><main>Grid fixture</main></body></html>');
+  await page.route('**/*',route=>route.request().isNavigationRequest()
+    ? route.fulfill({contentType:'text/html',body:'<!doctype html><html><body><main>Grid fixture</main></body></html>'})
+    : route.abort());
+  await page.goto('https://core-grid.test/');
   await page.addScriptTag({content:source});
   await page.evaluate(()=>{
     const artwork='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="%238b5cf6"/></svg>';
