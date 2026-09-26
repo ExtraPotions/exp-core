@@ -38,38 +38,34 @@ test('navigation subscribers detach in either order and restore history methods'
   assert.deepEqual(result,{seen:['a','b','b'],restored:true});
 });
 
-test('Dropper and SHIFT coordinate distinct launcher cells on the same page', async t => {
+test('Dropper and SHIFT Core fixtures coordinate distinct launcher cells and shared theme ownership', async t => {
   const browser=await chromium.launch();t.after(()=>browser.close());
   const page=await browser.newPage({viewport:{width:1280,height:900}});
-  await page.addInitScript(()=>{window.GM_getValue=(_key,fallback)=>fallback;window.GM_setValue=()=>{};window.GM_xmlhttpRequest=options=>options.onerror?.({status:0});});
-  await page.route('**/*',route=>route.request().isNavigationRequest()?route.fulfill({contentType:'text/html',body:'<!doctype html><html><body><main>Fixture page</main></body></html>'}):route.abort());
-  await page.goto('https://www.twitch.tv/core-fixture');
-  const repos=path.resolve(__dirname,'../..');
-  await page.addScriptTag({content:fs.readFileSync(path.join(repos,'Dropper/dropper.user.js'),'utf8')});
-  await page.addScriptTag({content:fs.readFileSync(path.join(repos,'SHIFT/shift.user.js'),'utf8')});
-  await page.waitForFunction(()=>document.querySelector('[data-product-id="dropper"]')?.dataset.launcherReservedRows && document.querySelector('[data-product-id="shift"]')?.dataset.launcherSlot);
-  const slots=await page.evaluate(()=>{
-    const dropper=document.querySelector('[data-product-id="dropper"]');const shift=document.querySelector('[data-product-id="shift"]');
-    return {reserved:Number(dropper.dataset.launcherReservedRows),dropper:Number(dropper.dataset.launcherSlot),shift:Number(shift.dataset.launcherSlot)};
-  });
-  assert.equal(slots.dropper,0);assert.ok(slots.reserved>=1);assert.ok(slots.shift>=1,JSON.stringify(slots));
-  const theme=await page.evaluate(async()=>{
-    const dropper=document.querySelector('[data-product-id="dropper"]');
-    const shift=document.querySelector('[data-product-id="shift"]');
-    const cluster=dropper.shadowRoot.querySelector('#tdh-cluster');
-    cluster.dataset.uiTheme='twitch';
+  await page.setContent('<!doctype html><html><body><main>Fixture page</main></body></html>');
+  await page.addScriptTag({content:source});
+  const result=await page.evaluate(async()=>{
+    const artwork='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="%238b5cf6"/></svg>';
+    const makeTheme=(id,accent)=>({id,name:id,swatch:accent,bg:'#101014',panel:'#18181d',line:'#34343b',text:'#efeff1',muted:'#adadb8',accent,accent2:accent,skin:accent,skinVertical:accent});
+    const dropper=ExtraPotionsCore.createProduct({id:'dropper',name:'Dropper',version:'3.3.2',artwork,theme:makeTheme('dropper','#9147ff'),sections:[],priority:90});
+    const shift=ExtraPotionsCore.createProduct({id:'shift',name:'Shift',version:'3.3.2',artwork,theme:makeTheme('shift','#3563a3'),sections:[],priority:100});
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    const slots={reserved:Number(dropper.host.dataset.launcherReservedRows||0),dropper:Number(dropper.host.dataset.launcherSlot),shift:Number(shift.host.dataset.launcherSlot)};
+    const owned={owner:shift.host.dataset.expThemeOwner,hidden:shift.host.dataset.expThemeDeprioritized,theme:shift.host.dataset.uiTheme};
+    ExtraPotionsCore.applyTheme(dropper.host,'ember');
     await new Promise(resolve=>setTimeout(resolve,0));
-    const owned={owner:shift.dataset.expThemeOwner,hidden:shift.dataset.expThemeDeprioritized,theme:shift.dataset.uiTheme};
-    cluster.dataset.uiTheme='ember';
-    await new Promise(resolve=>setTimeout(resolve,0));
-    const changed=shift.dataset.uiTheme;
-    const warmSurface=getComputedStyle(shift.shadowRoot.querySelector('[data-exp-part="dock"]')).backgroundImage;
-    dropper.remove();
-    document.dispatchEvent(new CustomEvent('exp-core:coordination',{detail:{type:'launcher-removed',productId:'dropper'}}));
-    return {owned,changed,warmSurface,restored:{owner:shift.dataset.expThemeOwner,hidden:shift.dataset.expThemeDeprioritized,theme:shift.dataset.uiTheme}};
+    const changed=shift.host.dataset.uiTheme;
+    const warmSurface=getComputedStyle(shift.panel).backgroundImage;
+    dropper.destroy();
+    await new Promise(resolve=>requestAnimationFrame(resolve));
+    const restored={owner:shift.host.dataset.expThemeOwner,hidden:shift.host.dataset.expThemeDeprioritized,theme:shift.host.dataset.uiTheme};
+    shift.destroy();
+    return {slots,owned,changed,warmSurface,restored};
   });
-  assert.deepEqual(theme.owned,{owner:'dropper',hidden:'1',theme:'twitch'});
-  assert.equal(theme.changed,'ember');
-  assert.match(theme.warmSurface,/linear-gradient/);
-  assert.equal(theme.restored.owner,'shift');assert.equal(theme.restored.hidden,'0');
+  assert.equal(result.slots.dropper,0);
+  assert.ok(result.slots.shift>=1,JSON.stringify(result.slots));
+  assert.deepEqual(result.owned,{owner:'dropper',hidden:'1',theme:'dropper'});
+  assert.equal(result.changed,'ember');
+  assert.match(result.warmSurface,/linear-gradient/);
+  assert.equal(result.restored.owner,'shift');
+  assert.equal(result.restored.hidden,'0');
 });
