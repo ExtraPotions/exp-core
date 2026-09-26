@@ -86,6 +86,19 @@ test('shared launcher measurements match the suite contract', () => {
   assert.equal(chromeContract.artwork.launcherButtonSize + chromeContract.artwork.launcherGapSize, 56);
   assert.match(source, /launcher\.replaceChildren\(mark\)/u);
   assert.doesNotMatch(source, /launcher\.append\(ring/u);
+  assert.deepEqual(chromeContract.menu.widths, {
+    full: { default: 312, min: 280, max: 340 },
+    compact: 260,
+    narrow: 220,
+  });
+  assert.deepEqual(chromeContract.menu.badgeOnlyProgress, {
+    placement: 'menu-content',
+    width: '100%',
+    outerBleed: false,
+  });
+  assert.equal(chromeContract.menu.dockPaddingInlinePx, 9);
+  assert.match(source, /function menuWidthForMode\(mode = 'compact', fullWidth = 312\)/u);
+  assert.match(source, /return Number\.isFinite\(full\) \? Math\.max\(280, Math\.min\(full, 340\)\) : 312;/u);
 });
 
 
