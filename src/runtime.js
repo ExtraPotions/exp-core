@@ -779,12 +779,15 @@ const ExtraPotionsCore = (() => {
     wrapper.className = 'support-wrap';
     const button = document.createElement('button');
     button.type = 'button';
+    button.id = 'tdh-support-button';
     button.className = 'support-button';
     button.setAttribute('aria-label', label);
     button.setAttribute('aria-expanded', 'false');
+    button.setAttribute('aria-controls', 'tdh-support-popover');
     button.title = label;
     button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.2-4.35-9.55-8.45C.42 9.02 2.3 5 6.25 5c2.15 0 3.56 1.21 4.33 2.3C11.36 6.21 12.77 5 14.92 5c3.95 0 5.83 4.02 3.8 7.55C16.36 16.65 12 21 12 21Z"/></svg>';
     const popover = document.createElement('div');
+    popover.id = 'tdh-support-popover';
     popover.className = 'support-popover';
     popover.setAttribute('role', 'dialog');
     popover.setAttribute('aria-label', label);
