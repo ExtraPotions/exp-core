@@ -110,8 +110,11 @@ const ExtraPotionsCore = (() => {
   }
   function menuPalette(host) {
     if (host?.dataset.productId === 'dropper') {
-      const selected = host.shadowRoot?.querySelector('#tdh-cluster')?.dataset.uiTheme;
-      return DropperReference.UI_THEMES.find(theme => theme.id === selected) || null;
+      const selected =
+        host.shadowRoot?.querySelector('#tdh-cluster,.exp-core-theme')?.dataset.uiTheme ||
+        host.dataset.uiTheme;
+      const theme = DropperReference.UI_THEMES.find(item => item.id === selected);
+      if (theme) return theme;
     }
     try {
       const value = JSON.parse(host.dataset.expMenuPalette || 'null');
@@ -539,10 +542,12 @@ const ExtraPotionsCore = (() => {
     const dropperThemeObserver = new MutationObserver(syncThemeOwner);
     function syncThemeOwner() {
       const owner = menuThemeOwner();
-      const dropperCluster = owner?.dataset.productId === 'dropper' ? owner.shadowRoot?.querySelector('#tdh-cluster') : null;
-      if (dropperCluster !== observedDropper) {
+      const dropperThemeSurface = owner?.dataset.productId === 'dropper'
+        ? owner.shadowRoot?.querySelector('#tdh-cluster,.exp-core-theme')
+        : null;
+      if (dropperThemeSurface !== observedDropper) {
         dropperThemeObserver.disconnect();
-        observedDropper = dropperCluster;
+        observedDropper = dropperThemeSurface;
         if (observedDropper) dropperThemeObserver.observe(observedDropper, { attributes:true, attributeFilter:['data-ui-theme'] });
       }
       const deprioritized = Boolean(owner && owner !== host);
