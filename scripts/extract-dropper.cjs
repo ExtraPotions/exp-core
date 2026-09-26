@@ -17,7 +17,10 @@ const siblingSource = path.join(root, '..', 'Dropper', 'dropper.user.js');
 async function loadSourceBytes() {
   const file = requestedSource || (fs.existsSync(siblingSource) ? siblingSource : '');
   if (file) return fs.readFileSync(file);
-  const response = await fetch(releaseUrl, { headers: { 'User-Agent': 'exp-core-reference-extractor' } });
+  const response = await fetch(releaseUrl, {
+    headers: { 'User-Agent': 'exp-core-reference-extractor' },
+    signal: AbortSignal.timeout(20000),
+  });
   if (!response.ok) throw new Error('Could not fetch approved Dropper ' + sourceVersion + ' artifact: HTTP ' + response.status);
   return Buffer.from(await response.arrayBuffer());
 }
