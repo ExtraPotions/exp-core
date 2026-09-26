@@ -46,6 +46,45 @@ test('Core identifies the Dropper 3.3.2 baseline and canonical menu widths', asy
   });
 });
 
+test('Dropper product chrome factories provide support actions and menu notices', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    const artwork='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="%238b5cf6"/></svg>';
+    const theme={id:'shift',name:'Shift',swatch:'#8b5cf6',bg:'#101014',panel:'#18181d',line:'#34343b',text:'#efeff1',muted:'#adadb8',accent:'#8b5cf6',accent2:'#a78bfa',skin:'#8b5cf6',skinVertical:'#8b5cf6'};
+    const product=ExtraPotionsCore.createProduct({id:'shift',name:'SHIFT',version:'3.4.0-dev.1',subtitle:'Adaptive themes and readability',artwork,theme,sections:[],getSettings:()=>({menuWidth:'compact'}),priority:100,supportUrl:'https://ko-fi.com/expdare'});
+    const notice=ExtraPotionsCore.createProductNotice({host:product.host,shadow:product.shadow,panel:product.panel,versionButton:product.versionButton,releaseUrl:'https://github.com/ExtraPotions/SHIFT/releases',installUrl:'https://raw.githubusercontent.com/ExtraPotions/SHIFT/main/shift.user.js'});
+    notice.show({kicker:'Current Version',title:'SHIFT Changelog',version:'3.4.0-dev.1',details:['One','Two'],showAction:false});
+    const support=product.shadow.querySelector('.support-wrap');
+    const card=notice.element;
+    const value={
+      support:Boolean(support),
+      supportButton:support?.querySelector('button')?.getAttribute('aria-label'),
+      supportHref:support?.querySelector('a')?.getAttribute('href'),
+      noticeVisible:!card.hidden,
+      noticePlacement:card.dataset.placement,
+      title:card.querySelector('.update-title')?.textContent,
+      version:card.querySelector('.update-version')?.textContent,
+      releaseHref:card.querySelector('.update-release')?.getAttribute('href'),
+      actionHidden:card.querySelector('.update-action')?.hidden,
+    };
+    notice.destroy();product.destroy();
+    return value;
+  });
+  assert.deepEqual(result,{
+    support:true,
+    supportButton:'Support SHIFT',
+    supportHref:'https://ko-fi.com/expdare',
+    noticeVisible:true,
+    noticePlacement:'menu',
+    title:'SHIFT Changelog',
+    version:'v3.4.0-dev.1',
+    releaseHref:'https://github.com/ExtraPotions/SHIFT/releases',
+    actionHidden:true,
+  });
+});
+
 test('build-time core advertises the product coordination protocols', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
