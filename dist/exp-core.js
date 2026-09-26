@@ -1595,9 +1595,7 @@ const ExtraPotionsCore = (() => {
   }
   function menuPalette(host) {
     if (host?.dataset.productId === 'dropper') {
-      const selected =
-        host.shadowRoot?.querySelector('#tdh-cluster,.exp-core-theme')?.dataset.uiTheme ||
-        host.dataset.uiTheme;
+      const selected = host.shadowRoot?.querySelector('#tdh-cluster')?.dataset.uiTheme;
       const theme = DropperReference.UI_THEMES.find(item => item.id === selected);
       if (theme) return theme;
     }
@@ -2028,7 +2026,7 @@ const ExtraPotionsCore = (() => {
     function syncThemeOwner() {
       const owner = menuThemeOwner();
       const dropperThemeSurface = owner?.dataset.productId === 'dropper'
-        ? owner.shadowRoot?.querySelector('#tdh-cluster,.exp-core-theme')
+        ? owner.shadowRoot?.querySelector('#tdh-cluster')
         : null;
       if (dropperThemeSurface !== observedDropper) {
         dropperThemeObserver.disconnect();
