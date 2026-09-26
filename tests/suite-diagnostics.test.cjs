@@ -26,7 +26,7 @@ test('Core product fixtures share diagnostics and detect active peers',async t=>
       settings:{fixture:true},
     }));
     const controls=ExtraPotionsCore.createDiagnosticsControls(()=>reports[0],()=>{});
-    products[0].panel.append(controls);
+    products[0].product.panel.append(controls);
     const controlLabels=[...controls.querySelectorAll('button')].map(button=>button.textContent);
     const summaries=reports.map(report=>({
       id:report.plugin.id,
