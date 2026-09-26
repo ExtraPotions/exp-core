@@ -1,9 +1,9 @@
-// Product-neutral host for the code extracted from Dropper 3.2.10.
+// Product-neutral host for the code extracted from Dropper 3.3.2.
 // Product engines own their settings, content, and actions. Core owns shared UI.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.2.25';
-  const sourceVersion = '3.2.31';
+  const version = '3.3.2';
+  const sourceVersion = '3.3.2';
   const protocol = 'exp-core-coordination-v1';
   const gridProtocol = 'exp-launcher-grid-v3';
   const GRID_ORDER = 'exp:v3:launcher-order';
@@ -14,6 +14,12 @@ const ExtraPotionsCore = (() => {
   const floatingNoticeRegistrations = new WeakMap();
   const controllers = new WeakMap();
   const tokenNames = ['bg', 'panel', 'line', 'text', 'muted', 'accent', 'accent2'];
+  function menuWidthForMode(mode = 'compact', fullWidth = 312) {
+    if (mode === 'narrow') return 220;
+    if (mode === 'compact') return 260;
+    const full = Number(fullWidth);
+    return Number.isFinite(full) ? Math.max(280, Math.min(full, 340)) : 312;
+  }
   const partIds = {
     'tdh-tools-dock': 'dock', 'tdh-settings-launcher': 'launcher',
     'tdh-rail-title': 'title', 'tdh-header-version': 'version',
@@ -372,8 +378,7 @@ const ExtraPotionsCore = (() => {
       notice.style.setProperty('--exp-notice-text', first(['--exp-notice-text','--theme-text','--text','--mb-ink'], theme.color || '#f4f4f6'));
     }
     function widthForMode() {
-      const mode = host?.dataset.menuWidth || 'compact';
-      return mode === 'narrow' ? 220 : mode === 'full' ? 312 : 260;
+      return menuWidthForMode(host?.dataset.menuWidth || 'compact');
     }
     function clearTimer() { clearTimeout(timer); timer = 0; }
     function queueLayout() {
@@ -517,7 +522,7 @@ const ExtraPotionsCore = (() => {
     const versionButton=panel.querySelector('.version,[data-exp-part="version"]');
     const menuNotices=[...themeRoot.querySelectorAll('.update-notice,.changelog')].map(notice=>createMenuNotice({host,shadow,panel,notice,versionButton:notice.classList.contains('changelog')?versionButton:null,manageVersion:false,durationMs:30000}));
     if (launcherSrc) panel.querySelectorAll('.header-icon img').forEach(image => image.src = launcherSrc);
-    host.dataset.coreVersion = version; host.dataset.coreSource = 'Dropper/3.2.10';
+    host.dataset.coreVersion = version; host.dataset.coreSource = 'Dropper/3.3.2';
     let choices = themes(productTheme), selected = choices.at(-1), open = false, destroyed = false, timer = 0, deadline = 0, frame = 0;
     const removers = [];
     const on = (node,type,fn,opts) => { node.addEventListener(type,fn,opts); removers.push(() => node.removeEventListener(type,fn,opts)); };
@@ -571,7 +576,7 @@ const ExtraPotionsCore = (() => {
 
       top = Math.max(8,Math.min(innerHeight-56,top));
       Object.assign(launcher.style,{top:top+'px',right:(12+x)+'px',bottom:'auto',left:'auto',zIndex:open?'2147483647':'2147483600'});
-      const maxWidth = Math.max(0,innerWidth-24), panelWidth = Math.min({full:312,compact:260,narrow:220}[width],maxWidth);
+      const maxWidth = Math.max(0,innerWidth-24), panelWidth = Math.min(menuWidthForMode(width),maxWidth);
       Object.assign(panel.style,{width:panelWidth+'px',maxHeight:Math.max(80,innerHeight-80)+'px',overflowY:'auto',right:'12px',left:'auto',bottom:'auto',zIndex:open?'2147483647':'2147483599'});
       if (!open) return;
       const h = panel.offsetHeight, below = innerHeight-top-56, above = top-8;
@@ -795,6 +800,6 @@ const ExtraPotionsCore = (() => {
   if(document.documentElement)startGrid();else addEventListener('DOMContentLoaded',startGrid,{once:true});
   document.addEventListener('exp-core:coordination',scheduleGrid);
   addEventListener('resize',scheduleGrid,{passive:true});
-  const api = Object.freeze({version,sourceVersion,protocol,gridProtocol,reference:DropperReference,css:canonicalCss,themes,create,createProduct,createLifecycle:()=>createProductLifecycle(api),registerLauncher,layout:layoutGrid,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct:ExtraPotionsDiagnostics.registerProduct,productCompatibility:ExtraPotionsDiagnostics.compatibility,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,compareVersions:DropperReference.compareVersions});
+  const api = Object.freeze({version,sourceVersion,protocol,gridProtocol,reference:DropperReference,css:canonicalCss,themes,create,createProduct,createLifecycle:()=>createProductLifecycle(api),registerLauncher,layout:layoutGrid,menuWidthForMode,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct:ExtraPotionsDiagnostics.registerProduct,productCompatibility:ExtraPotionsDiagnostics.compatibility,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,compareVersions:DropperReference.compareVersions});
   return api;
 })();
