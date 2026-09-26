@@ -867,6 +867,7 @@ const ExtraPotionsCore = (() => {
       if (actionUrl) action.href = actionUrl;
       action.textContent = state.actionText || 'Install Update';
       notice.dataset.noticeKind = state.kind || 'current';
+      controller.setMenuOpen(!panel.hidden);
       controller.show();
     }
     const versionClick = () => {
