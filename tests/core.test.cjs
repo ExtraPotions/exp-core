@@ -46,6 +46,27 @@ test('Core identifies the Dropper 3.3.2 baseline and canonical menu widths', asy
   });
 });
 
+test('Core products rerender the active section without owning product state', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    const artwork='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="%238b5cf6"/></svg>';
+    const theme={id:'shift',name:'Shift',swatch:'#8b5cf6',bg:'#101014',panel:'#18181d',line:'#34343b',text:'#efeff1',muted:'#adadb8',accent:'#8b5cf6',accent2:'#a78bfa',skin:'#8b5cf6',skinVertical:'#8b5cf6'};
+    let value='one';
+    const product=ExtraPotionsCore.createProduct({id:'shift',name:'SHIFT',version:'3.4.0-dev.1',artwork,theme,getSettings:()=>({menuWidth:'compact'}),sections:[{id:'appearance',label:'Appearance',render(){const node=document.createElement('span');node.textContent=value;return node;}}]});
+    product.open();
+    product.shadow.querySelector('button[data-section="appearance"]').click();
+    const before=product.panel.querySelector('.route-body').textContent;
+    value='two';
+    const rerendered=product.renderActive();
+    const after=product.panel.querySelector('.route-body').textContent;
+    product.destroy();
+    return {before,after,rerendered};
+  });
+  assert.deepEqual(result,{before:'one',after:'two',rerendered:true});
+});
+
 test('Dropper product chrome factories provide support actions and menu notices', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
