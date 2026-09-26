@@ -5,7 +5,7 @@
  * Product userscripts remain self-contained; this module defines the suite baseline
  * that product-local Core/MenuChrome implementations should mirror.
  */
-const VERSION = '3.2.25';
+const VERSION = '3.3.2';
 const UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 const UPDATE_NOTICE_DURATION_MS = 30 * 1000;
 const MENU_DISMISS_MS = 15 * 1000;
@@ -47,6 +47,17 @@ const chromeContract = Object.freeze({
   }),
   menu: Object.freeze({
     dismissMs: MENU_DISMISS_MS,
+    widths: Object.freeze({
+      full: Object.freeze({ default: 312, min: 280, max: 340 }),
+      compact: 260,
+      narrow: 220,
+    }),
+    dockPaddingInlinePx: 9,
+    badgeOnlyProgress: Object.freeze({
+      placement: 'menu-content',
+      width: '100%',
+      outerBleed: false,
+    }),
   }),
 });
 
