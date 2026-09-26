@@ -1,58 +1,62 @@
 {
   "source": "ExtraPotions/Dropper",
-  "sourceVersion": "3.2.25",
-  "behaviorSourceVersion": "3.2.31",
+  "sourceVersion": "3.3.2",
+  "behaviorSourceVersion": "3.3.2",
   "behaviorParity": [
+    "launcher-and-menu-badge-sizing",
+    "launcher-host-protection",
     "menu-width-notices",
+    "badge-only-menu-content-width",
     "version-scoped-update-checks",
     "diagnostic-resource-attribution",
-    "diagnostic-ui-geometry"
+    "diagnostic-ui-geometry",
+    "support-control-chrome"
   ],
-  "commit": "f9b2b837c9cb72c6a0d4d3404143f47af9a8d4df",
+  "commit": "0292a05a3c0ac6b850d078a5b9d6fa658731b34d",
   "path": "dropper.user.js",
-  "sha256": "6f8ddae769f17aecd9cae723d0bc36359e64e06262ee15962782bcd12e8a7dd8",
+  "sha256": "ac03b06a443654989158dfe0ca3a521aaba1c6010e18bb6fee768eacde8be2d1",
   "entries": [
     {
       "name": "PRIDE_RAINBOW",
       "kind": "constant",
-      "startLine": 755,
-      "endLine": 755
+      "startLine": 821,
+      "endLine": 821
     },
     {
       "name": "PRIDE_RAINBOW_VERTICAL",
       "kind": "constant",
-      "startLine": 756,
-      "endLine": 756
+      "startLine": 822,
+      "endLine": 822
     },
     {
       "name": "CRIMSON_THEME",
       "kind": "constant",
-      "startLine": 757,
-      "endLine": 757
+      "startLine": 823,
+      "endLine": 823
     },
     {
       "name": "UI_THEMES",
       "kind": "constant",
-      "startLine": 758,
-      "endLine": 767
+      "startLine": 824,
+      "endLine": 833
     },
     {
       "name": "css",
       "kind": "function",
-      "startLine": 11227,
-      "endLine": 11915
+      "startLine": 12593,
+      "endLine": 13336
     },
     {
       "name": "protectLauncherHost",
       "kind": "function",
-      "startLine": 235,
-      "endLine": 310
+      "startLine": 258,
+      "endLine": 333
     },
     {
       "name": "compareVersions",
       "kind": "function",
-      "startLine": 13667,
-      "endLine": 13671
+      "startLine": 15281,
+      "endLine": 15285
     }
   ]
 }
