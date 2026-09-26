@@ -12,7 +12,7 @@
 
 <p align="center">
   <img alt="Shared Component" src="https://img.shields.io/badge/Distribution-Shared%20Component-334155?style=flat-square">
-  <img alt="Version 3.3.4" src="https://img.shields.io/badge/version-3.3.4-22C55E?style=flat-square">
+  <img alt="Version 3.3.5" src="https://img.shields.io/badge/version-3.3.5-22C55E?style=flat-square">
   <img alt="JavaScript" src="https://img.shields.io/badge/Language-JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=000000">
   <img alt="Public Repository" src="https://img.shields.io/badge/Repository-Public-22C55E?style=flat-square">
   <img alt="PolyForm Noncommercial 1.0.0" src="https://img.shields.io/badge/Code-PolyForm%20NC%201.0.0-6B7280?style=flat-square">
@@ -21,11 +21,11 @@
 
 ## Purpose
 
-ExtraPotions Core supports the shared appearance, menus, diagnostics, and launcher behavior used by ExtraPotions products. The 3.3.4 contract is rebuilt from the approved Dropper 3.3.2 release baseline. It is not an end-user userscript; install the finished product userscripts instead.
+ExtraPotions Core supports the shared appearance, menus, diagnostics, and launcher behavior used by ExtraPotions products. The 3.3.5 contract is rebuilt from the approved Dropper 3.3.3 release baseline. It is not an end-user userscript; install the finished product userscripts instead.
 
-## 3.3.4
+## 3.3.5
 
-Text-gradient backgrounds and text clipping can now be protected together against host styles through a reusable helper. Non-modal launcher backdrops remain isolated from site dialog styles. The pinned Dropper 3.3.2 reference remains unchanged.
+Adds Firefox-safe JSON settings copies and stops idle menu normalization from repeatedly mutating its own chevrons. Refreshes the pinned shared UI reference to Dropper 3.3.3. Twitch progress verification remains product-specific.
 
 ## What exp-core Does
 
@@ -50,3 +50,7 @@ ExtraPotions Core is a shared component for independent ExtraPotions products an
 ## Text gradient rendering
 
 `applyTextGradient(element, backgroundImage)` applies important inline background and text-clip properties together. Callers provide the CSS image and own foreground colors, accessibility modes, and cleanup. PRISMA 3.1.0 uses this helper to prevent invisible highlights when a host dark-mode rule overrides backgrounds. Identity data and animation choices remain product-specific.
+
+## Settings copies in userscript sandboxes
+
+`cloneSettings(value)` copies persisted JSON settings within the userscript realm. Use it for settings snapshots and editable drafts instead of native `structuredClone`, which can return page-realm Xray wrappers in Firefox userscript managers. This helper accepts the JSON settings schema, not DOM nodes, functions, circular graphs, or other non-JSON runtime objects.

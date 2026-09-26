@@ -1,4 +1,4 @@
-// Generated from the approved Dropper v3.3.2 install artifact. Do not edit.
+// Generated from the approved Dropper v3.3.3 install artifact. Do not edit.
 const DropperReference = (() => {
 const LAUNCHER_ORDER_KEY = "exp:v3:launcher-order";
 const LAUNCHER_GRID_DELTA_KEY = "exp:v3:launcher-grid-delta";
@@ -1483,12 +1483,12 @@ function createProductLifecycle(shared) {
   });
 }
 
-// Product-neutral host for the code extracted from Dropper 3.3.2.
+// Product-neutral host for the code extracted from Dropper 3.3.3.
 // Product engines own their settings, content, and actions. Core owns shared UI.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.3.4';
-  const sourceVersion = '3.3.2';
+  const version = '3.3.5';
+  const sourceVersion = '3.3.3';
   const protocol = 'exp-core-coordination-v1';
   const gridProtocol = 'exp-launcher-grid-v3';
   const GRID_ORDER = 'exp:v3:launcher-order';
@@ -1500,6 +1500,9 @@ const ExtraPotionsCore = (() => {
   const controllers = new WeakMap();
   const tokenNames = ['bg', 'panel', 'line', 'text', 'muted', 'accent', 'accent2'];
   // Callers own foreground, accessibility fallbacks, and removing these inline properties.
+  // Settings use the persisted JSON schema. Parse in the caller's userscript realm
+  // instead of returning a native structuredClone page-realm Xray wrapper.
+  function cloneSettings(value) { return JSON.parse(JSON.stringify(value)); }
   function applyTextGradient(element, backgroundImage) {
     const properties = {'background-color':'transparent','background-image':backgroundImage,'background-clip':'text','-webkit-background-clip':'text','background-size':'auto','background-position':'0% 0%','background-repeat':'repeat'};
     for (const [property,value] of Object.entries(properties)) element.style.setProperty(property,value,'important');
@@ -1969,7 +1972,7 @@ const ExtraPotionsCore = (() => {
     panel.querySelectorAll('button.action,button.secondary,button.primary,button.compact,.diagnostics-controls button,.button-grid button,.menu-footer button').forEach(node => { if (!node.dataset.expPart) node.classList.add('life-btn'); });
     panel.querySelectorAll('.route-body').forEach(body => body.classList.toggle('fl-tool-hidden', body.hidden));
     const active = panel.querySelector('.fl-tool-header[aria-expanded="true"]');
-    panel.querySelectorAll('.fl-tool-header').forEach(header => { if (active) header.classList.toggle('last-opened', header === active); const chevron = header.querySelector('.fl-tool-chevron'); if (chevron) chevron.textContent = header.getAttribute('aria-expanded') === 'true' ? '▾' : '▸'; });
+    panel.querySelectorAll('.fl-tool-header').forEach(header => { if (active) header.classList.toggle('last-opened', header === active); const chevron = header.querySelector('.fl-tool-chevron'); if (chevron) { const text = header.getAttribute('aria-expanded') === 'true' ? '▾' : '▸'; if (chevron.textContent !== text) chevron.textContent = text; } });
   }
   function normalizeHeader(panel) {
     const head = panel.querySelector('.menu-head,header,.head,.ward-header'); if (!head) return;
@@ -2018,7 +2021,7 @@ const ExtraPotionsCore = (() => {
     const versionButton=panel.querySelector('.version,[data-exp-part="version"]');
     const menuNotices=[...themeRoot.querySelectorAll('.update-notice,.changelog')].map(notice=>createMenuNotice({host,shadow,panel,notice,versionButton:notice.classList.contains('changelog')?versionButton:null,manageVersion:false,durationMs:30000}));
     if (launcherSrc) panel.querySelectorAll('.header-icon img').forEach(image => image.src = launcherSrc);
-    host.dataset.coreVersion = version; host.dataset.coreSource = 'Dropper/3.3.2';
+    host.dataset.coreVersion = version; host.dataset.coreSource = 'Dropper/3.3.3';
     let choices = themes(productTheme), selected = choices.at(-1), open = false, destroyed = false, timer = 0, deadline = 0, frame = 0;
     const removers = [];
     const on = (node,type,fn,opts) => { node.addEventListener(type,fn,opts); removers.push(() => node.removeEventListener(type,fn,opts)); };
@@ -2418,6 +2421,6 @@ const ExtraPotionsCore = (() => {
   if(document.documentElement)startGrid();else addEventListener('DOMContentLoaded',startGrid,{once:true});
   document.addEventListener('exp-core:coordination',scheduleGrid);
   addEventListener('resize',scheduleGrid,{passive:true});
-  const api = Object.freeze({version,sourceVersion,protocol,gridProtocol,reference:DropperReference,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),registerLauncher,layout:layoutGrid,menuWidthForMode,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct:ExtraPotionsDiagnostics.registerProduct,productCompatibility:ExtraPotionsDiagnostics.compatibility,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,compareVersions:DropperReference.compareVersions});
+  const api = Object.freeze({version,sourceVersion,protocol,gridProtocol,reference:DropperReference,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),registerLauncher,layout:layoutGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct:ExtraPotionsDiagnostics.registerProduct,productCompatibility:ExtraPotionsDiagnostics.compatibility,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,compareVersions:DropperReference.compareVersions});
   return api;
 })();

@@ -1,3 +1,9 @@
+## 3.3.5 — 2026-09-26
+
+- Adds realm-local JSON settings copies for Firefox userscript sandboxes.
+- Avoids repeated chevron mutations while menus are idle.
+- Pins shared UI extraction to the Dropper 3.3.3 release. Twitch earning logic stays in Dropper.
+
 ## 3.3.4 — 2026-09-26
 
 - Adds a product-neutral text-gradient helper that protects gradient backgrounds and text clipping from host-page background overrides.
