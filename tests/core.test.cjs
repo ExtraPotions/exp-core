@@ -24,7 +24,7 @@ test('core is a private build-time bundle, not an installable userscript', () =>
   assert.doesNotMatch(bundle, /==UserScript==|@match|@downloadURL|@updateURL/);
 });
 
-test('Core identifies the Dropper 3.3.4 baseline and canonical menu widths', async (t) => {
+test('Core identifies the Dropper 3.3.5 baseline and canonical menu widths', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
   await page.addScriptTag({ content: source });
@@ -41,7 +41,7 @@ test('Core identifies the Dropper 3.3.4 baseline and canonical menu widths', asy
   }));
   assert.deepEqual(state, {
     version: pkg.version,
-    sourceVersion: '3.3.4',
+    sourceVersion: '3.3.5',
     widths: { full: 312, compact: 260, narrow: 220, fullWide: 340, fullSmall: 280 },
   });
 });

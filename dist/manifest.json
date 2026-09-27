@@ -1,9 +1,9 @@
 {
-  "coreVersion": "3.3.6",
+  "coreVersion": "3.3.7",
   "source": {
     "source": "ExtraPotions/Dropper",
-    "sourceVersion": "3.3.4",
-    "behaviorSourceVersion": "3.3.4",
+    "sourceVersion": "3.3.5",
+    "behaviorSourceVersion": "3.3.5",
     "behaviorParity": [
       "launcher-and-menu-badge-sizing",
       "launcher-host-protection",
@@ -14,39 +14,39 @@
       "diagnostic-ui-geometry",
       "support-control-chrome"
     ],
-    "commit": "a83f9165d8fc45dfecf4ff1b922ae5af812b98b2",
+    "commit": "0fe4fb9d90a112767d46fc13aba27918fd783f92",
     "path": "dropper.user.js",
-    "sha256": "7aae2ff93183903639f3db8741e369c2c00f73a83702ad0cd791a456b7ecbcbb",
+    "sha256": "4de0029a03fd5217a65e28888eb38a28705f19138fbcb22dc8c9066fb879352b",
     "entries": [
       {
         "name": "PRIDE_RAINBOW",
-        "kind": "constant",
-        "startLine": 826,
-        "endLine": 826
-      },
-      {
-        "name": "PRIDE_RAINBOW_VERTICAL",
-        "kind": "constant",
-        "startLine": 827,
-        "endLine": 827
-      },
-      {
-        "name": "CRIMSON_THEME",
         "kind": "constant",
         "startLine": 828,
         "endLine": 828
       },
       {
-        "name": "UI_THEMES",
+        "name": "PRIDE_RAINBOW_VERTICAL",
         "kind": "constant",
         "startLine": 829,
-        "endLine": 838
+        "endLine": 829
+      },
+      {
+        "name": "CRIMSON_THEME",
+        "kind": "constant",
+        "startLine": 830,
+        "endLine": 830
+      },
+      {
+        "name": "UI_THEMES",
+        "kind": "constant",
+        "startLine": 831,
+        "endLine": 840
       },
       {
         "name": "css",
         "kind": "function",
-        "startLine": 12610,
-        "endLine": 13353
+        "startLine": 12706,
+        "endLine": 13449
       },
       {
         "name": "protectLauncherHost",
@@ -57,17 +57,17 @@
       {
         "name": "compareVersions",
         "kind": "function",
-        "startLine": 15305,
-        "endLine": 15309
+        "startLine": 15451,
+        "endLine": 15455
       }
     ]
   },
-  "bundleSha256": "c60cf3b20a427d1fb866739b6d6ad348b3b0bd2fea75e713df415ac873c31412",
+  "bundleSha256": "24979bddd00e064082e5240b69026842d309c88966e943068019cbeb724e58d6",
   "files": {
-    "dropper-reference.js": "124109d5521089b07a04798ae8e97681d3746af6bcd09e5131ddedb5a492f84e",
+    "dropper-reference.js": "7628dcd26d516bf8463542f10802ef24158d8d6cc8c95930a6d5469724ac95c1",
     "diagnostic-report.js": "605abdecadfd11e7bf89d9937b67bc2a5eb2faa2f495035ca2505f3986ab5989",
     "lifecycle.js": "50a3584b708d155ce03c7d1a622d9be4f8345e91f6c4c71f8c42dc98f1ed5691",
     "product-tools.js": "25c488f980ac87072bd8cd0051fc3f0e236ee243156d30109b78eadbf843db00",
-    "runtime.js": "756d9f3d18491a4e3d1df3998bbff4b4ba01ca680b5953a080d7838dd269cfec"
+    "runtime.js": "daa7546ca8b2cd7393ed52577a508469274d4200510c6f4359648c7cf879c839"
   }
 }

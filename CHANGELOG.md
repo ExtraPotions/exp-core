@@ -1,6 +1,8 @@
-## Unreleased
+## 3.3.7 — 2026-09-26
 
-- Adds shared, local settings journals (up to five snapshots), backup/restore controls, and a current-page compatibility overview. The overview reports visible product/core versions and warns about duplicate instances or mixed core versions. Dropper reuses the standalone tools while retaining its native UI.
+- Adds bounded local settings journals and shared backup/restore controls.
+- Shows current-page product versions and warns about duplicate instances or mixed core versions.
+- Updates the verified Dropper UI reference to 3.3.5.
 
 ## 3.3.6 — 2026-09-26
 

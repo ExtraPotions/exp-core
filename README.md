@@ -12,7 +12,7 @@
 
 <p align="center">
   <img alt="Shared Component" src="https://img.shields.io/badge/Distribution-Shared%20Component-334155?style=flat-square">
-  <img alt="Version 3.3.6" src="https://img.shields.io/badge/version-3.3.6-22C55E?style=flat-square">
+  <img alt="Version 3.3.7" src="https://img.shields.io/badge/version-3.3.7-22C55E?style=flat-square">
   <img alt="JavaScript" src="https://img.shields.io/badge/Language-JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=000000">
   <img alt="Public Repository" src="https://img.shields.io/badge/Repository-Public-22C55E?style=flat-square">
   <img alt="PolyForm Noncommercial 1.0.0" src="https://img.shields.io/badge/Code-PolyForm%20NC%201.0.0-6B7280?style=flat-square">
@@ -21,11 +21,11 @@
 
 ## Purpose
 
-ExtraPotions Core supports the shared appearance, menus, diagnostics, and launcher behavior used by ExtraPotions products. The 3.3.6 contract is rebuilt from the approved Dropper 3.3.4 release baseline. It is not an end-user userscript; install the finished product userscripts instead.
+ExtraPotions Core supports the shared appearance, menus, diagnostics, and launcher behavior used by ExtraPotions products. The 3.3.7 contract is rebuilt from the approved Dropper 3.3.5 release baseline. It is not an end-user userscript; install the finished product userscripts instead.
 
-## 3.3.6
+## 3.3.7
 
-Adds Firefox-safe JSON settings copies and stops idle menu normalization from repeatedly mutating its own chevrons. Refreshes the pinned shared UI reference to Dropper 3.3.4. Twitch progress verification remains product-specific.
+Adds Firefox-safe JSON settings copies and stops idle menu normalization from repeatedly mutating its own chevrons. Refreshes the pinned shared UI reference to Dropper 3.3.5. Twitch progress verification remains product-specific.
 
 ## What exp-core Does
 
@@ -59,8 +59,8 @@ ExtraPotions Core is a shared component for independent ExtraPotions products an
 
 Opening a product menu closes other open product menus without stealing focus. Core supplies the default ExtraPotions Ko-fi support control, including custom headers.
 
-## Local development changes (unreleased)
+## Recovery and inspection tools
 
 Adds shared, local settings journals (up to five snapshots), backup/restore controls, and a current-page compatibility overview. The overview reports visible product/core versions and warns about duplicate instances or mixed core versions. Dropper reuses the standalone tools while retaining its native UI.
 
-These changes are prepared locally. The stable installation links above still serve the published release.
+These features are included in version 3.3.7.

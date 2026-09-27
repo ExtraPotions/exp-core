@@ -1,9 +1,9 @@
-// Product-neutral host for the code extracted from Dropper 3.3.4.
+// Product-neutral host for the code extracted from Dropper 3.3.5.
 // Product engines own their settings, content, and actions. Core owns shared UI.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.3.6';
-  const sourceVersion = '3.3.4';
+  const version = '3.3.7';
+  const sourceVersion = '3.3.5';
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
   const gridProtocol = 'exp-launcher-grid-v3';
@@ -545,7 +545,7 @@ const ExtraPotionsCore = (() => {
     const versionButton=panel.querySelector('.version,[data-exp-part="version"]');
     const menuNotices=[...themeRoot.querySelectorAll('.update-notice,.changelog')].map(notice=>createMenuNotice({host,shadow,panel,notice,versionButton:notice.classList.contains('changelog')?versionButton:null,manageVersion:false,durationMs:30000}));
     if (launcherSrc) panel.querySelectorAll('.header-icon img').forEach(image => image.src = launcherSrc);
-    host.dataset.coreVersion = version; host.dataset.coreSource = 'Dropper/3.3.4';
+    host.dataset.coreVersion = version; host.dataset.coreSource = 'Dropper/3.3.5';
     let choices = themes(productTheme), selected = choices.at(-1), open = false, destroyed = false, timer = 0, deadline = 0, frame = 0;
     const removers = [];
     const on = (node,type,fn,opts) => { node.addEventListener(type,fn,opts); removers.push(() => node.removeEventListener(type,fn,opts)); };
