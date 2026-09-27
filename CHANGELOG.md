@@ -1,3 +1,9 @@
+## 3.3.6 — 2026-09-26
+
+- Coordinates launcher menus across independent product bundles without passing cross-realm objects.
+- Provides the default ExtraPotions donation control, including custom product headers.
+- Pins the shared UI reference to Dropper 3.3.4.
+
 ## 3.3.5 — 2026-09-26
 
 - Adds realm-local JSON settings copies for Firefox userscript sandboxes.

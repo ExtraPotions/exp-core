@@ -1,4 +1,4 @@
-// Generated from the approved Dropper v3.3.3 install artifact. Do not edit.
+// Generated from the approved Dropper v3.3.4 install artifact. Do not edit.
 const DropperReference = (() => {
 const LAUNCHER_ORDER_KEY = "exp:v3:launcher-order";
 const LAUNCHER_GRID_DELTA_KEY = "exp:v3:launcher-grid-delta";
@@ -1483,12 +1483,13 @@ function createProductLifecycle(shared) {
   });
 }
 
-// Product-neutral host for the code extracted from Dropper 3.3.3.
+// Product-neutral host for the code extracted from Dropper 3.3.4.
 // Product engines own their settings, content, and actions. Core owns shared UI.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.3.5';
-  const sourceVersion = '3.3.3';
+  const version = '3.3.6';
+  const sourceVersion = '3.3.4';
+  const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
   const gridProtocol = 'exp-launcher-grid-v3';
   const GRID_ORDER = 'exp:v3:launcher-order';
@@ -2016,12 +2017,20 @@ const ExtraPotionsCore = (() => {
     const themeRoot = document.createElement('div'); themeRoot.className = 'exp-core-theme';
     [...shadow.childNodes].filter(node => node !== styles).forEach(node => themeRoot.append(node)); shadow.append(themeRoot);
     panel.dataset.expPart = 'dock'; panel.classList.add('dropper-menu-surface'); makeLauncher(launcher,launcherSrc); normalizeHeader(panel); normalizeControls(panel);
+    let defaultSupport = null;
+    const header = panel.querySelector('.menu-head');
+    if (header && !header.querySelector('.support-wrap') && options.supportUrl !== '') {
+      defaultSupport = createSupportControl({url:options.supportUrl || SUPPORT_URL,label:'Support '+id.toUpperCase()});
+      let actions = header.querySelector('.header-actions');
+      if (!actions) { actions=document.createElement('div');actions.className='header-actions';const close=header.querySelector('[data-exp-part="close"]');if(close)actions.append(close);header.append(actions); }
+      actions.prepend(defaultSupport.element);
+    }
     applyContentDrivenMenuLayout(shadow);
     applyMatteToggleChrome(shadow);
     const versionButton=panel.querySelector('.version,[data-exp-part="version"]');
     const menuNotices=[...themeRoot.querySelectorAll('.update-notice,.changelog')].map(notice=>createMenuNotice({host,shadow,panel,notice,versionButton:notice.classList.contains('changelog')?versionButton:null,manageVersion:false,durationMs:30000}));
     if (launcherSrc) panel.querySelectorAll('.header-icon img').forEach(image => image.src = launcherSrc);
-    host.dataset.coreVersion = version; host.dataset.coreSource = 'Dropper/3.3.3';
+    host.dataset.coreVersion = version; host.dataset.coreSource = 'Dropper/3.3.4';
     let choices = themes(productTheme), selected = choices.at(-1), open = false, destroyed = false, timer = 0, deadline = 0, frame = 0;
     const removers = [];
     const on = (node,type,fn,opts) => { node.addEventListener(type,fn,opts); removers.push(() => node.removeEventListener(type,fn,opts)); };
@@ -2097,14 +2106,15 @@ const ExtraPotionsCore = (() => {
     on(window,'keydown',e=>{if(shortcutKey&&e.altKey&&e.shiftKey&&e.key.toLowerCase()===shortcutKey.toLowerCase()&&!e.repeat){e.preventDefault();setOpen(!open,true);} });
     on(window,'resize',queueLayout);on(document,'exp-core:coordination',queueLayout);
     on(document,'exp-core:coordination',syncThemeOwner);
+    on(document,'exp-core:menu-open',()=>{if(open && document.documentElement.getAttribute('data-exp-open-menu')!==id)setOpen(false,false);});
     const resize = new ResizeObserver(queueLayout); resize.observe(panel);
     const mutation = new MutationObserver(records=>{if(records.some(r=>r.type==='childList'||r.attributeName==='hidden'))queueLayout();}); mutation.observe(panel,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
     const controller = {
       layout, setTheme,
-      state(value) {open=Boolean(value);panel.classList.toggle('fl-rail-open',open);menuNotices.forEach(notice=>notice.setMenuOpen(open));if(open)scheduleDismiss();else clearTimer();queueLayout();},
+      state(value) {open=Boolean(value);if(open){document.documentElement.setAttribute('data-exp-open-menu',id);document.dispatchEvent(new Event('exp-core:menu-open'));}panel.classList.toggle('fl-rail-open',open);menuNotices.forEach(notice=>notice.setMenuOpen(open));if(open)scheduleDismiss();else clearTimer();queueLayout();},
       update(){normalizeControls(panel);queueLayout();},
       get dismissAt(){return deadline;},
-      destroy(){destroyed=true;clearTimer();cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();dropperThemeObserver.disconnect();menuNotices.forEach(notice=>notice.destroy());removers.forEach(f=>f());styles.dispose();controllers.delete(host);}
+      destroy(){destroyed=true;defaultSupport?.destroy();clearTimer();cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();dropperThemeObserver.disconnect();menuNotices.forEach(notice=>notice.destroy());removers.forEach(f=>f());styles.dispose();controllers.delete(host);}
     };
     controllers.set(host,controller);setTheme(getSettings().uiTheme || getSettings().theme || id);
     queueLayout();return controller;
@@ -2401,7 +2411,7 @@ const ExtraPotionsCore = (() => {
     const area=document.createElement('textarea');area.value=text;area.style.cssText='position:fixed;left:-9999px';document.documentElement.append(area);area.select();const success=document.execCommand('copy');area.remove();if(!success)throw new Error('Clipboard unavailable');
   }
   function createDiagnosticsControls(getReport, notify = () => {}) { return ExtraPotionsDiagnostics.createControls(getReport, notify); }
-  function createProduct({id,name,version:productVersion,subtitle='',artwork,theme,sections=[],getSettings,onSettings=()=>{},priority,supportUrl=''}) {
+  function createProduct({id,name,version:productVersion,subtitle='',artwork,theme,sections=[],getSettings,onSettings=()=>{},priority,supportUrl=SUPPORT_URL}) {
     const host=document.createElement('div');host.id='exp-'+id+'-root';host.dataset.expOwned='1';const shadow=host.attachShadow({mode:'open'});const panel=document.createElement('aside');panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-label',name+' settings');
     const header=document.createElement('header');header.className='menu-head';const brand=document.createElement('div');brand.className='header-brand';const image=document.createElement('img');image.src=artwork;image.alt='';const copy=document.createElement('div');const titleRow=document.createElement('div');const title=document.createElement('strong');title.textContent=name;const v=document.createElement('button');v.type='button';v.className='version';v.textContent='v'+productVersion;titleRow.append(title,v);const sub=document.createElement('small');sub.textContent=subtitle;copy.append(titleRow,sub);brand.append(image,copy);const close=document.createElement('button');close.className='close';close.textContent='×';close.setAttribute('aria-label','Close '+name);const actions=document.createElement('div');actions.className='header-actions';const support=createSupportControl({url:supportUrl,label:'Support '+name});if(support)actions.append(support.element);actions.append(close);header.append(brand,actions);const divider=document.createElement('div');divider.className='header-divider';const nav=document.createElement('nav');
     let isOpen=false, activeId='';let chrome;
@@ -2410,7 +2420,7 @@ const ExtraPotionsCore = (() => {
     function renderActive(){if(!activeId)return false;const entry=sectionMap.get(activeId);if(!entry||entry.body.hidden)return false;renderSection(entry.section,entry.body);return true;}
     function setOpen(value,focus=true){isOpen=Boolean(value);panel.hidden=!isOpen;launcher.setAttribute('aria-expanded',String(isOpen));if(isOpen){activeId='';nav.querySelectorAll('.route-body').forEach(n=>n.hidden=true);nav.querySelectorAll('button[data-section]').forEach(n=>n.setAttribute('aria-expanded','false'));}chrome.state(isOpen);if(focus)(isOpen?focusMenuSurface(panel):launcher.focus());}
     for(const section of sections){const group=document.createElement('section');group.className='tool-panel';const button=document.createElement('button');button.type='button';button.textContent=section.label;button.dataset.section=section.id;const body=document.createElement('div');body.className='route-body';body.hidden=true;sectionMap.set(section.id,{section,body,button});button.addEventListener('click',()=>{const opening=body.hidden;nav.querySelectorAll('.route-body').forEach(n=>n.hidden=true);nav.querySelectorAll('button[data-section]').forEach(n=>{n.classList.toggle('last-opened',n===button);n.setAttribute('aria-expanded',String(opening&&n===button));});body.hidden=!opening;activeId=opening?section.id:'';if(opening)renderSection(section,body);chrome.update();});group.append(button,body);nav.append(group);}
-    const launcher=document.createElement('button');launcher.className='launcher';launcher.type='button';launcher.setAttribute('aria-label','Open '+name);const mark=image.cloneNode(true);launcher.append(mark);launcher.addEventListener('click',()=>setOpen(!isOpen));close.addEventListener('click',()=>setOpen(false));panel.append(header,divider,nav);shadow.append(panel,launcher);document.documentElement.append(host);chrome=create({id,host,shadow,panel,launcher,getSettings,setOpen,productTheme:theme});const unregister=registerLauncher(host,{productId:id,priority});
+    const launcher=document.createElement('button');launcher.className='launcher';launcher.type='button';launcher.setAttribute('aria-label','Open '+name);const mark=image.cloneNode(true);launcher.append(mark);launcher.addEventListener('click',()=>setOpen(!isOpen));close.addEventListener('click',()=>setOpen(false));panel.append(header,divider,nav);shadow.append(panel,launcher);document.documentElement.append(host);chrome=create({id,host,shadow,panel,launcher,getSettings,setOpen,productTheme:theme,supportUrl});const unregister=registerLauncher(host,{productId:id,priority});
     const key=e=>{if(e.key==='Escape'&&isOpen)setOpen(false);};document.addEventListener('keydown',key);
     return {host,shadow,panel,launcher,versionButton:v,open:()=>setOpen(true),close:()=>setOpen(false),toggle:()=>setOpen(!isOpen),refresh:()=>chrome.update(),renderActive,get isOpen(){return isOpen;},destroy(){document.removeEventListener('keydown',key);support?.destroy();chrome.destroy();unregister();host.remove();}};
   }

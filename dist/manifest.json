@@ -1,9 +1,9 @@
 {
-  "coreVersion": "3.3.5",
+  "coreVersion": "3.3.6",
   "source": {
     "source": "ExtraPotions/Dropper",
-    "sourceVersion": "3.3.3",
-    "behaviorSourceVersion": "3.3.3",
+    "sourceVersion": "3.3.4",
+    "behaviorSourceVersion": "3.3.4",
     "behaviorParity": [
       "launcher-and-menu-badge-sizing",
       "launcher-host-protection",
@@ -14,39 +14,39 @@
       "diagnostic-ui-geometry",
       "support-control-chrome"
     ],
-    "commit": "c7237da5025b8068ec7e95d0986e0d0889219f55",
+    "commit": "a83f9165d8fc45dfecf4ff1b922ae5af812b98b2",
     "path": "dropper.user.js",
-    "sha256": "b7aa6dda301879663c6a0d759c770389fa1ac9d15207a1f4fe16dc0cb925c474",
+    "sha256": "7aae2ff93183903639f3db8741e369c2c00f73a83702ad0cd791a456b7ecbcbb",
     "entries": [
       {
         "name": "PRIDE_RAINBOW",
-        "kind": "constant",
-        "startLine": 825,
-        "endLine": 825
-      },
-      {
-        "name": "PRIDE_RAINBOW_VERTICAL",
         "kind": "constant",
         "startLine": 826,
         "endLine": 826
       },
       {
-        "name": "CRIMSON_THEME",
+        "name": "PRIDE_RAINBOW_VERTICAL",
         "kind": "constant",
         "startLine": 827,
         "endLine": 827
       },
       {
-        "name": "UI_THEMES",
+        "name": "CRIMSON_THEME",
         "kind": "constant",
         "startLine": 828,
-        "endLine": 837
+        "endLine": 828
+      },
+      {
+        "name": "UI_THEMES",
+        "kind": "constant",
+        "startLine": 829,
+        "endLine": 838
       },
       {
         "name": "css",
         "kind": "function",
-        "startLine": 12597,
-        "endLine": 13340
+        "startLine": 12610,
+        "endLine": 13353
       },
       {
         "name": "protectLauncherHost",
@@ -57,16 +57,16 @@
       {
         "name": "compareVersions",
         "kind": "function",
-        "startLine": 15292,
-        "endLine": 15296
+        "startLine": 15305,
+        "endLine": 15309
       }
     ]
   },
-  "bundleSha256": "df5a9ad21ddf5a3a07e984f54c6f224998310cd5b35329f48279b8c383c233f8",
+  "bundleSha256": "690aabb45905186397a271b14e52a80d93f815bd6932e1b840fd2a07792e645f",
   "files": {
-    "dropper-reference.js": "9f4cf676dddcdec44b985389ef74dc8e95adea4f17801e87de689e6c46eba633",
+    "dropper-reference.js": "124109d5521089b07a04798ae8e97681d3746af6bcd09e5131ddedb5a492f84e",
     "diagnostic-report.js": "605abdecadfd11e7bf89d9937b67bc2a5eb2faa2f495035ca2505f3986ab5989",
     "lifecycle.js": "50a3584b708d155ce03c7d1a622d9be4f8345e91f6c4c71f8c42dc98f1ed5691",
-    "runtime.js": "a61cc6418d6df57e9232488fcdbf172e6a838e40b19c65839a515db10fe338ab"
+    "runtime.js": "4dfb687a64a45f6ebf1a835cd5b096c3c875e1d00550d85ffc4c4bea11138c23"
   }
 }
