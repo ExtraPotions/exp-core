@@ -97,3 +97,41 @@ test('all product menus contain long content and keep the end reachable in short
   await page.close();
  }
 });
+
+test('compact System groups keep diagnostics visible and expand without horizontal overflow',{skip:!suiteAvailable&&'Requires sibling product builds'},async t=>{
+ const browser=await chromium.launch();t.after(()=>browser.close());
+ for(const name of ['Dropper','WARD','PRISMA','SHIFT']){
+  const page=await browser.newPage({viewport:{width:360,height:900}});
+  await page.route('**/*',r=>r.request().isNavigationRequest()?r.fulfill({contentType:'text/html',body:'<main>Fixture</main>'}):r.abort());
+  await page.goto('https://fixture.test/');await page.evaluate(()=>{window.GM_getValue=(_k,f)=>f;window.GM_setValue=()=>{};window.GM_xmlhttpRequest=()=>{};});
+  await page.addScriptTag({content:fs.readFileSync(path.join(repos,name,name.toLowerCase()+'.user.js'),'utf8')});
+  const host=page.locator(name==='Dropper'?'#tdh-root':'#exp-'+name.toLowerCase()+'-root');await host.waitFor({state:'attached'});
+  await host.evaluate(h=>{const s=h.shadowRoot;s.querySelector('.launcher,.ward-launcher,#tdh-settings-launcher').click();s.querySelector('[data-panel="tdh-diagnostics-body"],[data-view="system"],[data-route="system"],[data-section="system"]').click();});
+  assert.equal(await host.getByRole('button',{name:'Show Diagnostics',exact:true}).isVisible(),true);
+  const width=host.getByRole('combobox',{name:'Menu width',exact:true});assert.equal(await width.isVisible(),true);
+  assert.equal(await width.evaluate(n=>n.closest('[data-exp-arrange-section]').querySelector('.fl-tool-title').textContent),'System');
+  for (const mode of ['full','compact','narrow']) {
+    await width.selectOption(mode);
+    const inline=await width.evaluate(n=>{const label=n.parentElement.querySelector('.copy,.row-copy,span').getBoundingClientRect(),select=n.getBoundingClientRect();return label.right<=select.left+1&&Math.min(label.bottom,select.bottom)>Math.max(label.top,select.top)&&n.parentElement.scrollWidth<=n.parentElement.clientWidth+1;});
+    assert.equal(inline,true,name+' '+mode+' width control must remain inline');
+  }
+  const preferences=host.locator('[data-exp-system-tools]>details').filter({has:page.locator('summary',{hasText:'Menu preferences'})});assert.equal(await preferences.count(),1);
+  await preferences.locator(':scope>summary').click();
+  const notifications=preferences.getByRole('switch',{name:/^Menu notifications/});
+  await notifications.waitFor({state:'visible',timeout:3000});assert.equal(await notifications.isVisible(),true,name);const checked=await notifications.getAttribute('aria-checked');await notifications.click();
+  assert.notEqual(await notifications.getAttribute('aria-checked'),checked);assert.equal(await preferences.evaluate(n=>n.open),true);
+  await preferences.locator(':scope>summary').click();
+  const grid=host.locator('[data-exp-system-tools]');assert.equal(await grid.count(),1);
+  assert.doesNotMatch(await grid.textContent(),/Settings backups|Back up settings|Restore selected backup/);
+  assert.equal(await grid.locator(':scope>details[open]').count(),0);
+  const cards=grid.locator(':scope>details');assert.ok(await cards.count()>=3);
+  for(let i=0;i<await cards.count();i++){
+   const card=cards.nth(i);await card.locator(':scope>summary').focus();await page.keyboard.press('Enter');
+   assert.equal(await card.evaluate(n=>n.open),true);
+   const dimensions=await card.evaluate(n=>({width:n.getBoundingClientRect().width,parent:n.parentElement.getBoundingClientRect().width,overflow:n.scrollWidth-n.clientWidth}));
+   assert.ok(Math.abs(dimensions.width-dimensions.parent)<2,JSON.stringify({name,dimensions}));assert.ok(dimensions.overflow<=1,JSON.stringify({name,dimensions}));
+   await card.locator(':scope>summary').press('Enter');
+  }
+  await page.close();
+ }
+});
