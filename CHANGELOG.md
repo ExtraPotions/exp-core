@@ -1,3 +1,9 @@
+## 3.3.8 — 2026-09-26
+
+- Adds section rearranging and visibility controls under System while preserving shared recovery tools.
+- Keeps menus and long controls inside the available viewport.
+- Refreshes the product guide with a horizontal screenshot gallery and linked license badges.
+
 ## 3.3.7 — 2026-09-26
 
 - Adds bounded local settings journals and shared backup/restore controls.

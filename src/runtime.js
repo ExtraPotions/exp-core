@@ -2,7 +2,7 @@
 // Product engines own their settings, content, and actions. Core owns shared UI.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.3.7';
+  const version = '3.3.8';
   const sourceVersion = '3.3.5';
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -39,6 +39,11 @@ const ExtraPotionsCore = (() => {
     css.replaceAll('#' + id, '[data-exp-part="' + part + '"]'), DropperReference.css())
     .replaceAll('.cluster', '.exp-core-theme');
   const compositionCss = `
+    [data-exp-part="dock"]{box-sizing:border-box;overflow-x:hidden;overscroll-behavior:contain}
+    [data-exp-part="dock"] :is(.row,.group,.section,.fl-tool-body,.route-body,.fl-tool-title){min-width:0;max-width:100%;overflow-wrap:anywhere!important}
+    [data-exp-part="dock"] :is(input,select,textarea){min-width:0;max-width:100%}
+    .update-notice,.changelog{max-height:calc(100vh - 24px)!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain;overflow-wrap:anywhere}
+
     :host{color-scheme:dark}
     [data-exp-part="launcher"]{box-sizing:border-box!important;width:48px!important;min-width:48px!important;max-width:48px!important;height:48px!important;min-height:48px!important;max-height:48px!important}
     [data-exp-part="launcher"] .launcher-icon{width:40px!important;height:40px!important}
@@ -182,7 +187,7 @@ const ExtraPotionsCore = (() => {
     if (!(shadow instanceof ShadowRoot)) return false;
     shadow.host.dataset.expContentDrivenMenu = '1';
     if (!shadow.querySelector('style[data-exp-content-driven-menu]')) {
-      injectStyle(shadow, '.fl-tool-body .action.warn{border-color:#cb6868!important;background:#402020!important;color:#ffd7d7!important}.fl-tool-body .action.warn:hover{background:#582828!important;color:#fff!important}:host([data-exp-content-driven-menu="1"]) :is(.panel,.ward,#mb-dock,[data-exp-part="dock"]){height:auto!important;min-height:0!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-body,.panel-body,.route-body){height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-header,.panel-head,.route,.nav-item,.group>summary){height:auto!important;min-height:0!important;white-space:normal!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-title,.label,.setting-label,.setting-value,.copy strong,.copy .label){overflow:visible!important;text-overflow:clip!important;white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important}:host([data-exp-content-driven-menu="1"]) :is(.row,.mini-row,.setting-row){height:auto!important;min-height:0!important;align-items:center!important}:host([data-exp-content-driven-menu="1"]) :is(.group,.section,.panel-body:not(.hidden)){grid-template-columns:minmax(0,1fr)!important}:host([data-exp-content-driven-menu="1"]) :is(.group,.section,.panel-body:not(.hidden))>*{grid-column:1/-1!important}.fl-tool-body .row:has(>select){display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)!important;min-width:0!important}.fl-tool-body .row>select{width:100%!important;min-width:0!important;max-width:100%!important}', { expContentDrivenMenu: '1' });
+      injectStyle(shadow, '.fl-tool-body .action.warn{border-color:#cb6868!important;background:#402020!important;color:#ffd7d7!important}.fl-tool-body .action.warn:hover{background:#582828!important;color:#fff!important}:host([data-exp-content-driven-menu="1"]) :is(.panel,.ward,#mb-dock,[data-exp-part="dock"]){height:auto!important;min-height:0!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-body,.panel-body,.route-body){height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-header,.panel-head,.route,.nav-item,.group>summary){height:auto!important;min-height:0!important;white-space:normal!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-title,.label,.setting-label,.setting-value,.copy strong,.copy .label){overflow:visible!important;text-overflow:clip!important;white-space:normal!important;word-break:normal!important;overflow-wrap:anywhere!important}:host([data-exp-content-driven-menu="1"]) :is(.row,.mini-row,.setting-row){height:auto!important;min-height:0!important;align-items:center!important}:host([data-exp-content-driven-menu="1"]) :is(.group,.section,.panel-body:not(.hidden)){grid-template-columns:minmax(0,1fr)!important}:host([data-exp-content-driven-menu="1"]) :is(.group,.section,.panel-body:not(.hidden))>*{grid-column:1/-1!important}.fl-tool-body .row:has(>select){display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)!important;min-width:0!important}.fl-tool-body .row>select{width:100%!important;min-width:0!important;max-width:100%!important}', { expContentDrivenMenu: '1' });
     }
     applyMatteToggleChrome(shadow);
     return true;
@@ -602,7 +607,7 @@ const ExtraPotionsCore = (() => {
       top = Math.max(8,Math.min(innerHeight-56,top));
       Object.assign(launcher.style,{top:top+'px',right:(12+x)+'px',bottom:'auto',left:'auto',zIndex:open?'2147483647':'2147483600'});
       const maxWidth = Math.max(0,innerWidth-24), panelWidth = Math.min(menuWidthForMode(width),maxWidth);
-      Object.assign(panel.style,{width:panelWidth+'px',maxHeight:Math.max(80,innerHeight-80)+'px',overflowY:'auto',right:'12px',left:'auto',bottom:'auto',zIndex:open?'2147483647':'2147483599'});
+      Object.assign(panel.style,{width:panelWidth+'px',maxHeight:Math.max(0,innerHeight-80)+'px',overflowY:'auto',overflowX:'hidden',overscrollBehavior:'contain',right:'12px',left:'auto',bottom:'auto',zIndex:open?'2147483647':'2147483599'});
       if (!open) return;
       const h = panel.offsetHeight, below = innerHeight-top-56, above = top-8;
       const up = below < h+12 && above >= below;
@@ -610,7 +615,8 @@ const ExtraPotionsCore = (() => {
       panel.style.top = Math.max(8, up ? top-h-8 : Math.min(innerHeight-h-8,top+56))+'px';
       menuNotices.forEach(notice=>notice.layout());
     }
-    function queueLayout() { if (!frame && !destroyed) frame = requestAnimationFrame(() => { frame = 0; normalizeControls(panel); layout(); }); }
+    const arrangement = ExpMenuArrangement.mount({ panel, id, onChange: queueLayout, resetLaunchers() { write(GRID_ORDER,[]);write(GRID_DELTA,0);layoutGrid();emit('launcher-grid-moved',id);queueLayout(); } });
+    function queueLayout() { if (!frame && !destroyed) frame = requestAnimationFrame(() => { frame = 0; normalizeControls(panel); arrangement.update(); layout(); }); }
     let startX=0,startY=0,startDelta=0,pointer=null,dragged=false,axis='',order=[];
     on(launcher,'pointerdown',e=>{if(e.button!==0)return;pointer=e.pointerId;startX=e.clientX;startY=e.clientY;startDelta=Number(read(GRID_DELTA,0))||0;order=read(GRID_ORDER,[]);if(!Array.isArray(order))order=[];if(!order.includes(id))order.push(id);dragged=false;axis='';e.preventDefault();});
     on(document,'pointermove',e=>{if(e.pointerId!==pointer)return;const dx=e.clientX-startX,dy=e.clientY-startY;if(!axis&&Math.max(Math.abs(dx),Math.abs(dy))>4)axis=Math.abs(dx)>Math.abs(dy)?'order':'group';if(!axis)return;dragged=true;e.preventDefault();launcher.classList.add('is-dragging');if(axis==='order'){const from=order.indexOf(id),to=Math.max(0,Math.min(order.length-1,from+Math.round(-dx/56))),next=[...order];next.splice(from,1);next.splice(to,0,id);write(GRID_ORDER,next);}else write(GRID_DELTA,startDelta+dy);layoutGrid();emit('launcher-grid-moved',id);layout();},{passive:false});
@@ -629,7 +635,7 @@ const ExtraPotionsCore = (() => {
       state(value) {open=Boolean(value);if(open){document.documentElement.setAttribute('data-exp-open-menu',id);document.dispatchEvent(new Event('exp-core:menu-open'));}panel.classList.toggle('fl-rail-open',open);menuNotices.forEach(notice=>notice.setMenuOpen(open));if(open)scheduleDismiss();else clearTimer();queueLayout();},
       update(){normalizeControls(panel);queueLayout();},
       get dismissAt(){return deadline;},
-      destroy(){destroyed=true;defaultSupport?.destroy();clearTimer();cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();dropperThemeObserver.disconnect();menuNotices.forEach(notice=>notice.destroy());removers.forEach(f=>f());styles.dispose();controllers.delete(host);}
+      destroy(){destroyed=true;arrangement.destroy();defaultSupport?.destroy();clearTimer();cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();dropperThemeObserver.disconnect();menuNotices.forEach(notice=>notice.destroy());removers.forEach(f=>f());styles.dispose();controllers.delete(host);}
     };
     controllers.set(host,controller);setTheme(getSettings().uiTheme || getSettings().theme || id);
     queueLayout();return controller;

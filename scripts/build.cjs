@@ -5,7 +5,7 @@ const crypto = require('node:crypto');
 const root = path.resolve(__dirname, '..');
 const hash = text => crypto.createHash('sha256').update(text).digest('hex');
 const normalize = text => text.replace(/\r\n/g, '\n');
-const files = ['dropper-reference.js','diagnostic-report.js','lifecycle.js','product-tools.js','runtime.js'];
+const files = ['dropper-reference.js','diagnostic-report.js','lifecycle.js','product-tools.js','menu-arrangement.js','runtime.js'];
 const provenance = JSON.parse(fs.readFileSync(path.join(root,'source-provenance.json'),'utf8'));
 const source = files.map(file => normalize(fs.readFileSync(path.join(root,'src',file),'utf8')).trim()).join('\n\n') + '\n';
 const version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;

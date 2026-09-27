@@ -1518,11 +1518,120 @@ const ExtraPotionsTools = (() => {
   return Object.freeze({createSettingsRecovery,compatibilitySnapshot,createCompatibilityControls,createRecoveryControls});
 })();
 
+// Section arrangement shared at build time by ExtraPotions menus.
+const ExpMenuArrangement = (() => {
+  const css = `
+    [data-exp-arrange-section]{position:relative}
+    [data-exp-arrange-section]>.fl-tool-header{padding-left:38px!important}
+    .exp-section-grip{position:absolute!important;left:4px!important;right:auto!important;top:4px!important;width:28px!important;height:26px!important;min-width:0!important;min-height:0!important;padding:0!important;border:1px solid var(--theme-line);border-radius:6px!important;background:var(--theme-bg);color:var(--theme-muted);touch-action:none;cursor:grab;z-index:1}
+    .exp-section-grip[data-dragging=true]{cursor:grabbing}
+    .exp-menu-editor{grid-column:1/-1;box-sizing:border-box;width:100%;min-width:0;padding:7px;border:1px solid var(--theme-line);border-radius:7px;background:var(--theme-bg)}
+    .exp-menu-editor summary{cursor:pointer;font-weight:700}
+    .exp-menu-editor .exp-menu-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px}
+    .exp-menu-editor button[role=switch]{flex:0 0 32px;width:32px;height:20px;padding:2px;border-radius:5px;border:1px solid var(--theme-line);background:var(--theme-panel)}
+    .exp-menu-editor button[role=switch]::before{content:'';display:block;width:12px;height:12px;border-radius:3px;background:var(--theme-muted)}
+    .exp-menu-editor button[aria-checked=true]{background:var(--theme-accent)}
+    .exp-menu-editor button[aria-checked=true]::before{margin-left:auto;background:var(--theme-text)}
+    .exp-menu-editor .exp-reset{width:100%;margin-top:7px;border-radius:6px}
+    [data-exp-arrange-section][hidden]{display:none!important}
+  `;
+  function mount({ panel, id, onChange = () => {}, resetLaunchers = () => {} }) {
+    const document = panel.ownerDocument, view = document.defaultView;
+    const entries = [...panel.querySelectorAll('.fl-tool-panel')].map(section => {
+      const header = section.querySelector(':scope>.fl-tool-header');
+      const body = section.querySelector(':scope>.fl-tool-body');
+      if (!header || !body) return null;
+      const label = (header.querySelector('.fl-tool-title') || header).textContent.replace(/[▸▾›]/g, '').trim();
+      return { section, header, body, label, key: header.dataset.route || header.dataset.section || header.dataset.panel || body.id };
+    }).filter(entry => entry?.key);
+    if (entries.length < 2) return { update() {}, destroy() {} };
+    const parent = entries[0].section.parentElement;
+    if (entries.some(entry => entry.section.parentElement !== parent)) return { update() {}, destroy() {} };
+    const defaults = entries.map(entry => entry.key);
+    const orderKey = `exp:v3:menu-order:${id}`, hiddenKey = `exp:v3:menu-hidden:${id}`;
+    const read = key => { try { const value = JSON.parse(view.localStorage.getItem(key) || '[]'); return Array.isArray(value) ? [...new Set(value.filter(x => typeof x === 'string'))] : []; } catch { return []; } };
+    const save = (key, value) => { try { view.localStorage.setItem(key, JSON.stringify(value)); } catch {} };
+    let order = [...new Set([...read(orderKey), ...defaults])], hidden = read(hiddenKey), drag = null;
+    const recovery = entries.find(entry => entry.label.toLowerCase() === 'system') || entries[0];
+    const style = document.createElement('style'); style.textContent = css; panel.getRootNode().append(style);
+    const abort = new view.AbortController();
+    const on = (node, type, handler, options = {}) => node.addEventListener(type, handler, { ...options, signal: abort.signal });
+    const editor = document.createElement('details'); editor.className = 'exp-menu-editor';
+    const summary = document.createElement('summary'); summary.textContent = 'Edit menu'; editor.append(summary);
+    const switches = new Map();
+    const ordered = () => [...parent.children].filter(node => node.hasAttribute('data-exp-arrange-section'));
+    function apply() {
+      const desired = [...entries].sort((a,b) => order.indexOf(a.key)-order.indexOf(b.key));
+      desired.forEach((entry,index) => { const current = ordered()[index]; if (current !== entry.section) parent.insertBefore(entry.section,current || null); });
+      entries.forEach(entry => {
+        const isHidden = entry !== recovery && hidden.includes(entry.key);
+        if (entry.section.hidden !== isHidden) entry.section.hidden = isHidden;
+        switches.get(entry.key)?.setAttribute('aria-checked', String(!isHidden));
+      });
+      onChange();
+    }
+    function update() { if (!recovery.body.contains(editor)) recovery.body.append(editor); }
+    for (const entry of entries) {
+      entry.section.dataset.expArrangeSection = entry.key;
+      const grip = document.createElement('button'); grip.type = 'button'; grip.className = 'exp-section-grip'; grip.textContent = '⠿';
+      grip.setAttribute('aria-label', `Rearrange ${entry.label}`); grip.title = 'Drag to reorder, or use Alt + Up/Down'; entry.section.append(grip); entry.grip = grip;
+      on(grip, 'click', event => { event.preventDefault(); event.stopPropagation(); });
+      on(grip, 'pointerdown', event => {
+        if (event.button !== 0 || drag) return;
+        event.preventDefault(); event.stopPropagation();
+        drag = { entry, pointer: event.pointerId, y: event.clientY, snapshot: [...order], moved: false };
+        parent.setPointerCapture?.(event.pointerId); grip.dataset.dragging = 'true';
+      });
+      on(grip, 'keydown', event => {
+        if (!event.altKey || !['ArrowUp','ArrowDown'].includes(event.key)) return;
+        event.preventDefault(); event.stopPropagation();
+        const visible = ordered().filter(node => !node.hidden).map(node => node.dataset.expArrangeSection);
+        const from = visible.indexOf(entry.key), to = from + (event.key === 'ArrowUp' ? -1 : 1);
+        if (to < 0 || to >= visible.length) return;
+        const target = order.indexOf(visible[to]), source = order.indexOf(entry.key);
+        [order[source], order[target]] = [order[target], order[source]];
+        save(orderKey,order); apply(); grip.focus();
+      });
+      if (entry === recovery) continue;
+      const row = document.createElement('div'); row.className = 'exp-menu-row';
+      const label = document.createElement('span'); label.textContent = entry.label;
+      const toggle = document.createElement('button'); toggle.type = 'button'; toggle.setAttribute('role','switch'); toggle.setAttribute('aria-label',`Show ${entry.label}`);
+      switches.set(entry.key,toggle);
+      on(toggle,'click',() => { hidden = hidden.includes(entry.key) ? hidden.filter(key => key !== entry.key) : [...hidden,entry.key]; save(hiddenKey,hidden); apply(); });
+      row.append(label,toggle); editor.append(row);
+    }
+    on(view,'pointermove',event => {
+      if (!drag || event.pointerId !== drag.pointer || Math.abs(event.clientY-drag.y) < 5 && !drag.moved) return;
+      event.preventDefault(); drag.moved = true;
+      const others = ordered().filter(node => node !== drag.entry.section && !node.hidden);
+      const next = others.find(node => { const rect=node.getBoundingClientRect(); return event.clientY < rect.top+rect.height/2; });
+      order = order.filter(key => key !== drag.entry.key);
+      const index = next ? order.indexOf(next.dataset.expArrangeSection) : others.length ? order.indexOf(others.at(-1).dataset.expArrangeSection)+1 : order.length;
+      order.splice(index,0,drag.entry.key); apply();
+    }, { passive:false });
+    function end(event) {
+      if (!drag || event.pointerId !== drag.pointer) return;
+      const previous = drag; drag = null; delete previous.entry.grip.dataset.dragging;
+      if (event.type !== 'pointerup') { order = previous.snapshot; apply(); } else save(orderKey,order);
+      if (parent.hasPointerCapture?.(previous.pointer)) parent.releasePointerCapture(previous.pointer);
+      previous.entry.grip.focus();
+    }
+    on(view,'pointerup',end); on(view,'pointercancel',end); on(parent,'lostpointercapture',end);
+    on(view,'storage',event => { if ([orderKey,hiddenKey,null].includes(event.key) && !drag) { order=[...new Set([...read(orderKey),...defaults])]; hidden=read(hiddenKey); apply(); } });
+    function resetButton(label, action) { const button=document.createElement('button');button.type='button';button.className='life-btn exp-reset';button.textContent=label;on(button,'click',action);editor.append(button); }
+    resetButton('Reset menu arrangement',() => { order=[...defaults];hidden=[];save(orderKey,order);save(hiddenKey,hidden);apply(); });
+    resetButton('Reset launcher arrangement',resetLaunchers);
+    apply(); update();
+    return { update, destroy() { abort.abort();style.remove();editor.remove();entries.forEach(entry => { entry.grip.remove();delete entry.section.dataset.expArrangeSection;entry.section.hidden=false; }); } };
+  }
+  return Object.freeze({ mount });
+})();
+
 // Product-neutral host for the code extracted from Dropper 3.3.5.
 // Product engines own their settings, content, and actions. Core owns shared UI.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.3.7';
+  const version = '3.3.8';
   const sourceVersion = '3.3.5';
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -1559,6 +1668,11 @@ const ExtraPotionsCore = (() => {
     css.replaceAll('#' + id, '[data-exp-part="' + part + '"]'), DropperReference.css())
     .replaceAll('.cluster', '.exp-core-theme');
   const compositionCss = `
+    [data-exp-part="dock"]{box-sizing:border-box;overflow-x:hidden;overscroll-behavior:contain}
+    [data-exp-part="dock"] :is(.row,.group,.section,.fl-tool-body,.route-body,.fl-tool-title){min-width:0;max-width:100%;overflow-wrap:anywhere!important}
+    [data-exp-part="dock"] :is(input,select,textarea){min-width:0;max-width:100%}
+    .update-notice,.changelog{max-height:calc(100vh - 24px)!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain;overflow-wrap:anywhere}
+
     :host{color-scheme:dark}
     [data-exp-part="launcher"]{box-sizing:border-box!important;width:48px!important;min-width:48px!important;max-width:48px!important;height:48px!important;min-height:48px!important;max-height:48px!important}
     [data-exp-part="launcher"] .launcher-icon{width:40px!important;height:40px!important}
@@ -1702,7 +1816,7 @@ const ExtraPotionsCore = (() => {
     if (!(shadow instanceof ShadowRoot)) return false;
     shadow.host.dataset.expContentDrivenMenu = '1';
     if (!shadow.querySelector('style[data-exp-content-driven-menu]')) {
-      injectStyle(shadow, '.fl-tool-body .action.warn{border-color:#cb6868!important;background:#402020!important;color:#ffd7d7!important}.fl-tool-body .action.warn:hover{background:#582828!important;color:#fff!important}:host([data-exp-content-driven-menu="1"]) :is(.panel,.ward,#mb-dock,[data-exp-part="dock"]){height:auto!important;min-height:0!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-body,.panel-body,.route-body){height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-header,.panel-head,.route,.nav-item,.group>summary){height:auto!important;min-height:0!important;white-space:normal!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-title,.label,.setting-label,.setting-value,.copy strong,.copy .label){overflow:visible!important;text-overflow:clip!important;white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important}:host([data-exp-content-driven-menu="1"]) :is(.row,.mini-row,.setting-row){height:auto!important;min-height:0!important;align-items:center!important}:host([data-exp-content-driven-menu="1"]) :is(.group,.section,.panel-body:not(.hidden)){grid-template-columns:minmax(0,1fr)!important}:host([data-exp-content-driven-menu="1"]) :is(.group,.section,.panel-body:not(.hidden))>*{grid-column:1/-1!important}.fl-tool-body .row:has(>select){display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)!important;min-width:0!important}.fl-tool-body .row>select{width:100%!important;min-width:0!important;max-width:100%!important}', { expContentDrivenMenu: '1' });
+      injectStyle(shadow, '.fl-tool-body .action.warn{border-color:#cb6868!important;background:#402020!important;color:#ffd7d7!important}.fl-tool-body .action.warn:hover{background:#582828!important;color:#fff!important}:host([data-exp-content-driven-menu="1"]) :is(.panel,.ward,#mb-dock,[data-exp-part="dock"]){height:auto!important;min-height:0!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-body,.panel-body,.route-body){height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-header,.panel-head,.route,.nav-item,.group>summary){height:auto!important;min-height:0!important;white-space:normal!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-title,.label,.setting-label,.setting-value,.copy strong,.copy .label){overflow:visible!important;text-overflow:clip!important;white-space:normal!important;word-break:normal!important;overflow-wrap:anywhere!important}:host([data-exp-content-driven-menu="1"]) :is(.row,.mini-row,.setting-row){height:auto!important;min-height:0!important;align-items:center!important}:host([data-exp-content-driven-menu="1"]) :is(.group,.section,.panel-body:not(.hidden)){grid-template-columns:minmax(0,1fr)!important}:host([data-exp-content-driven-menu="1"]) :is(.group,.section,.panel-body:not(.hidden))>*{grid-column:1/-1!important}.fl-tool-body .row:has(>select){display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)!important;min-width:0!important}.fl-tool-body .row>select{width:100%!important;min-width:0!important;max-width:100%!important}', { expContentDrivenMenu: '1' });
     }
     applyMatteToggleChrome(shadow);
     return true;
@@ -2122,7 +2236,7 @@ const ExtraPotionsCore = (() => {
       top = Math.max(8,Math.min(innerHeight-56,top));
       Object.assign(launcher.style,{top:top+'px',right:(12+x)+'px',bottom:'auto',left:'auto',zIndex:open?'2147483647':'2147483600'});
       const maxWidth = Math.max(0,innerWidth-24), panelWidth = Math.min(menuWidthForMode(width),maxWidth);
-      Object.assign(panel.style,{width:panelWidth+'px',maxHeight:Math.max(80,innerHeight-80)+'px',overflowY:'auto',right:'12px',left:'auto',bottom:'auto',zIndex:open?'2147483647':'2147483599'});
+      Object.assign(panel.style,{width:panelWidth+'px',maxHeight:Math.max(0,innerHeight-80)+'px',overflowY:'auto',overflowX:'hidden',overscrollBehavior:'contain',right:'12px',left:'auto',bottom:'auto',zIndex:open?'2147483647':'2147483599'});
       if (!open) return;
       const h = panel.offsetHeight, below = innerHeight-top-56, above = top-8;
       const up = below < h+12 && above >= below;
@@ -2130,7 +2244,8 @@ const ExtraPotionsCore = (() => {
       panel.style.top = Math.max(8, up ? top-h-8 : Math.min(innerHeight-h-8,top+56))+'px';
       menuNotices.forEach(notice=>notice.layout());
     }
-    function queueLayout() { if (!frame && !destroyed) frame = requestAnimationFrame(() => { frame = 0; normalizeControls(panel); layout(); }); }
+    const arrangement = ExpMenuArrangement.mount({ panel, id, onChange: queueLayout, resetLaunchers() { write(GRID_ORDER,[]);write(GRID_DELTA,0);layoutGrid();emit('launcher-grid-moved',id);queueLayout(); } });
+    function queueLayout() { if (!frame && !destroyed) frame = requestAnimationFrame(() => { frame = 0; normalizeControls(panel); arrangement.update(); layout(); }); }
     let startX=0,startY=0,startDelta=0,pointer=null,dragged=false,axis='',order=[];
     on(launcher,'pointerdown',e=>{if(e.button!==0)return;pointer=e.pointerId;startX=e.clientX;startY=e.clientY;startDelta=Number(read(GRID_DELTA,0))||0;order=read(GRID_ORDER,[]);if(!Array.isArray(order))order=[];if(!order.includes(id))order.push(id);dragged=false;axis='';e.preventDefault();});
     on(document,'pointermove',e=>{if(e.pointerId!==pointer)return;const dx=e.clientX-startX,dy=e.clientY-startY;if(!axis&&Math.max(Math.abs(dx),Math.abs(dy))>4)axis=Math.abs(dx)>Math.abs(dy)?'order':'group';if(!axis)return;dragged=true;e.preventDefault();launcher.classList.add('is-dragging');if(axis==='order'){const from=order.indexOf(id),to=Math.max(0,Math.min(order.length-1,from+Math.round(-dx/56))),next=[...order];next.splice(from,1);next.splice(to,0,id);write(GRID_ORDER,next);}else write(GRID_DELTA,startDelta+dy);layoutGrid();emit('launcher-grid-moved',id);layout();},{passive:false});
@@ -2149,7 +2264,7 @@ const ExtraPotionsCore = (() => {
       state(value) {open=Boolean(value);if(open){document.documentElement.setAttribute('data-exp-open-menu',id);document.dispatchEvent(new Event('exp-core:menu-open'));}panel.classList.toggle('fl-rail-open',open);menuNotices.forEach(notice=>notice.setMenuOpen(open));if(open)scheduleDismiss();else clearTimer();queueLayout();},
       update(){normalizeControls(panel);queueLayout();},
       get dismissAt(){return deadline;},
-      destroy(){destroyed=true;defaultSupport?.destroy();clearTimer();cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();dropperThemeObserver.disconnect();menuNotices.forEach(notice=>notice.destroy());removers.forEach(f=>f());styles.dispose();controllers.delete(host);}
+      destroy(){destroyed=true;arrangement.destroy();defaultSupport?.destroy();clearTimer();cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();dropperThemeObserver.disconnect();menuNotices.forEach(notice=>notice.destroy());removers.forEach(f=>f());styles.dispose();controllers.delete(host);}
     };
     controllers.set(host,controller);setTheme(getSettings().uiTheme || getSettings().theme || id);
     queueLayout();return controller;

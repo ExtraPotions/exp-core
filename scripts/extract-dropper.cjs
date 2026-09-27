@@ -16,7 +16,11 @@ const siblingSource = path.join(root, '..', 'Dropper', 'dropper.user.js');
 
 async function loadSourceBytes() {
   const file = requestedSource || (fs.existsSync(siblingSource) ? siblingSource : '');
-  if (file) return fs.readFileSync(file);
+  if (file) {
+    const bytes = fs.readFileSync(file);
+    if (requestedSource || crypto.createHash('sha256').update(bytes).digest('hex') === expected) return bytes;
+    // Local product work may be newer than the approved reference.
+  }
   const response = await fetch(releaseUrl, {
     headers: { 'User-Agent': 'exp-core-reference-extractor' },
     signal: AbortSignal.timeout(20000),
