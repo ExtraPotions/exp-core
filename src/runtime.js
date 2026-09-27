@@ -2,7 +2,7 @@
 // Product engines own their settings, content, and actions. Core owns shared UI.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.3.10';
+  const version = '3.3.11';
   const sourceVersion = '3.3.5';
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -253,11 +253,11 @@ const ExtraPotionsCore = (() => {
     const sorted = [...document.querySelectorAll('[data-exp-product-launcher="1"]')].sort((a,b) => {
       const ai = Array.isArray(order) ? order.indexOf(a.dataset.productId) : -1;
       const bi = Array.isArray(order) ? order.indexOf(b.dataset.productId) : -1;
-      if (a.dataset.productId !== 'dropper' && b.dataset.productId !== 'dropper' && ai !== bi) return ai < 0 ? 1 : bi < 0 ? -1 : ai - bi;
-      return Number(b.dataset.launcherPriority || 0) - Number(a.dataset.launcherPriority || 0) || a.dataset.productId.localeCompare(b.dataset.productId);
+      if (ai !== bi) return ai < 0 ? 1 : bi < 0 ? -1 : ai - bi;
+      const ap = a.dataset.productId === 'dropper' ? Number.MAX_SAFE_INTEGER : Number(a.dataset.launcherPriority || 0);
+      const bp = b.dataset.productId === 'dropper' ? Number.MAX_SAFE_INTEGER : Number(b.dataset.launcherPriority || 0);
+      return bp - ap || a.dataset.productId.localeCompare(b.dataset.productId);
     });
-    const dropper = sorted.find(node => node.dataset.productId === 'dropper');
-    const products = sorted.filter(node => node !== dropper);
     const assign = (node, slot, span = 1) => {
       const row = Math.floor(slot / 3), column = slot % 3;
       Object.assign(node.dataset, { launcherSlot:String(slot), launcherRow:String(row), launcherColumn:String(column), launcherSpan:String(span) });
@@ -265,9 +265,8 @@ const ExtraPotionsCore = (() => {
       node.style.setProperty('--exp-launcher-y', row * 56 + 'px');
       node.style.setProperty('--exp-launcher-offset', row * 56 + 'px');
     };
-    if (dropper) assign(dropper, 0);
-    products.forEach((node, index) => assign(node, (dropper ? 1 : 0) + index));
-    write(GRID_ORDER, products.map(node => node.dataset.productId));
+    sorted.forEach((node, index) => assign(node, index));
+    write(GRID_ORDER, sorted.map(node => node.dataset.productId));
   }
   function storageRead(key, fallback = null) {
     try { if (typeof GM_getValue === 'function') return GM_getValue(key, fallback); } catch {}
@@ -673,12 +672,14 @@ const ExtraPotionsCore = (() => {
     }
     const arrangement = ExpMenuArrangement.mount({ panel, id, onChange: queueLayout, resetLaunchers() { write(GRID_ORDER,[]);write(GRID_DELTA,0);layoutGrid();emit('launcher-grid-moved',id);queueLayout(); } });
     function queueLayout() { if (!frame && !destroyed) frame = requestAnimationFrame(() => { frame = 0; normalizeControls(panel); arrangement.update(); layout(); }); }
-    let startX=0,startY=0,startDelta=0,pointer=null,dragged=false,axis='',order=[];
-    on(launcher,'pointerdown',e=>{if(e.button!==0)return;pointer=e.pointerId;startX=e.clientX;startY=e.clientY;startDelta=Number(read(GRID_DELTA,0))||0;order=read(GRID_ORDER,[]);if(!Array.isArray(order))order=[];if(!order.includes(id))order.push(id);dragged=false;axis='';e.preventDefault();});
-    on(document,'pointermove',e=>{if(e.pointerId!==pointer)return;const dx=e.clientX-startX,dy=e.clientY-startY;if(!axis&&Math.max(Math.abs(dx),Math.abs(dy))>4)axis=Math.abs(dx)>Math.abs(dy)?'order':'group';if(!axis)return;dragged=true;e.preventDefault();launcher.classList.add('is-dragging');if(axis==='order'){const from=order.indexOf(id),to=Math.max(0,Math.min(order.length-1,from+Math.round(-dx/56))),next=[...order];next.splice(from,1);next.splice(to,0,id);write(GRID_ORDER,next);}else write(GRID_DELTA,startDelta+dy);layoutGrid();emit('launcher-grid-moved',id);layout();},{passive:false});
+    let startX=0,startY=0,pointer=null,dragged=false,axis='',order=[];
+    launcher.title = launcher.title || 'Drag left, right, up, or down to reorder. Alt+Arrow keys also reorder.';
+    on(launcher,'pointerdown',e=>{if(e.button!==0)return;pointer=e.pointerId;startX=e.clientX;startY=e.clientY;order=read(GRID_ORDER,[]);if(!Array.isArray(order))order=[];if(!order.includes(id))order.push(id);dragged=false;axis='';e.preventDefault();});
+    on(document,'pointermove',e=>{if(e.pointerId!==pointer)return;const dx=e.clientX-startX,dy=e.clientY-startY;if(!axis&&Math.max(Math.abs(dx),Math.abs(dy))>4)axis='order';if(!axis)return;dragged=true;e.preventDefault();launcher.classList.add('is-dragging');const from=order.indexOf(id),offset=Math.abs(dx)>Math.abs(dy)?Math.round(-dx/56):Math.round(dy/56)*3,to=Math.max(0,Math.min(order.length-1,from+offset)),next=[...order];next.splice(from,1);next.splice(to,0,id);write(GRID_ORDER,next);layoutGrid();emit('launcher-grid-moved',id);layout();},{passive:false});
     const end=e=>{if(e.pointerId===pointer){pointer=null;launcher.classList.remove('is-dragging');}};
     on(document,'pointerup',end);on(document,'pointercancel',end);
     on(launcher,'click',e=>{if(dragged){e.preventDefault();e.stopImmediatePropagation();dragged=false;}},true);
+    on(launcher,'keydown',e=>{if(!e.altKey||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();let next=read(GRID_ORDER,[]);if(!Array.isArray(next))next=[];if(!next.includes(id))next.push(id);const from=next.indexOf(id),offset={ArrowLeft:1,ArrowRight:-1,ArrowUp:-3,ArrowDown:3}[e.key],to=Math.max(0,Math.min(next.length-1,from+offset));next=[...next];next.splice(from,1);next.splice(to,0,id);write(GRID_ORDER,next);layoutGrid();emit('launcher-grid-moved',id);layout();launcher.focus();});
     for(const type of ['pointerdown','click','wheel','keydown','input','change'])on(panel,type,scheduleDismiss,{passive:type==='wheel'});
     on(window,'keydown',e=>{if(shortcutKey&&e.altKey&&e.shiftKey&&e.key.toLowerCase()===shortcutKey.toLowerCase()&&!e.repeat){e.preventDefault();setOpen(!open,true);} });
     on(window,'resize',queueLayout);on(document,'exp-core:coordination',queueLayout);

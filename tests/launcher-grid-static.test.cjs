@@ -83,6 +83,9 @@ test('shared launcher measurements match the suite contract', () => {
   assert.match(source, /\[data-exp-part="launcher"\] \.launcher-icon\{width:40px!important;height:40px!important\}/u);
   assert.match(source, /\.header-icon \.menu-icon\{width:38px!important;height:38px!important\}/u);
   assert.match(source, /column \* 56 \+ 'px'/u);
+  assert.match(source, /Math\.round\(dy\/56\)\*3/u);
+  assert.match(source, /ArrowUp:-3,ArrowDown:3/u);
+  assert.match(source, /sorted\.forEach\(\(node, index\) => assign\(node, index\)\)/u);
   assert.equal(chromeContract.artwork.launcherButtonSize + chromeContract.artwork.launcherGapSize, 56);
   assert.match(source, /launcher\.replaceChildren\(mark\)/u);
   assert.doesNotMatch(source, /launcher\.append\(ring/u);
