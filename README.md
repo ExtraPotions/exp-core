@@ -58,3 +58,9 @@ ExtraPotions Core is a shared component for independent ExtraPotions products an
 ## Shared menu and support controls
 
 Opening a product menu closes other open product menus without stealing focus. Core supplies the default ExtraPotions Ko-fi support control, including custom headers.
+
+## Local development changes (unreleased)
+
+Adds shared, local settings journals (up to five snapshots), backup/restore controls, and a current-page compatibility overview. The overview reports visible product/core versions and warns about duplicate instances or mixed core versions. Dropper reuses the standalone tools while retaining its native UI.
+
+These changes are prepared locally. The stable installation links above still serve the published release.

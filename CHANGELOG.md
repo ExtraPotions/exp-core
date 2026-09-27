@@ -1,3 +1,7 @@
+## Unreleased
+
+- Adds shared, local settings journals (up to five snapshots), backup/restore controls, and a current-page compatibility overview. The overview reports visible product/core versions and warns about duplicate instances or mixed core versions. Dropper reuses the standalone tools while retaining its native UI.
+
 ## 3.3.6 — 2026-09-26
 
 - Coordinates launcher menus across independent product bundles without passing cross-realm objects.
