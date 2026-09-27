@@ -2,7 +2,7 @@
 // Product engines own their settings, content, and actions. Core owns shared UI.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.3.9';
+  const version = '3.3.10';
   const sourceVersion = '3.3.5';
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -14,7 +14,39 @@ const ExtraPotionsCore = (() => {
   const registrations = new WeakMap();
   const floatingNoticeRegistrations = new WeakMap();
   const controllers = new WeakMap();
-  const tokenNames = ['bg', 'panel', 'line', 'text', 'muted', 'accent', 'accent2'];
+  const baseTokenNames = ['bg', 'panel', 'line', 'text', 'muted', 'accent', 'accent2'];
+  const tokenNames = [...baseTokenNames, 'raised', 'inset', 'link', 'focus', 'onAccent'];
+  const hex = value => /^#[0-9a-f]{6}$/i.test(value || '') ? value : '#000000';
+  const rgb = value => [1, 3, 5].map(index => parseInt(hex(value).slice(index, index + 2), 16));
+  const blend = (from, to, amount) => '#' + rgb(from).map((part, index) => Math.round(part + (rgb(to)[index] - part) * amount).toString(16).padStart(2, '0')).join('');
+  const luminance = value => {
+    const parts = rgb(value).map(part => { const channel = part / 255; return channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4; });
+    return .2126 * parts[0] + .7152 * parts[1] + .0722 * parts[2];
+  };
+  const contrast = (one, two) => { const [light, dark] = [luminance(one), luminance(two)].sort((a, b) => b - a); return (light + .05) / (dark + .05); };
+  function readable(candidate, background, fallback) {
+    if (contrast(candidate, background) >= 4.5) return candidate;
+    for (let amount = .15; amount <= 1; amount += .05) {
+      const lighter = blend(candidate, '#ffffff', amount);
+      if (contrast(lighter, background) >= 4.5) return lighter;
+      const darker = blend(candidate, '#000000', amount);
+      if (contrast(darker, background) >= 4.5) return darker;
+    }
+    return fallback;
+  }
+  function semanticTheme(theme = {}) {
+    const panel = hex(theme.panel);
+    const background = hex(theme.bg);
+    const onAccent = [hex(theme.text), background, '#ffffff', '#000000'].sort((a, b) => contrast(b, theme.accent) - contrast(a, theme.accent))[0];
+    return {
+      ...theme,
+      raised: hex(theme.raised) !== '#000000' || theme.raised === '#000000' ? theme.raised : blend(panel, theme.text, .08),
+      inset: hex(theme.inset) !== '#000000' || theme.inset === '#000000' ? theme.inset : blend(background, '#000000', .18),
+      link: theme.link && contrast(theme.link, panel) >= 4.5 ? theme.link : readable(theme.accent2, panel, theme.text),
+      focus: theme.focus && contrast(theme.focus, panel) >= 3 ? theme.focus : readable(theme.accent2, panel, theme.text),
+      onAccent: theme.onAccent && contrast(theme.onAccent, theme.accent) >= 4.5 ? theme.onAccent : onAccent,
+    };
+  }
   // Callers own foreground, accessibility fallbacks, and removing these inline properties.
   // Settings use the persisted JSON schema. Parse in the caller's userscript realm
   // instead of returning a native structuredClone page-realm Xray wrapper.
@@ -73,16 +105,17 @@ const ExtraPotionsCore = (() => {
     .header-icon{width:38px!important;height:38px!important}
     .header-icon .menu-icon{width:38px!important;height:38px!important}
     :host([data-exp-theme-deprioritized="1"]) .theme-row:has(.exp-theme-swatches),:host([data-exp-theme-deprioritized="1"]) #mb-theme-dots{display:none!important}
-    :host([data-exp-theme-deprioritized="1"]) #mb-cluster{--mb-bg:var(--theme-bg)!important;--mb-surface:var(--theme-panel)!important;--mb-chip:var(--theme-panel)!important;--mb-ink:var(--theme-text)!important;--mb-muted:var(--theme-muted)!important;--mb-line:var(--theme-line)!important;--mb-brand:var(--theme-accent)!important;--mb-brand-ink:var(--theme-bg)!important;--mb-hover:var(--theme-panel)!important;--mb-track:var(--theme-line)!important}
+    :host([data-exp-theme-deprioritized="1"]) #mb-cluster{--mb-bg:var(--theme-bg)!important;--mb-surface:var(--theme-panel)!important;--mb-chip:var(--theme-raised)!important;--mb-ink:var(--theme-text)!important;--mb-muted:var(--theme-muted)!important;--mb-line:var(--theme-line)!important;--mb-brand:var(--theme-accent)!important;--mb-brand-ink:var(--theme-onAccent)!important;--mb-hover:var(--theme-raised)!important;--mb-track:var(--theme-line)!important}
     [hidden]{display:none!important}
     .exp-core-theme{position:static;display:contents;color:var(--theme-text);font:13px/1.42 ui-sans-serif,system-ui,"Segoe UI",sans-serif}
     [data-exp-part="dock"],[data-exp-part="launcher"]{position:fixed}
     [data-exp-part="dock"]{color:var(--theme-text);scrollbar-width:thin}
     [data-exp-part="dock"] [data-exp-part="title"]{color:var(--theme-text)}
+    .exp-core-theme a{color:var(--theme-link)}
     button,input,select,textarea{font-family:inherit}
     button{color:inherit}
     button:disabled{opacity:.5;cursor:not-allowed}
-    button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--theme-accent2);outline-offset:2px}
+    button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--theme-focus);outline-offset:2px}
     button.fl-tool-header{width:100%;border:0;background:transparent;color:var(--theme-text);text-align:left;font:inherit}
     .fl-tool-header .fl-tool-chevron{font:11px/1.42 system-ui}
     .fl-tool-body[hidden]{display:none!important}
@@ -104,7 +137,7 @@ const ExtraPotionsCore = (() => {
     .button-grid,.actions,.profile-actions,.menu-footer,.diagnostics-controls>div,.rules-transfer{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;min-width:0}
     .button-grid>*{min-width:0}
     .life-btn.warn{border-color:#cb6868!important;background:#402020!important;color:#ffd7d7!important}
-    input:not([type=file]),textarea{box-sizing:border-box;max-width:100%;min-width:0;border:1px solid var(--theme-line);border-radius:6px;background:var(--theme-bg);color:var(--theme-text);padding:5px 6px;font-size:11px}
+    input:not([type=file]),textarea{box-sizing:border-box;max-width:100%;min-width:0;border:1px solid var(--theme-line);border-radius:6px;background:var(--theme-inset);color:var(--theme-text);padding:5px 6px;font-size:11px}
     input[type=search],textarea{width:100%}
     .identity{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--theme-line)}
     .identity>.copy{flex:1;min-width:0}
@@ -112,7 +145,7 @@ const ExtraPotionsCore = (() => {
     .identity-actions>.life-btn{width:auto;margin:0;padding:3px 6px}
     .theme-row{flex-wrap:wrap}
     .exp-theme-swatches{min-width:0}
-    .appearance-group,.auth-advanced,.rule-card,.stat-card{grid-column:1/-1;min-width:0;border:1px solid var(--theme-line);border-radius:7px;margin-top:6px;padding:6px;background:var(--theme-bg)}
+    .appearance-group,.auth-advanced,.rule-card,.stat-card{grid-column:1/-1;min-width:0;border:1px solid var(--theme-line);border-radius:7px;margin-top:6px;padding:6px;background:var(--theme-inset)}
     summary{cursor:pointer;font-size:11px}
     .feature-pair,.category-grid{display:block}
     .status-value,output{font-size:10px;color:var(--theme-muted)}
@@ -125,7 +158,7 @@ const ExtraPotionsCore = (() => {
     .ward-shell{display:contents}
     .utility-grid,.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
     .workspace-actions{grid-column:1/-1}
-    .setting-arrow,.step-btn{width:25px;min-height:25px;border:1px solid var(--theme-line);border-radius:6px;background:var(--theme-bg);color:var(--theme-text)}
+    .setting-arrow,.step-btn{width:25px;min-height:25px;border:1px solid var(--theme-line);border-radius:6px;background:var(--theme-raised);color:var(--theme-text)}
     .step-value{flex:1;text-align:center;font-size:10px}
     .stepper{display:flex;align-items:center;gap:5px}
   `;
@@ -149,13 +182,13 @@ const ExtraPotionsCore = (() => {
     if (host?.dataset.productId === 'dropper') {
       const selected = host.shadowRoot?.querySelector('#tdh-cluster')?.dataset.uiTheme;
       const theme = DropperReference.UI_THEMES.find(item => item.id === selected);
-      if (theme) return theme;
+      if (theme) return semanticTheme(theme);
     }
     try {
       const value = JSON.parse(host.dataset.expMenuPalette || 'null');
-      if (!value || !['bg','panel','line','text','muted','accent','accent2'].every(key => /^#[0-9a-f]{3,8}$/i.test(value[key]))) return null;
+      if (!value || !baseTokenNames.every(key => /^#[0-9a-f]{3,8}$/i.test(value[key]))) return null;
       if (value.skin && (/url\(|var\(|;|\/\*/i.test(value.skin) || value.skin.length > 300)) return null;
-      return value;
+      return semanticTheme(value);
     } catch { return null; }
   }
   function publishMenuPalette(host, theme) {
@@ -319,7 +352,7 @@ const ExtraPotionsCore = (() => {
   }
   function themes(productTheme) {
     const common = DropperReference.UI_THEMES.filter(t => !['twitch', 'dropper'].includes(t.id));
-    return Object.freeze([...common, DropperReference.CRIMSON_THEME, ...(productTheme ? [productTheme] : [DropperReference.UI_THEMES.at(-1)])].map(t => Object.freeze({ ...t, vars: Object.fromEntries(tokenNames.map(k => [k, t[k]])) })));
+    return Object.freeze([...common, DropperReference.CRIMSON_THEME, ...(productTheme ? [productTheme] : [DropperReference.UI_THEMES.at(-1)])].map(t => { const theme = semanticTheme(t); return Object.freeze({ ...theme, vars: Object.fromEntries(tokenNames.map(k => [k, theme[k]])) }); }));
   }
   function createThemeSwatches({ container, themes: choices, value, onChange = () => {} }) {
     const root = resolveShadowRoot(container);
@@ -604,7 +637,7 @@ const ExtraPotionsCore = (() => {
       paintTheme(deprioritized && menuPalette(owner) || localTheme);
     }
     function setTheme(value, supplied) {
-      if (supplied) choices = supplied.map(t => ({ ...t, ...t.vars, skin:t.skin || t.swatch, skinVertical:t.skinVertical || t.skin || t.swatch }));
+      if (supplied) choices = supplied.map(t => semanticTheme({ ...t, ...t.vars, skin:t.skin || t.swatch, skinVertical:t.skinVertical || t.skin || t.swatch }));
       const alias = ({warm:'ember',discord:'glacier',pine:'verdant',obsidian:'contrast'})[value] || value;
       localTheme = choices.find(t => t.id === alias) || choices.at(-1);
       publishMenuPalette(host, localTheme);

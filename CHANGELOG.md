@@ -1,3 +1,9 @@
+## 3.3.10 — 2026-09-27
+
+- Adds distinct raised and inset surfaces so menus retain visible depth across every palette.
+- Derives accessible link, focus, and accent-text colors without changing established theme identities.
+- Preserves compatible seven-token palettes while publishing the expanded semantic palette contract.
+
 ## 3.3.9 — 2026-09-26
 
 - Compacts System menus and keeps menu width controls together on one row.
