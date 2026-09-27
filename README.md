@@ -20,7 +20,7 @@ The shared menu experience included with ExtraPotions products. No separate inst
 
 Shown in SHIFT: choose which sections appear and reset their arrangement.
 
-<img src="docs/screenshots/menu-arrangement.png" width="480" alt="Menu section visibility and arrangement controls">
+<img src="docs/screenshots/menu-arrangement.png" width="240" alt="Menu section visibility and arrangement controls">
 
 ## Included with your products
 
