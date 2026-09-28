@@ -42,7 +42,6 @@ jobs:
         run: |
           set -euo pipefail
           version="${TAG#v}"
-          npm run extract
           npm run build
           npm test
           node --check dist/exp-core.js
@@ -52,9 +51,9 @@ jobs:
         run: |
           set -euo pipefail
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            git diff --exit-code -- src/dropper-reference.js source-provenance.json dist/exp-core.js dist/manifest.json
+            git diff --exit-code -- dist/exp-core.js dist/manifest.json
           else
-            git add src/dropper-reference.js source-provenance.json dist/exp-core.js dist/manifest.json
+            git add dist/exp-core.js dist/manifest.json
             if ! git diff --cached --quiet; then
               git config user.name 'github-actions[bot]'
               git config user.email '41898282+github-actions[bot]@users.noreply.github.com'

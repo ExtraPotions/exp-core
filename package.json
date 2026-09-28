@@ -6,7 +6,8 @@
     "build": "node scripts/build.cjs",
     "build:check": "node scripts/build.cjs --check",
     "sync:check": "node scripts/sync-products.cjs --check",
-    "test": "npm run build:check && node --test tests/*.test.cjs"
+    "test": "npm run build:check && node --test tests/*.test.cjs",
+    "sync": "node scripts/sync-products.cjs"
   },
   "devDependencies": {
     "acorn": "8.18.0",
