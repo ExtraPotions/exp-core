@@ -1797,7 +1797,7 @@ const ExpMenuArrangement = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.4.0-dev.1';
+  const version = '3.4.0-dev.2';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -1828,6 +1828,16 @@ const ExtraPotionsCore = (() => {
     }),
   });
   const SUITE_EVENT = 'exp-core:suite';
+  const PAGE_BATCH_EVENT = 'exp-core:page-batch';
+  const PRESENTATION_PHASES = Object.freeze({
+    observe: 10,
+    classify: 20,
+    visibility: 30,
+    theme: 40,
+    annotate: 50,
+    ui: 60,
+  });
+  const PRESENTATION_CHANNELS = Object.freeze(['classification', 'visibility', 'surface', 'annotation']);
   const registrations = new WeakMap();
   const floatingNoticeRegistrations = new WeakMap();
   const controllers = new WeakMap();
@@ -2105,6 +2115,172 @@ const ExtraPotionsCore = (() => {
     };
     document.addEventListener(SUITE_EVENT, listener);
     return () => document.removeEventListener(SUITE_EVENT, listener);
+  }
+
+  function normalizePresentationPhases(values = []) {
+    const list = Array.isArray(values) ? values : [values];
+    return [...new Set(list.map(value => String(value || '').trim().toLowerCase()).filter(value => PRESENTATION_PHASES[value]))]
+      .sort((left, right) => PRESENTATION_PHASES[left] - PRESENTATION_PHASES[right]);
+  }
+
+  function presentationProviderNode(productId) {
+    const id = String(productId || '').toLowerCase();
+    if (!/^[a-z][a-z0-9-]+$/.test(id)) return null;
+    return [...document.querySelectorAll('[data-exp-presentation-provider]')]
+      .find(node => node.dataset.expPresentationProvider === id) || null;
+  }
+
+  function registerPresentationProvider(options = {}) {
+    const id = String(options.id || options.productId || '').toLowerCase();
+    if (!/^[a-z][a-z0-9-]+$/.test(id)) throw new Error('Invalid presentation product ID');
+    const phases = normalizePresentationPhases(options.phases || options.phase);
+    if (!phases.length) throw new Error('Presentation provider requires at least one valid phase');
+    let node = presentationProviderNode(id);
+    if (!node) {
+      node = document.createElement('meta');
+      node.dataset.expPresentationProvider = id;
+      (document.documentElement || document.head || document.body)?.append(node);
+    }
+    node.dataset.expPresentationPhases = JSON.stringify(phases);
+    node.dataset.expPresentationPriority = String(Number(options.priority ?? SUITE_PRIORITY[id] ?? 0) || 0);
+    emitSuiteEvent(id, 'presentation.provider-registered', { phases });
+    return Object.freeze({
+      id,
+      phases: Object.freeze([...phases]),
+      dispose() {
+        const current = presentationProviderNode(id);
+        if (current === node) current.remove();
+        emitSuiteEvent(id, 'presentation.provider-unregistered', {});
+      },
+    });
+  }
+
+  function presentationProviders() {
+    return Object.freeze([...document.querySelectorAll('[data-exp-presentation-provider]')].map(node => {
+      let phases = [];
+      try { phases = normalizePresentationPhases(JSON.parse(node.dataset.expPresentationPhases || '[]')); } catch {}
+      return Object.freeze({
+        id: node.dataset.expPresentationProvider,
+        phases: Object.freeze(phases),
+        priority: Number(node.dataset.expPresentationPriority || 0),
+      });
+    }).filter(provider => provider.id)
+      .sort((left, right) => {
+        const leftPhase = Math.min(...left.phases.map(phase => PRESENTATION_PHASES[phase]));
+        const rightPhase = Math.min(...right.phases.map(phase => PRESENTATION_PHASES[phase]));
+        return leftPhase - rightPhase || right.priority - left.priority || left.id.localeCompare(right.id);
+      }));
+  }
+
+  function readPresentationState(target) {
+    if (!(target instanceof Element)) return Object.freeze({});
+    try {
+      const value = JSON.parse(target.getAttribute('data-exp-presentation-state') || '{}');
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return Object.freeze({});
+      return Object.freeze(Object.fromEntries(Object.entries(value).map(([productId, state]) => [
+        productId,
+        Object.freeze({ ...(state && typeof state === 'object' && !Array.isArray(state) ? state : {}) }),
+      ])));
+    } catch {
+      return Object.freeze({});
+    }
+  }
+
+  function setPresentationState(target, productId, patch = {}) {
+    if (!(target instanceof Element)) throw new TypeError('Presentation target must be an Element');
+    const id = String(productId || '').toLowerCase();
+    if (!/^[a-z][a-z0-9-]+$/.test(id)) throw new Error('Invalid presentation product ID');
+    const current = JSON.parse(JSON.stringify(readPresentationState(target)));
+    const next = { ...(current[id] || {}) };
+    for (const [channel, raw] of Object.entries(patch || {})) {
+      if (!PRESENTATION_CHANNELS.includes(channel)) continue;
+      if (raw === null || raw === undefined || raw === '') delete next[channel];
+      else {
+        const value = String(raw).trim().toLowerCase();
+        if (!/^[a-z0-9][a-z0-9._:-]{0,79}$/.test(value)) throw new Error('Invalid presentation state value');
+        next[channel] = value;
+      }
+    }
+    if (Object.keys(next).length) current[id] = next;
+    else delete current[id];
+    if (Object.keys(current).length) target.setAttribute('data-exp-presentation-state', JSON.stringify(current));
+    else target.removeAttribute('data-exp-presentation-state');
+    emitSuiteEvent(id, 'presentation.state-changed', { channels: Object.keys(next) });
+    return readPresentationState(target);
+  }
+
+  function clearPresentationState(target, productId) {
+    return setPresentationState(target, productId, Object.fromEntries(PRESENTATION_CHANNELS.map(channel => [channel, null])));
+  }
+
+  function pageObserverMarker() {
+    return document.querySelector('meta[data-exp-page-observer]');
+  }
+
+  function ensureSharedPageObserver(owner = 'core', options = {}) {
+    let marker = pageObserverMarker();
+    if (marker) return Object.freeze({ leader: false, owner: marker.dataset.expPageObserver || 'unknown' });
+    marker = document.createElement('meta');
+    marker.dataset.expPageObserver = String(owner || 'core').toLowerCase();
+    marker.dataset.expPageObserverProtocol = 'exp-page-observer-v1';
+    marker.dataset.expPageObserverEpoch = '0';
+    (document.documentElement || document.head || document.body)?.append(marker);
+
+    const delay = Math.max(16, Math.min(500, Number(options.delayMs || 60) || 60));
+    let timer = 0;
+    let epoch = 0;
+    let added = 0;
+    let removed = 0;
+    const flush = () => {
+      timer = 0;
+      if (!added && !removed) return;
+      epoch += 1;
+      marker.dataset.expPageObserverEpoch = String(epoch);
+      const payload = JSON.stringify({
+        protocol: 'exp-page-observer-v1',
+        owner: marker.dataset.expPageObserver,
+        epoch,
+        added,
+        removed,
+        href: location.href,
+        at: Date.now(),
+      });
+      added = 0;
+      removed = 0;
+      document.dispatchEvent(new CustomEvent(PAGE_BATCH_EVENT, { detail: payload }));
+    };
+    const observer = new MutationObserver(records => {
+      for (const record of records) {
+        added += record.addedNodes?.length || 0;
+        removed += record.removedNodes?.length || 0;
+      }
+      if (!timer && (added || removed)) timer = setTimeout(flush, delay);
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+    return Object.freeze({ leader: true, owner: marker.dataset.expPageObserver });
+  }
+
+  function observePage(callback, options = {}) {
+    if (typeof callback !== 'function') throw new TypeError('Page observer callback must be a function');
+    ensureSharedPageObserver(options.productId || options.owner || 'core', options);
+    const listener = event => {
+      let payload;
+      try { payload = typeof event.detail === 'string' ? JSON.parse(event.detail) : event.detail; } catch { return; }
+      if (!payload || payload.protocol !== 'exp-page-observer-v1') return;
+      callback(payload);
+    };
+    document.addEventListener(PAGE_BATCH_EVENT, listener);
+    return () => document.removeEventListener(PAGE_BATCH_EVENT, listener);
+  }
+
+  function pageObserverState() {
+    const marker = pageObserverMarker();
+    return Object.freeze({
+      active: Boolean(marker),
+      owner: marker?.dataset.expPageObserver || null,
+      protocol: marker?.dataset.expPageObserverProtocol || null,
+      epoch: Number(marker?.dataset.expPageObserverEpoch || 0),
+    });
   }
 
   function registerDiagnosticsProduct(productId, productVersion, host) {
@@ -2984,6 +3160,6 @@ const ExtraPotionsCore = (() => {
     return Object.freeze({ lifecycle, diagnostics, updates });
   }
 
-  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,onSuiteEvent,pageContext,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:ExtraPotionsDiagnostics.compatibility,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
+  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,onSuiteEvent,pageContext,registerPresentationProvider,presentationProviders,readPresentationState,setPresentationState,clearPresentationState,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePage,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:ExtraPotionsDiagnostics.compatibility,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
   return api;
 })();
