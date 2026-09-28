@@ -1,9 +1,9 @@
 ## 3.3.13 — Unreleased
 
-- Makes exp-core the canonical owner of the shared ExtraPotions foundation.
-- Removes Dropper-derived Core generation and treats Dropper as a downstream Core consumer.
-- Adds pinned byte-for-byte Core verification for Dropper, SHIFT, PRISMA, and WARD.
-- Adds automatic Core artifact generation on main.
+- Makes exp-core the canonical owner of shared ExtraPotions UI and runtime infrastructure, with Core-native provenance and public shared-service APIs.
+- Removes the legacy Dropper-to-Core extraction and synchronization paths, and treats Dropper as a downstream Core consumer like SHIFT, PRISMA, and WARD.
+- Requires every consumer to pin and byte-verify a published exp-core artifact, with ownership tests preventing product-local reimplementation of shared infrastructure.
+- Centralizes Core-driven consumer rollout in exp-core so a released Core change is synchronized, rebuilt, tested, patch-versioned, and published by each consumer automatically.
 
 ## 3.3.12 — 2026-09-27
 
