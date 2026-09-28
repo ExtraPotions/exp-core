@@ -1,4 +1,4 @@
-## 3.3.13 — Unreleased
+## 3.3.13 — 2026-09-27
 
 - Makes exp-core the canonical owner of shared ExtraPotions UI and runtime infrastructure, with Core-native provenance and public shared-service APIs.
 - Removes the legacy Dropper-to-Core extraction and synchronization paths, and treats Dropper as a downstream Core consumer like SHIFT, PRISMA, and WARD.
