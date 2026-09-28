@@ -454,34 +454,47 @@ const ExtraPotionsCore = (() => {
     const delay = Math.max(16, Math.min(500, Number(options.delayMs || 60) || 60));
     let timer = 0;
     let epoch = 0;
-    let added = 0;
-    let removed = 0;
+    const pending = new Map();
+    const queue = (target, record) => {
+      if (!(target instanceof Element)) return;
+      if (target.closest?.('[data-exp-owned="1"]')) return;
+      const state = pending.get(target) || { types: new Set(), added: 0, removed: 0 };
+      state.types.add(record.type);
+      state.added += record.addedNodes?.length || 0;
+      state.removed += record.removedNodes?.length || 0;
+      pending.set(target, state);
+    };
     const flush = () => {
       timer = 0;
-      if (!added && !removed) return;
+      const entries = [...pending.entries()].filter(([target]) => target.isConnected);
+      pending.clear();
+      if (!entries.length) return;
       epoch += 1;
       marker.dataset.expPageObserverEpoch = String(epoch);
-      const payload = JSON.stringify({
-        protocol: 'exp-page-observer-v1',
-        owner: marker.dataset.expPageObserver,
-        epoch,
-        added,
-        removed,
-        href: location.href,
-        at: Date.now(),
+      entries.forEach(([target, state], index) => {
+        const payload = JSON.stringify({
+          protocol: 'exp-page-observer-v1',
+          owner: marker.dataset.expPageObserver,
+          epoch,
+          rootIndex: index,
+          rootCount: entries.length,
+          types: [...state.types].sort(),
+          added: state.added,
+          removed: state.removed,
+          href: location.href,
+          at: Date.now(),
+        });
+        target.dispatchEvent(new CustomEvent(PAGE_BATCH_EVENT, { bubbles: true, composed: true, detail: payload }));
       });
-      added = 0;
-      removed = 0;
-      document.dispatchEvent(new CustomEvent(PAGE_BATCH_EVENT, { detail: payload }));
     };
     const observer = new MutationObserver(records => {
       for (const record of records) {
-        added += record.addedNodes?.length || 0;
-        removed += record.removedNodes?.length || 0;
+        const target = record.target?.nodeType === Node.TEXT_NODE ? record.target.parentElement : record.target;
+        queue(target, record);
       }
-      if (!timer && (added || removed)) timer = setTimeout(flush, delay);
+      if (!timer && pending.size) timer = setTimeout(flush, delay);
     });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
     return Object.freeze({ leader: true, owner: marker.dataset.expPageObserver });
   }
 
@@ -492,7 +505,7 @@ const ExtraPotionsCore = (() => {
       let payload;
       try { payload = typeof event.detail === 'string' ? JSON.parse(event.detail) : event.detail; } catch { return; }
       if (!payload || payload.protocol !== 'exp-page-observer-v1') return;
-      callback(payload);
+      callback(payload, event.target instanceof Element ? event.target : document.documentElement);
     };
     document.addEventListener(PAGE_BATCH_EVENT, listener);
     return () => document.removeEventListener(PAGE_BATCH_EVENT, listener);
