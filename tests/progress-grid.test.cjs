@@ -24,7 +24,8 @@ for(const viewport of [{width:1280,height:900},{width:360,height:640}])test(`${v
   const boxes=()=>page.evaluate(()=>[...document.querySelectorAll('[data-exp-product-launcher="1"]')].map(h=>{const n=h.shadowRoot.querySelector('[data-exp-part="launcher"],.launcher');const r=n.getBoundingClientRect();return{id:h.dataset.productId,row:Number(h.dataset.launcherRow),column:Number(h.dataset.launcherColumn),top:r.top,bottom:r.bottom,left:r.left,right:r.right};}));
   for(const anchor of ['bottom','top']){
     await page.evaluate(anchor=>{localStorage.setItem('exp:v3:launcher-grid-delta',anchor==='top'?String(-(innerHeight-68)):'0');document.dispatchEvent(new CustomEvent('exp-core:coordination',{detail:{type:'launcher-grid-moved'}}));},anchor);
-    await page.waitForTimeout(80);
+    await page.waitForFunction(expected => document.documentElement.dataset.expLauncherAnchor === expected, anchor);
+    await page.waitForTimeout(20);
     const before=await boxes(),dropper=before.find(n=>n.id==='dropper');
     assert.equal(new Set(before.filter(n=>n.row===0).map(n=>n.column)).size,3);
     for(const l of before){assert.ok(Math.abs(l.top-(dropper.top+(anchor==='top'?1:-1)*l.row*56))<1,`${anchor} ${JSON.stringify(before)}`);assert.ok(Math.abs(l.right-(dropper.right-l.column*56))<1);}
