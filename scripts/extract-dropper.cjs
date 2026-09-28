@@ -6,9 +6,9 @@ const acorn = require('acorn');
 
 const root = path.resolve(__dirname, '..');
 const normalize = (text) => text.replace(/\r\n/g, '\n');
-const sourceVersion = '3.3.5';
-const expected = '4de0029a03fd5217a65e28888eb38a28705f19138fbcb22dc8c9066fb879352b';
-const expectedCommit = '0fe4fb9d90a112767d46fc13aba27918fd783f92';
+const sourceVersion = '3.3.15';
+const expected = '438fa8c0468f58181429ab17b1a44c803b51365d130ab6aef430f7df09536de8';
+const expectedCommit = '8540fc3c94883d76eb4c1f8d6056d6227e8373a3';
 const releaseUrl = 'https://raw.githubusercontent.com/ExtraPotions/Dropper/v3.3.5/dropper.user.js';
 const sourceArg = process.argv.find(value => value.startsWith('--source='));
 const requestedSource = sourceArg?.slice(9) || '';
