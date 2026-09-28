@@ -521,3 +521,27 @@ test('simultaneous product notices stack beside the complete launcher grid', asy
   assert.ok(facts.notices[0].bottom <= facts.notices[1].top, JSON.stringify(facts));
   assert.ok(facts.notices[1].bottom <= facts.gridTop, JSON.stringify(facts));
 });
+
+test('Core product services resolve product versions lazily', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    let version = '';
+    const services = ExtraPotionsCore.createProductServices({
+      productId: 'ward',
+      repository: 'ExtraPotions/WARD',
+      currentVersion: () => version,
+      enabled: () => false,
+    });
+    version = '3.2.23';
+    const status = services.updates.status();
+    return {
+      current: status.current,
+      exposed: services.updates.CURRENT_VERSION,
+      lifecycle: Boolean(services.lifecycle),
+      diagnostics: Boolean(services.diagnostics),
+    };
+  });
+  assert.deepEqual(result, { current: '3.2.23', exposed: '3.2.23', lifecycle: true, diagnostics: true });
+});
