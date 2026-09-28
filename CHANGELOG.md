@@ -1,3 +1,10 @@
+## 3.4.0-dev.8 — 2026-09-28
+
+- Makes product diagnostics registration the single bootstrap point for Core-owned interoperability metadata.
+- Automatically registers each known product's suite role/capabilities and presentation phases from the Core contract.
+- Removes the need for products to repeat suite and presentation registration blocks.
+- Keeps Dropper out of the general page-presentation pipeline while retaining its flagship suite role.
+
 ## 3.4.0-dev.7 — 2026-09-28
 
 - Enforces Core presentation phases during shared DOM scheduler execution instead of treating phase order as metadata only.
