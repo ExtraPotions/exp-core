@@ -58,6 +58,30 @@ test('Core arrangement preserves order and hidden keys while adding categories',
   assert.deepEqual(result.groups,['appearance','advanced']);
 });
 
+
+test('Core does not re-collapse a submenu after the user opens it',async t=>{
+  const browser=await chromium.launch({headless:true});t.after(()=>browser.close());
+  const page=await browser.newPage();await page.setContent('<!doctype html><html><body></body></html>');await page.addScriptTag({content:source});
+  const result=await page.evaluate(()=>{
+    const panel=document.createElement('aside');panel.style.cssText='--theme-line:#444;--theme-bg:#111;--theme-panel:#18181d;--theme-muted:#aaa;--theme-accent:#8b5cf6;--theme-text:#fff';
+    const make=(key,label)=>{const s=document.createElement('section');s.className='fl-tool-panel';const h=document.createElement('button');h.className='fl-tool-header';h.dataset.section=key;const t=document.createElement('span');t.className='fl-tool-title';t.textContent=label;h.append(t);const b=document.createElement('div');b.className='fl-tool-body';s.append(h,b);return s;};
+    const appearance=make('appearance','Appearance');
+    const nested=ExtraPotionsCore.createMenuCategoryDisclosure('Readability','appearance',document.createElement('div'));
+    appearance.querySelector('.fl-tool-body').append(nested);
+    panel.append(appearance,make('advanced','Advanced'),make('system','System'));document.body.append(panel);
+    const controller=ExtraPotionsCore.mountMenuArrangement({panel,id:'shift'});
+    const initiallyOpen=nested.open;
+    nested.open=true;
+    controller.update();
+    const afterUpdate=nested.open;
+    ExtraPotionsCore.collapseMenuSubmenus(panel);
+    const afterCollapsePass=nested.open;
+    controller.destroy();
+    return {initiallyOpen,afterUpdate,afterCollapsePass};
+  });
+  assert.deepEqual(result,{initiallyOpen:false,afterUpdate:true,afterCollapsePass:true});
+});
+
 test('Core menu arrangement fits full compact and narrow widths',async t=>{
   const browser=await chromium.launch({headless:true});t.after(()=>browser.close());
   const page=await browser.newPage({viewport:{width:900,height:700}});await page.setContent('<!doctype html><html><body></body></html>');await page.addScriptTag({content:source});
@@ -65,7 +89,7 @@ test('Core menu arrangement fits full compact and narrow widths',async t=>{
     const facts=await page.evaluate(mode=>{
       const panel=document.createElement('aside');panel.dataset.expMenuWidth=mode;panel.style.cssText=`box-sizing:border-box;width:${ExtraPotionsCore.menuWidthForMode(mode)}px;--theme-line:#444;--theme-bg:#111;--theme-panel:#18181d;--theme-muted:#aaa;--theme-accent:#8b5cf6;--theme-text:#fff`;
       const make=(key,label)=>{const s=document.createElement('section');s.className='fl-tool-panel';const h=document.createElement('button');h.className='fl-tool-header';h.dataset.section=key;const t=document.createElement('span');t.className='fl-tool-title';t.textContent=label;h.append(t);const b=document.createElement('div');b.className='fl-tool-body';s.append(h,b);return s;};
-      const appearance=make('appearance','Appearance');const nested=ExtraPotionsCore.createMenuCategoryDisclosure('Readability','appearance',document.createElement('div'));nested.open=true;appearance.querySelector('.fl-tool-body').append(nested);
+      const appearance=make('appearance','Appearance');const nested=ExtraPotionsCore.createMenuCategoryDisclosure('Readability','appearance',document.createElement('div'));appearance.querySelector('.fl-tool-body').append(nested);
       panel.append(appearance,make('effects','Effects & Integrations'),make('profiles','Profiles & Sites'),make('system','System'));document.body.append(panel);
       const controller=ExtraPotionsCore.mountMenuArrangement({panel,id:'shift'});const editor=panel.querySelector('.exp-menu-editor');
       const result={width:panel.getBoundingClientRect().width,expected:ExtraPotionsCore.menuWidthForMode(mode),editorFits:editor.scrollWidth<=editor.clientWidth+1,groupsFit:[...editor.querySelectorAll('.exp-menu-category-group')].every(g=>g.scrollWidth<=g.clientWidth+1),nestedOpen:nested.open,editorOpen:editor.open};
