@@ -4,10 +4,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const reference = fs.readFileSync(path.join(__dirname, '..', 'src', 'dropper-reference.js'), 'utf8');
+const reference = fs.readFileSync(path.join(__dirname, '..', 'src', 'foundation.js'), 'utf8');
 const runtime = fs.readFileSync(path.join(__dirname, '..', 'src', 'runtime.js'), 'utf8');
 
-test('Core exposes the locked common order and swaps Twitch for Crimson outside Dropper', () => {
+test('Core exposes the locked common palette order and product-neutral Crimson fallback', () => {
   const ids = ['ember', 'midnight', 'glacier', 'contrast', 'verdant', 'pride'];
   let cursor = -1;
   for (const id of ids) {
