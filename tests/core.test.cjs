@@ -150,6 +150,7 @@ test('suite event channel crosses product boundaries with serialized payloads', 
 test('Core exposes a product-neutral shared page context', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage();
+  await page.route('https://example.test/**', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html><body></body></html>' }));
   await page.goto('https://example.test/products/42?x=1');
   await page.addScriptTag({ content: source });
   const context = await page.evaluate(() => ExtraPotionsCore.pageContext());
