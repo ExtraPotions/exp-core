@@ -122,6 +122,25 @@ test('Core owns canonical interoperability contracts for the current suite', asy
   assert.deepEqual(contracts.prisma.presentationPhases, ['annotate']);
 });
 
+test('diagnostics registration bootstraps Core-owned interoperability metadata', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const state = await page.evaluate(() => {
+    ExtraPotionsCore.registerDiagnosticsProduct('ward', '3.2.25');
+    ExtraPotionsCore.registerDiagnosticsProduct('shift', '3.4.12');
+    ExtraPotionsCore.registerDiagnosticsProduct('prisma', '3.1.11');
+    ExtraPotionsCore.registerDiagnosticsProduct('dropper', '3.3.20');
+    return {
+      suite: ExtraPotionsCore.suiteSnapshot(),
+      presentation: ExtraPotionsCore.presentationProviders(),
+    };
+  });
+  assert.deepEqual(state.suite.products.map(item => item.id), ['dropper', 'shift', 'ward', 'prisma']);
+  assert.deepEqual(state.presentation.map(item => item.id), ['ward', 'shift', 'prisma']);
+  assert.deepEqual(state.presentation.map(item => item.phases), [['classify', 'visibility'], ['theme'], ['annotate']]);
+});
+
 test('suite registry exposes the flagship product order and product capabilities', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
