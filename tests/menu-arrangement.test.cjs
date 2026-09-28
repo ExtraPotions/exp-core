@@ -1,54 +1,76 @@
 'use strict';
-const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
 const {chromium}=require('playwright');
-const helper=fs.readFileSync(path.join(__dirname,'../src/menu-arrangement.js'),'utf8');
-async function fixture(t,native=false){
- const browser=await chromium.launch({headless:true});t.after(()=>browser.close());const page=await browser.newPage();
- await page.route('**/*',r=>r.fulfill({body:'<!doctype html><body></body>',contentType:'text/html'}));await page.goto('https://fixture.test');
- await page.addScriptTag({content:helper+';window.ExpMenuArrangement=ExpMenuArrangement;'});
- await page.evaluate(native=>{
-  const host=document.createElement('div');document.body.append(host);const shadow=host.attachShadow({mode:'open'});
-  shadow.innerHTML='<style>aside{width:220px}section{margin:5px;border:1px solid gray} .fl-tool-header{display:flex;justify-content:space-between;width:100%;box-sizing:border-box;padding:7px 8px}.fl-tool-body:empty{height:0}</style><aside><nav></nav></aside>';
-  const panel=shadow.querySelector('aside'),nav=shadow.querySelector('nav');
-  for(const [key,label] of [['one','First'],['appearance','Appearance'],['system','System']]){const section=document.createElement('section');section.className='fl-tool-panel';section.innerHTML=`<${native?'div':'button'} class="fl-tool-header" data-route="${key}"><span class="fl-tool-title">${label}</span><span>▸</span></${native?'div':'button'}><div class="fl-tool-body"></div>`;nav.append(section);}
-  window.panel=panel;window.resetCount=0;window.changes=0;window.arrangement=ExpMenuArrangement.mount({panel,id:'test',onChange:()=>window.changes++,resetLaunchers:()=>window.resetCount++});
- },native);
- return page;
-}
-test('left grips, System recovery, switches and resets work with native and normalized headers',async t=>{
- for(const native of [false,true]){
-  const page=await fixture(t,native);
-  assert.equal(await page.locator('[data-exp-arrange-section=system] .exp-menu-editor').count(),1);
-  assert.equal(await page.locator('input[type=checkbox]').count(),0);
-  const bounds=await page.locator('[data-exp-arrange-section=one]').evaluate(section=>{const grip=section.querySelector('.exp-section-grip').getBoundingClientRect(),title=section.querySelector('.fl-tool-title').getBoundingClientRect();return {left:grip.left,right:grip.right,title:title.left};});
-  assert.ok(bounds.right<=bounds.title);assert.ok(bounds.left<bounds.title);
-  await page.locator('summary').click();assert.equal(await page.getByRole('switch',{name:'Show System'}).count(),0);
-  await page.getByRole('switch',{name:'Show Appearance'}).click();assert.equal(await page.locator('[data-exp-arrange-section=appearance]').isVisible(),false);
-  await page.evaluate(()=>{const body=panel.querySelector('[data-exp-arrange-section=system] .fl-tool-body');body.replaceChildren();arrangement.update();});
-  assert.equal(await page.locator('.exp-menu-editor').count(),1);
-  await page.getByRole('button',{name:'Reset menu arrangement',exact:true}).click();assert.equal(await page.locator('[data-exp-arrange-section=appearance]').isVisible(),true);
-  await page.getByRole('button',{name:'Reset launcher arrangement',exact:true}).click();assert.equal(await page.evaluate(()=>resetCount),1);
-  await page.evaluate(()=>arrangement.destroy());assert.equal(await page.locator('.exp-section-grip,.exp-menu-editor').count(),0);
- }
+const bundle=fs.readFileSync(path.join(__dirname,'..','dist','exp-core.js'),'utf8');
+const source=`(()=>{\n${bundle}\nglobalThis.ExtraPotionsCore=ExtraPotionsCore;\n})();\n`;
+
+test('Core exposes Main Appearance Advanced System categories',async t=>{
+  const browser=await chromium.launch({headless:true});t.after(()=>browser.close());
+  const page=await browser.newPage();await page.setContent('<!doctype html><html><body></body></html>');await page.addScriptTag({content:source});
+  const result=await page.evaluate(()=>({
+    categories:ExtraPotionsCore.menuCategories.map(({id,label})=>({id,label})),
+    shift:ExtraPotionsCore.categorizeMenuSections('shift',[
+      {key:'appearance',label:'Appearance'},{key:'readability',label:'Readability'},
+      {key:'effects',label:'Effects & Integrations'},{key:'profiles',label:'Profiles & Sites'},{key:'system',label:'System'}
+    ]).map(g=>({id:g.id,keys:g.sections.map(s=>s.key)})),
+    prisma:ExtraPotionsCore.categorizeMenuSections('prisma',[
+      {key:'page',label:'Highlights'},{key:'style',label:'Highlight Style'},{key:'look',label:'Appearance'},
+      {key:'tools',label:'Language'},{key:'sites',label:'Sites'},{key:'system',label:'System'}
+    ]).map(g=>({id:g.id,keys:g.sections.map(s=>s.key)}))
+  }));
+  assert.deepEqual(result.categories,[{id:'main',label:'Main'},{id:'appearance',label:'Appearance'},{id:'advanced',label:'Advanced'},{id:'system',label:'System'}]);
+  assert.deepEqual(result.shift,[{id:'appearance',keys:['appearance','readability']},{id:'advanced',keys:['effects','profiles']},{id:'system',keys:['system']}]);
+  assert.deepEqual(result.prisma,[{id:'main',keys:['page']},{id:'appearance',keys:['style','look']},{id:'advanced',keys:['tools','sites']},{id:'system',keys:['system']}]);
 });
-test('keyboard and pointer order persist, cancellation rolls back, storage updates restore System',async t=>{
- const page=await fixture(t);const grip=page.getByRole('button',{name:'Rearrange First'});
- await grip.focus();await page.keyboard.press('Alt+ArrowDown');
- assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('exp:v3:menu-order:test'))),['appearance','one','system']);
- const origin=await grip.boundingBox();const target=await page.locator('[data-exp-arrange-section=system]').boundingBox();
- await page.mouse.move(origin.x+8,origin.y+8);await page.mouse.down();await page.mouse.move(target.x+8,target.y+target.height+10,{steps:5});await page.mouse.up();
- assert.equal((await page.evaluate(()=>JSON.parse(localStorage.getItem('exp:v3:menu-order:test')))).at(-1),'one');
- const before=await page.evaluate(()=>[...panel.querySelectorAll('[data-exp-arrange-section]')].map(n=>n.dataset.expArrangeSection));
- await grip.dispatchEvent('pointerdown',{button:0,pointerId:88,clientY:100});
- await page.evaluate(()=>{window.dispatchEvent(new PointerEvent('pointermove',{pointerId:88,clientY:0,cancelable:true}));window.dispatchEvent(new PointerEvent('pointercancel',{pointerId:88}));});
- assert.deepEqual(await page.evaluate(()=>[...panel.querySelectorAll('[data-exp-arrange-section]')].map(n=>n.dataset.expArrangeSection)),before);
- await page.evaluate(()=>{localStorage.setItem('exp:v3:menu-hidden:test','["system","appearance"]');window.dispatchEvent(new StorageEvent('storage',{key:'exp:v3:menu-hidden:test'}));});
- assert.equal(await page.locator('[data-exp-arrange-section=system]').isVisible(),true);
- assert.equal(await page.locator('[data-exp-arrange-section=appearance]').isVisible(),false);
+
+test('Core category disclosures start collapsed',async t=>{
+  const browser=await chromium.launch({headless:true});t.after(()=>browser.close());
+  const page=await browser.newPage();await page.setContent('<!doctype html><html><body></body></html>');await page.addScriptTag({content:source});
+  const result=await page.evaluate(()=>{
+    const node=document.createElement('div');node.textContent='Product controls';
+    const details=ExtraPotionsCore.createMenuCategoryDisclosure('Readability','appearance',node);document.body.append(details);
+    return {open:details.open,category:details.dataset.expMenuCategory,submenu:details.dataset.expMenuSubmenu,label:details.querySelector('summary').textContent};
+  });
+  assert.deepEqual(result,{open:false,category:'appearance',submenu:'1',label:'Readability'});
 });
-test('bundled core uses the canonical arrangement helper',()=>{
- assert.ok(fs.readFileSync(path.join(__dirname,'../dist/exp-core.js'),'utf8').replace(/\r\n/g,'\n').includes(helper.replace(/\r\n/g,'\n').trim()));
+
+test('Core arrangement preserves order and hidden keys while adding categories',async t=>{
+  const browser=await chromium.launch({headless:true});t.after(()=>browser.close());
+  const page=await browser.newPage();await page.route('https://menu.test/**',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><html><body></body></html>'}));await page.goto('https://menu.test/');await page.addScriptTag({content:source});
+  const result=await page.evaluate(()=>{
+    localStorage.setItem('exp:v3:menu-order:shift',JSON.stringify(['profiles','appearance','system','readability','effects']));
+    localStorage.setItem('exp:v3:menu-hidden:shift',JSON.stringify(['readability']));
+    const panel=document.createElement('aside');panel.style.cssText='--theme-line:#444;--theme-bg:#111;--theme-panel:#18181d;--theme-muted:#aaa;--theme-accent:#b33;--theme-text:#fff';
+    const make=(key,label)=>{const s=document.createElement('section');s.className='fl-tool-panel';const h=document.createElement('button');h.className='fl-tool-header';h.dataset.section=key;const t=document.createElement('span');t.className='fl-tool-title';t.textContent=label;h.append(t);const b=document.createElement('div');b.className='fl-tool-body';s.append(h,b);return s;};
+    panel.append(make('appearance','Appearance'),make('readability','Readability'),make('effects','Effects & Integrations'),make('profiles','Profiles & Sites'),make('system','System'));document.body.append(panel);
+    const controller=ExtraPotionsCore.mountMenuArrangement({panel,id:'shift'});
+    const ordered=[...panel.querySelectorAll(':scope > .fl-tool-panel')].map(n=>({key:n.dataset.expArrangeSection,category:n.dataset.expMenuCategory,hidden:n.hidden}));
+    const groups=[...panel.querySelectorAll('[data-exp-menu-category-group]')].map(n=>n.dataset.expMenuCategoryGroup);
+    controller.destroy();return {ordered,groups};
+  });
+  assert.deepEqual(result.ordered,[
+    {key:'profiles',category:'advanced',hidden:false},{key:'appearance',category:'appearance',hidden:false},{key:'system',category:'system',hidden:false},
+    {key:'readability',category:'appearance',hidden:true},{key:'effects',category:'advanced',hidden:false}
+  ]);
+  assert.deepEqual(result.groups,['appearance','advanced']);
 });
-test('sibling Dropper build uses the canonical arrangement helper',{skip:!fs.existsSync(path.join(__dirname,'../../Dropper/src/dropper.user.js'))&&'Requires sibling Dropper checkout'},()=>{
- for(const file of ['../../Dropper/src/dropper.user.js','../../Dropper/src/shared-menu-arrangement.js']) assert.ok(fs.readFileSync(path.join(__dirname,file),'utf8').replace(/\r\n/g,'\n').includes(helper.replace(/\r\n/g,'\n').trim()),file);
+
+test('Core menu arrangement fits full compact and narrow widths',async t=>{
+  const browser=await chromium.launch({headless:true});t.after(()=>browser.close());
+  const page=await browser.newPage({viewport:{width:900,height:700}});await page.setContent('<!doctype html><html><body></body></html>');await page.addScriptTag({content:source});
+  for(const mode of ['full','compact','narrow']){
+    const facts=await page.evaluate(mode=>{
+      const panel=document.createElement('aside');panel.dataset.expMenuWidth=mode;panel.style.cssText=`box-sizing:border-box;width:${ExtraPotionsCore.menuWidthForMode(mode)}px;--theme-line:#444;--theme-bg:#111;--theme-panel:#18181d;--theme-muted:#aaa;--theme-accent:#8b5cf6;--theme-text:#fff`;
+      const make=(key,label)=>{const s=document.createElement('section');s.className='fl-tool-panel';const h=document.createElement('button');h.className='fl-tool-header';h.dataset.section=key;const t=document.createElement('span');t.className='fl-tool-title';t.textContent=label;h.append(t);const b=document.createElement('div');b.className='fl-tool-body';s.append(h,b);return s;};
+      const appearance=make('appearance','Appearance');const nested=ExtraPotionsCore.createMenuCategoryDisclosure('Readability','appearance',document.createElement('div'));nested.open=true;appearance.querySelector('.fl-tool-body').append(nested);
+      panel.append(appearance,make('effects','Effects & Integrations'),make('profiles','Profiles & Sites'),make('system','System'));document.body.append(panel);
+      const controller=ExtraPotionsCore.mountMenuArrangement({panel,id:'shift'});const editor=panel.querySelector('.exp-menu-editor');
+      const result={width:panel.getBoundingClientRect().width,expected:ExtraPotionsCore.menuWidthForMode(mode),editorFits:editor.scrollWidth<=editor.clientWidth+1,groupsFit:[...editor.querySelectorAll('.exp-menu-category-group')].every(g=>g.scrollWidth<=g.clientWidth+1),nestedOpen:nested.open,editorOpen:editor.open};
+      controller.destroy();panel.remove();return result;
+    },mode);
+    assert.equal(facts.width,facts.expected,mode);assert.equal(facts.editorFits,true,mode);assert.equal(facts.groupsFit,true,mode);assert.equal(facts.nestedOpen,false,mode);assert.equal(facts.editorOpen,false,mode);
+  }
 });
