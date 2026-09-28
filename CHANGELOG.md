@@ -1,3 +1,10 @@
+## 3.4.0-dev.6 — 2026-09-28
+
+- Makes Core the single source of truth for product role, suite priority, capabilities, and presentation phases.
+- Adds a public suite-contract lookup for interoperable products and diagnostics.
+- Lets products register by ID/version only instead of duplicating Core-owned interoperability metadata.
+- Keeps product-specific lifecycle capabilities and engine behavior in each product.
+
 ## 3.4.0-dev.5 — 2026-09-28
 
 - Adds suite interoperability state to Core diagnostics.
