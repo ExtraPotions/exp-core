@@ -106,6 +106,22 @@ test('Dropper product chrome factories provide support actions and menu notices'
   });
 });
 
+test('Core owns canonical interoperability contracts for the current suite', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const contracts = await page.evaluate(() => Object.fromEntries(
+    ['dropper', 'shift', 'ward', 'prisma'].map(id => [id, ExtraPotionsCore.suiteContract(id)])
+  ));
+  assert.equal(contracts.dropper.role, 'flagship');
+  assert.equal(contracts.dropper.priority, 4);
+  assert.deepEqual(contracts.dropper.capabilities, ['twitch.drops', 'twitch.campaigns', 'twitch.progress', 'twitch.claims', 'twitch.stream-management']);
+  assert.deepEqual(contracts.dropper.presentationPhases, []);
+  assert.deepEqual(contracts.shift.presentationPhases, ['theme']);
+  assert.deepEqual(contracts.ward.presentationPhases, ['classify', 'visibility']);
+  assert.deepEqual(contracts.prisma.presentationPhases, ['annotate']);
+});
+
 test('suite registry exposes the flagship product order and product capabilities', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
@@ -165,9 +181,9 @@ test('presentation providers follow the shared composition order', async (t) => 
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
   await page.addScriptTag({ content: source });
   const providers = await page.evaluate(() => {
-    ExtraPotionsCore.registerPresentationProvider({ productId: 'prisma', phases: ['annotate'] });
-    ExtraPotionsCore.registerPresentationProvider({ productId: 'shift', phases: ['theme'] });
-    ExtraPotionsCore.registerPresentationProvider({ productId: 'ward', phases: ['classify', 'visibility'] });
+    ExtraPotionsCore.registerPresentationProvider({ productId: 'prisma' });
+    ExtraPotionsCore.registerPresentationProvider({ productId: 'shift' });
+    ExtraPotionsCore.registerPresentationProvider({ productId: 'ward' });
     return ExtraPotionsCore.presentationProviders();
   });
   assert.deepEqual(providers.map(item => item.id), ['ward', 'shift', 'prisma']);
