@@ -191,6 +191,29 @@ test('presentation state keeps product ownership separate on one DOM element', a
   assert.match(state.raw, /"ward"/u);
 });
 
+test('presentation suppression follows ancestor visibility state without treating dim as hidden', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage();
+  await page.setContent('<!doctype html><html><body><section id="outer"><span id="inner">Text</span></section></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    const outer = document.querySelector('#outer');
+    const inner = document.querySelector('#inner');
+    ExtraPotionsCore.setPresentationState(outer, 'ward', { visibility: 'dim' });
+    const dimSuppressed = ExtraPotionsCore.isPresentationSuppressed(inner);
+    ExtraPotionsCore.setPresentationState(outer, 'ward', { visibility: 'collapse' });
+    const collapsedSuppressed = ExtraPotionsCore.isPresentationSuppressed(inner);
+    return {
+      dimSuppressed,
+      collapsedSuppressed,
+      chain: ExtraPotionsCore.presentationStateChain(inner).map(entry => entry.state),
+    };
+  });
+  assert.equal(result.dimSuppressed, false);
+  assert.equal(result.collapsedSuppressed, true);
+  assert.equal(result.chain[0].ward.visibility, 'collapse');
+});
+
 test('shared page observation uses one DOM leader and broadcasts mutation batches', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
