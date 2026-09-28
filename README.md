@@ -22,6 +22,14 @@ Shown in SHIFT: choose which sections appear and reset their arrangement.
 
 <img src="docs/screenshots/menu-arrangement.png" width="240" alt="Menu section visibility and arrangement controls">
 
+## Architecture
+
+exp-core is the canonical implementation of shared ExtraPotions infrastructure. Product repositories consume a pinned released Core artifact; they do not define or feed shared behavior back into Core.
+
+Shared launcher coordination, menu geometry and themes, diagnostics, notices, update chrome, compatibility controls, and other cross-product UI/runtime behavior belong here. Dropper, SHIFT, PRISMA, WARD, and future products keep only their product-specific engines and integrations.
+
+A released Core update is synchronized into each consumer, verified byte-for-byte against the pinned Core tag, tested with that product, and prepared as a product patch release automatically.
+
 ## Included with your products
 
 Install [Dropper](https://github.com/ExtraPotions/Dropper), [SHIFT](https://github.com/ExtraPotions/SHIFT), [PRISMA](https://github.com/ExtraPotions/PRISMA), or [WARD](https://github.com/ExtraPotions/WARD). The shared menu experience is included.
