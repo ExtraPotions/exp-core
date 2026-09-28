@@ -1,3 +1,9 @@
+## 3.3.17 — Unreleased
+
+- Preserves a Core-owned submenu after the user opens it during a menu arrangement refresh.
+- Prevents shared layout normalization from immediately re-collapsing navigation targets such as SHIFT site/profile controls.
+- Adds regression coverage for user-opened submenu persistence while keeping initial submenu state collapsed.
+
 ## 3.3.16 — 2026-09-28
 
 - Adds Core-owned Main, Appearance, Advanced, and System menu category primitives.
