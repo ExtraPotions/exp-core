@@ -1841,7 +1841,7 @@ const ExpMenuArrangement = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.4.0-dev.7';
+  const version = '3.4.0-dev.8';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -2436,7 +2436,9 @@ const ExtraPotionsCore = (() => {
 
   function registerDiagnosticsProduct(productId, productVersion, host) {
     const result = ExtraPotionsDiagnostics.registerProduct(productId, productVersion, host);
+    const contract = suiteContract(productId);
     registerSuiteProduct({ productId, productVersion });
+    if (contract?.presentationPhases?.length) registerPresentationProvider({ productId });
     return result;
   }
   function menuThemeOwner() {
