@@ -1,3 +1,10 @@
+## 3.3.13 — Unreleased
+
+- Makes exp-core the canonical owner of the shared ExtraPotions foundation.
+- Removes Dropper-derived Core generation and treats Dropper as a downstream Core consumer.
+- Adds pinned byte-for-byte Core verification for Dropper, SHIFT, PRISMA, and WARD.
+- Adds automatic Core artifact generation on main.
+
 ## 3.3.12 — 2026-09-27
 
 - Adds the shared themed outer menu border across ExtraPotions products.

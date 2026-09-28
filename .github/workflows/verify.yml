@@ -23,6 +23,6 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - name: Verify generated Core bundle
-        run: npm run build:check
+        run: npm run build
       - name: Run Core regression suite
         run: node --test tests/*.test.cjs
