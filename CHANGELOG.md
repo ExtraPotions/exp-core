@@ -1,4 +1,4 @@
-## 3.3.15 — Unreleased
+## 3.3.15 — 2026-09-28
 
 - Lets Core-owned product services resolve the consumer version lazily during bootstrap.
 - Preserves version-scoped update caching once the product version becomes available.
