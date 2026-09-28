@@ -1859,6 +1859,8 @@ const ExtraPotionsCore = (() => {
   });
   const SUITE_EVENT = 'exp-core:suite';
   const PAGE_BATCH_EVENT = 'exp-core:page-batch';
+  const PAGE_PHASE_EVENT = 'exp-core:page-phase';
+  const PAGE_PHASE_END_EVENT = 'exp-core:page-phase-end';
   const PRESENTATION_PHASES = Object.freeze({
     observe: 10,
     classify: 20,
@@ -2310,21 +2312,37 @@ const ExtraPotionsCore = (() => {
       if (!entries.length) return;
       epoch += 1;
       marker.dataset.expPageObserverEpoch = String(epoch);
-      entries.forEach(([target, state], index) => {
-        const payload = JSON.stringify({
-          protocol: 'exp-page-observer-v1',
-          owner: marker.dataset.expPageObserver,
-          epoch,
-          rootIndex: index,
-          rootCount: entries.length,
-          types: [...state.types].sort(),
-          added: state.added,
-          removed: state.removed,
-          href: location.href,
-          at: Date.now(),
-        });
+      const payloads = entries.map(([target, state], index) => [target, JSON.stringify({
+        protocol: 'exp-page-observer-v1',
+        owner: marker.dataset.expPageObserver,
+        epoch,
+        rootIndex: index,
+        rootCount: entries.length,
+        types: [...state.types].sort(),
+        added: state.added,
+        removed: state.removed,
+        href: location.href,
+        at: Date.now(),
+      })]);
+      payloads.forEach(([target, payload]) => {
         target.dispatchEvent(new CustomEvent(PAGE_BATCH_EVENT, { bubbles: true, composed: true, detail: payload }));
       });
+      for (const phase of Object.keys(PRESENTATION_PHASES).sort((left, right) => PRESENTATION_PHASES[left] - PRESENTATION_PHASES[right])) {
+        for (const [target, payload] of payloads) {
+          target.dispatchEvent(new CustomEvent(`${PAGE_PHASE_EVENT}:${phase}`, { bubbles: true, composed: true, detail: payload }));
+        }
+        document.dispatchEvent(new CustomEvent(`${PAGE_PHASE_END_EVENT}:${phase}`, {
+          detail: JSON.stringify({
+            protocol: 'exp-page-observer-v1',
+            owner: marker.dataset.expPageObserver,
+            epoch,
+            phase,
+            rootCount: entries.length,
+            href: location.href,
+            at: Date.now(),
+          }),
+        }));
+      }
     };
     const observer = new MutationObserver(records => {
       for (const record of records) {
@@ -2348,6 +2366,44 @@ const ExtraPotionsCore = (() => {
     };
     document.addEventListener(PAGE_BATCH_EVENT, listener);
     return () => document.removeEventListener(PAGE_BATCH_EVENT, listener);
+  }
+
+  function observePageBatch(callback, options = {}) {
+    if (typeof callback !== 'function') throw new TypeError('Page batch callback must be a function');
+    const productId = String(options.productId || options.owner || 'core').toLowerCase();
+    const contract = suiteContract(productId);
+    const requested = options.phase || contract?.presentationPhases?.[0] || 'observe';
+    const phase = normalizePresentationPhases([requested])[0] || 'observe';
+    ensureSharedPageObserver(productId, options);
+    const roots = new Map();
+    const rootEvent = `${PAGE_PHASE_EVENT}:${phase}`;
+    const endEvent = `${PAGE_PHASE_END_EVENT}:${phase}`;
+    const onRoot = event => {
+      let payload;
+      try { payload = typeof event.detail === 'string' ? JSON.parse(event.detail) : event.detail; } catch { return; }
+      if (!payload || payload.protocol !== 'exp-page-observer-v1') return;
+      const root = event.target instanceof Element ? event.target : null;
+      if (root) roots.set(root, payload);
+    };
+    const onEnd = event => {
+      let payload;
+      try { payload = typeof event.detail === 'string' ? JSON.parse(event.detail) : event.detail; } catch { return; }
+      if (!payload || payload.protocol !== 'exp-page-observer-v1' || payload.phase !== phase) return;
+      const entries = [...roots.entries()];
+      roots.clear();
+      callback(
+        Object.freeze({ ...payload }),
+        Object.freeze(entries.map(([root]) => root)),
+        Object.freeze(entries.map(([, detail]) => Object.freeze({ ...detail }))),
+      );
+    };
+    document.addEventListener(rootEvent, onRoot);
+    document.addEventListener(endEvent, onEnd);
+    return () => {
+      document.removeEventListener(rootEvent, onRoot);
+      document.removeEventListener(endEvent, onEnd);
+      roots.clear();
+    };
   }
 
   function pageObserverState() {
@@ -3248,6 +3304,6 @@ const ExtraPotionsCore = (() => {
     return Object.freeze({ lifecycle, diagnostics, updates });
   }
 
-  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,onSuiteEvent,pageContext,registerPresentationProvider,presentationProviders,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePage,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:ExtraPotionsDiagnostics.compatibility,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
+  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,onSuiteEvent,pageContext,registerPresentationProvider,presentationProviders,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:ExtraPotionsDiagnostics.compatibility,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
   return api;
 })();
