@@ -1839,18 +1839,22 @@ const ExtraPotionsCore = (() => {
     dropper: Object.freeze({
       role: 'flagship',
       capabilities: Object.freeze(['twitch.drops', 'twitch.campaigns', 'twitch.progress', 'twitch.claims', 'twitch.stream-management']),
+      presentationPhases: Object.freeze([]),
     }),
     shift: Object.freeze({
       role: 'product',
       capabilities: Object.freeze(['appearance.theme', 'appearance.readability', 'appearance.site-profile']),
+      presentationPhases: Object.freeze(['theme']),
     }),
     ward: Object.freeze({
       role: 'product',
       capabilities: Object.freeze(['retail.classification', 'retail.cleanup', 'retail.coupons']),
+      presentationPhases: Object.freeze(['classify', 'visibility']),
     }),
     prisma: Object.freeze({
       role: 'product',
       capabilities: Object.freeze(['text.identity-detection', 'text.identity-highlighting', 'identity.catalog']),
+      presentationPhases: Object.freeze(['annotate']),
     }),
   });
   const SUITE_EVENT = 'exp-core:suite';
@@ -2036,6 +2040,19 @@ const ExtraPotionsCore = (() => {
     return [...new Set(values.map(value => String(value || '').trim().toLowerCase()).filter(value => /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/.test(value)))];
   }
 
+  function suiteContract(productId) {
+    const id = String(productId || '').toLowerCase();
+    const known = SUITE_PRODUCTS[id];
+    if (!known) return null;
+    return Object.freeze({
+      id,
+      role: known.role || 'product',
+      priority: Number(SUITE_PRIORITY[id] || 0),
+      capabilities: Object.freeze(normalizeSuiteCapabilities(known.capabilities)),
+      presentationPhases: Object.freeze(normalizePresentationPhases(known.presentationPhases || [])),
+    });
+  }
+
   function suiteProductNode(productId) {
     const id = String(productId || '').toLowerCase();
     if (!/^[a-z][a-z0-9-]+$/.test(id)) return null;
@@ -2047,10 +2064,10 @@ const ExtraPotionsCore = (() => {
     const id = String(options.id || options.productId || '').toLowerCase();
     const productVersion = String(options.version || options.productVersion || 'unknown');
     if (!/^[a-z][a-z0-9-]+$/.test(id)) throw new Error('Invalid suite product ID');
-    const known = SUITE_PRODUCTS[id] || {};
-    const capabilities = normalizeSuiteCapabilities(options.capabilities === undefined ? known.capabilities : options.capabilities);
-    const priority = Number(options.priority ?? SUITE_PRIORITY[id] ?? 0);
-    const role = String(options.role || known.role || 'product');
+    const contract = suiteContract(id);
+    const capabilities = normalizeSuiteCapabilities(options.capabilities === undefined ? contract?.capabilities : options.capabilities);
+    const priority = Number(options.priority ?? contract?.priority ?? 0);
+    const role = String(options.role || contract?.role || 'product');
     let node = suiteProductNode(id);
     if (!node) {
       node = document.createElement('meta');
@@ -2159,7 +2176,8 @@ const ExtraPotionsCore = (() => {
   function registerPresentationProvider(options = {}) {
     const id = String(options.id || options.productId || '').toLowerCase();
     if (!/^[a-z][a-z0-9-]+$/.test(id)) throw new Error('Invalid presentation product ID');
-    const phases = normalizePresentationPhases(options.phases || options.phase);
+    const contract = suiteContract(id);
+    const phases = normalizePresentationPhases(options.phases || options.phase || contract?.presentationPhases);
     if (!phases.length) throw new Error('Presentation provider requires at least one valid phase');
     let node = presentationProviderNode(id);
     if (!node) {
@@ -3230,6 +3248,6 @@ const ExtraPotionsCore = (() => {
     return Object.freeze({ lifecycle, diagnostics, updates });
   }
 
-  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,onSuiteEvent,pageContext,registerPresentationProvider,presentationProviders,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePage,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:ExtraPotionsDiagnostics.compatibility,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
+  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,onSuiteEvent,pageContext,registerPresentationProvider,presentationProviders,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePage,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:ExtraPotionsDiagnostics.compatibility,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
   return api;
 })();
