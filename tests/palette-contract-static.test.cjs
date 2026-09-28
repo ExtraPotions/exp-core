@@ -24,3 +24,8 @@ test('locked Midnight and deep Crimson tokens are exact', () => {
   for (const token of ['#050a12', '#0c1726', '#3563a3', '#65558f', '#348f8b', '#d4deeb']) assert.match(reference, new RegExp(token, 'u'));
   for (const token of ['#0c0508', '#1d090f', '#941f2f', '#5e2144', '#2f746e', '#e5d2d7', '#b63243']) assert.match(reference, new RegExp(token, 'u'));
 });
+
+test('shared menu shell keeps a visible themed outer border', () => {
+  assert.match(reference, /#tdh-tools-dock \\{[^}]*border:1px solid var\\(--theme-line\\)/u);
+  assert.doesNotMatch(reference, /#tdh-tools-dock \\{[^}]*border:0;/u);
+});
