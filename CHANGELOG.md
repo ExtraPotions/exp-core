@@ -1,3 +1,11 @@
+## 3.4.0-dev.1 — 2026-09-28
+
+- Starts the ExtraPotions interoperability layer without changing product engines.
+- Adds a cross-sandbox suite registry and capability discovery for Dropper, SHIFT, WARD, and PRISMA.
+- Adds a serialized suite event channel and shared page-context helper for future product coordination.
+- Records the product-line priority as Dropper (flagship), SHIFT, WARD, then PRISMA while leaving user launcher arrangement unchanged.
+- Existing diagnostics registration now also publishes each running product into the suite registry.
+
 ## 3.3.17 — 2026-09-28
 
 - Preserves a Core-owned submenu after the user opens it during a menu arrangement refresh.

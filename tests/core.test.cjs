@@ -106,6 +106,59 @@ test('Dropper product chrome factories provide support actions and menu notices'
   });
 });
 
+test('suite registry exposes the flagship product order and product capabilities', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const state = await page.evaluate(() => {
+    ExtraPotionsCore.registerDiagnosticsProduct('prisma', '3.1.11');
+    ExtraPotionsCore.registerDiagnosticsProduct('ward', '3.2.25');
+    ExtraPotionsCore.registerDiagnosticsProduct('shift', '3.4.12');
+    ExtraPotionsCore.registerDiagnosticsProduct('dropper', '3.3.20');
+    return {
+      snapshot: ExtraPotionsCore.suiteSnapshot(),
+      drops: ExtraPotionsCore.hasProductCapability('twitch.drops'),
+      retail: ExtraPotionsCore.capabilityProviders('retail.cleanup').map(item => item.id),
+      identity: ExtraPotionsCore.capabilityProviders('text.identity-highlighting').map(item => item.id),
+    };
+  });
+  assert.deepEqual(state.snapshot.products.map(item => item.id), ['dropper', 'shift', 'ward', 'prisma']);
+  assert.equal(state.snapshot.products[0].role, 'flagship');
+  assert.equal(state.drops, true);
+  assert.deepEqual(state.retail, ['ward']);
+  assert.deepEqual(state.identity, ['prisma']);
+});
+
+test('suite event channel crosses product boundaries with serialized payloads', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => new Promise((resolve) => {
+    const stop = ExtraPotionsCore.onSuiteEvent((event) => {
+      if (event.type !== 'shift.theme-applied') return;
+      stop();
+      resolve(event);
+    });
+    ExtraPotionsCore.emitSuiteEvent('shift', 'shift.theme-applied', { theme: 'obsidian' });
+  }));
+  assert.equal(result.source, 'shift');
+  assert.equal(result.type, 'shift.theme-applied');
+  assert.deepEqual(result.detail, { theme: 'obsidian' });
+  assert.equal(result.protocol, 'exp-suite-interoperability-v1');
+});
+
+test('Core exposes a product-neutral shared page context', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage();
+  await page.goto('https://example.test/products/42?x=1');
+  await page.addScriptTag({ content: source });
+  const context = await page.evaluate(() => ExtraPotionsCore.pageContext());
+  assert.equal(context.origin, 'https://example.test');
+  assert.equal(context.hostname, 'example.test');
+  assert.equal(context.pathname, '/products/42');
+  assert.equal(context.topLevel, true);
+});
+
 test('build-time core advertises the product coordination protocols', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');

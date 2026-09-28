@@ -11,6 +11,28 @@ const ExtraPotionsCore = (() => {
   const GRID_DELTA = 'exp:v3:launcher-grid-delta';
   const PRIORITY = { shift: 100, dropper: 90, ward: 60, prisma: 40 };
   const THEME_PRIORITY = { dropper: 4, shift: 3, prisma: 2, ward: 1 };
+  // Product importance is separate from launcher placement/theme ownership.
+  // Dropper is the flagship, followed by SHIFT, WARD, then PRISMA.
+  const SUITE_PRIORITY = Object.freeze({ dropper: 4, shift: 3, ward: 2, prisma: 1 });
+  const SUITE_PRODUCTS = Object.freeze({
+    dropper: Object.freeze({
+      role: 'flagship',
+      capabilities: Object.freeze(['twitch.drops', 'twitch.campaigns', 'twitch.progress', 'twitch.claims', 'twitch.stream-management']),
+    }),
+    shift: Object.freeze({
+      role: 'product',
+      capabilities: Object.freeze(['appearance.theme', 'appearance.readability', 'appearance.site-profile']),
+    }),
+    ward: Object.freeze({
+      role: 'product',
+      capabilities: Object.freeze(['retail.classification', 'retail.cleanup', 'retail.coupons']),
+    }),
+    prisma: Object.freeze({
+      role: 'product',
+      capabilities: Object.freeze(['text.identity-detection', 'text.identity-highlighting', 'identity.catalog']),
+    }),
+  });
+  const SUITE_EVENT = 'exp-core:suite';
   const registrations = new WeakMap();
   const floatingNoticeRegistrations = new WeakMap();
   const controllers = new WeakMap();
@@ -177,6 +199,124 @@ const ExtraPotionsCore = (() => {
   const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
   const write = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
   const emit = (type, productId) => document.dispatchEvent(new CustomEvent('exp-core:coordination', { detail: { protocol, type, productId } }));
+
+  function normalizeSuiteCapabilities(values = []) {
+    if (!Array.isArray(values)) return [];
+    return [...new Set(values.map(value => String(value || '').trim().toLowerCase()).filter(value => /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/.test(value)))];
+  }
+
+  function suiteProductNode(productId) {
+    const id = String(productId || '').toLowerCase();
+    if (!/^[a-z][a-z0-9-]+$/.test(id)) return null;
+    return [...document.querySelectorAll('[data-exp-suite-product]')]
+      .find(node => node.dataset.expSuiteProduct === id) || null;
+  }
+
+  function registerSuiteProduct(options = {}) {
+    const id = String(options.id || options.productId || '').toLowerCase();
+    const productVersion = String(options.version || options.productVersion || 'unknown');
+    if (!/^[a-z][a-z0-9-]+$/.test(id)) throw new Error('Invalid suite product ID');
+    const known = SUITE_PRODUCTS[id] || {};
+    const capabilities = normalizeSuiteCapabilities(options.capabilities === undefined ? known.capabilities : options.capabilities);
+    const priority = Number(options.priority ?? SUITE_PRIORITY[id] ?? 0);
+    const role = String(options.role || known.role || 'product');
+    let node = suiteProductNode(id);
+    if (!node) {
+      node = document.createElement('meta');
+      node.dataset.expSuiteProduct = id;
+      (document.documentElement || document.head || document.body)?.append(node);
+    }
+    node.dataset.expSuiteVersion = productVersion;
+    node.dataset.expSuiteRole = role;
+    node.dataset.expSuitePriority = String(Number.isFinite(priority) ? priority : 0);
+    node.dataset.expSuiteCapabilities = JSON.stringify(capabilities);
+    emitSuiteEvent(id, 'product.registered', { capabilities, role, version: productVersion });
+    return Object.freeze({
+      id,
+      update(next = {}) { return registerSuiteProduct({ id, version: productVersion, role, priority, capabilities, ...next }); },
+      dispose() {
+        const current = suiteProductNode(id);
+        if (current === node) current.remove();
+        emitSuiteEvent(id, 'product.unregistered', {});
+      },
+    });
+  }
+
+  function suiteSnapshot() {
+    const products = [...document.querySelectorAll('[data-exp-suite-product]')].map(node => {
+      let capabilities = [];
+      try { capabilities = normalizeSuiteCapabilities(JSON.parse(node.dataset.expSuiteCapabilities || '[]')); } catch {}
+      return Object.freeze({
+        id: node.dataset.expSuiteProduct,
+        version: node.dataset.expSuiteVersion || 'unknown',
+        role: node.dataset.expSuiteRole || 'product',
+        priority: Number(node.dataset.expSuitePriority || 0),
+        capabilities: Object.freeze(capabilities),
+      });
+    }).filter(product => product.id)
+      .sort((left, right) => right.priority - left.priority || left.id.localeCompare(right.id));
+    return Object.freeze({
+      protocol: 'exp-suite-interoperability-v1',
+      coreVersion: version,
+      products: Object.freeze(products),
+    });
+  }
+
+  function capabilityProviders(capability) {
+    const name = String(capability || '').trim().toLowerCase();
+    return Object.freeze(suiteSnapshot().products.filter(product => product.capabilities.includes(name)));
+  }
+
+  function hasProductCapability(capability) {
+    return capabilityProviders(capability).length > 0;
+  }
+
+  function pageContext() {
+    return Object.freeze({
+      href: location.href,
+      origin: location.origin,
+      hostname: location.hostname,
+      pathname: location.pathname,
+      topLevel: window.top === window.self,
+    });
+  }
+
+  function emitSuiteEvent(productId, type, detail = {}) {
+    const source = String(productId || 'core').toLowerCase();
+    const eventType = String(type || '').trim().toLowerCase();
+    if (!/^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/.test(eventType)) throw new Error('Invalid suite event type');
+    let safeDetail = {};
+    try { safeDetail = JSON.parse(JSON.stringify(detail || {})); } catch {}
+    const payload = JSON.stringify({
+      protocol: 'exp-suite-interoperability-v1',
+      coreVersion: version,
+      source,
+      type: eventType,
+      detail: safeDetail,
+      at: Date.now(),
+    });
+    document.dispatchEvent(new CustomEvent(SUITE_EVENT, { detail: payload }));
+  }
+
+  function onSuiteEvent(callback, options = {}) {
+    if (typeof callback !== 'function') throw new TypeError('Suite event callback must be a function');
+    const expectedType = options.type ? String(options.type).toLowerCase() : null;
+    const listener = event => {
+      let payload;
+      try { payload = typeof event.detail === 'string' ? JSON.parse(event.detail) : event.detail; } catch { return; }
+      if (!payload || payload.protocol !== 'exp-suite-interoperability-v1') return;
+      if (expectedType && payload.type !== expectedType) return;
+      callback(payload);
+    };
+    document.addEventListener(SUITE_EVENT, listener);
+    return () => document.removeEventListener(SUITE_EVENT, listener);
+  }
+
+  function registerDiagnosticsProduct(productId, productVersion, host) {
+    const result = ExtraPotionsDiagnostics.registerProduct(productId, productVersion, host);
+    registerSuiteProduct({ productId, productVersion });
+    return result;
+  }
   function menuThemeOwner() {
     return [...document.querySelectorAll('[data-exp-product-launcher="1"][data-product-id]')]
       .filter(node => node.isConnected && THEME_PRIORITY[node.dataset.productId])
@@ -1049,6 +1189,6 @@ const ExtraPotionsCore = (() => {
     return Object.freeze({ lifecycle, diagnostics, updates });
   }
 
-  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct:ExtraPotionsDiagnostics.registerProduct,productCompatibility:ExtraPotionsDiagnostics.compatibility,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
+  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,onSuiteEvent,pageContext,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:ExtraPotionsDiagnostics.compatibility,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
   return api;
 })();
