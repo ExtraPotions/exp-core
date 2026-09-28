@@ -1,6 +1,6 @@
 {
   "name": "@extrapotions/exp-core",
-  "version": "3.3.14",
+  "version": "3.3.15",
   "private": true,
   "scripts": {
     "build": "node scripts/build.cjs",
