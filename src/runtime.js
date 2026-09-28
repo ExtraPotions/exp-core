@@ -1341,7 +1341,18 @@ const ExtraPotionsCore = (() => {
   }
 
   function createDiagnosticsReport(product, details = {}) {
-    return ExtraPotionsDiagnostics.createReport(product, details, { version, source: 'exp-core', sourceVersion });
+    const report = ExtraPotionsDiagnostics.createReport(product, details, { version, source: 'exp-core', sourceVersion });
+    return {
+      ...report,
+      interoperability: {
+        suite: suiteSnapshot(),
+        presentation: {
+          phases: { ...PRESENTATION_PHASES },
+          providers: presentationProviders(),
+        },
+        pageObserver: pageObserverState(),
+      },
+    };
   }
   function downloadDiagnostics(report) {
     const name=`${String(report.report||'Diagnostics').toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;
