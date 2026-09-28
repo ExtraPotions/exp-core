@@ -1,3 +1,9 @@
+## 3.4.0-dev.5 — 2026-09-28
+
+- Adds suite interoperability state to Core diagnostics.
+- Diagnostics now include observed suite products and capabilities, presentation-provider order and phases, and shared page-observer owner/protocol/epoch.
+- Keeps interoperability diagnostics metadata-only and excludes page text or product-private content.
+
 ## 3.4.0-dev.4 — 2026-09-28
 
 - Preserves mutation roots and mutation types in the shared page-observer broadcaster.
