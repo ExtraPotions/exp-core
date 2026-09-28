@@ -1,3 +1,9 @@
+## 3.4.0-dev.3 — 2026-09-28
+
+- Adds ancestor-aware presentation-state lookup and a shared cross-product visibility check.
+- Allows SHIFT and PRISMA to honor WARD hide/collapse state without importing WARD internals.
+- Keeps dimmed content available for downstream presentation and annotation.
+
 ## 3.4.0-dev.2 — 2026-09-28
 
 - Adds a deterministic presentation pipeline: observe, classify, visibility, theme, annotate, then product UI.
