@@ -147,7 +147,9 @@ const ExpMenuArrangement = (() => {
     const save = (key, value) => { try { view.localStorage.setItem(key, JSON.stringify(value)); } catch {} };
     let order = [...new Set([...read(orderKey), ...defaults])], hidden = read(hiddenKey), drag = null;
     const recovery = entries.find(entry => entry.category === 'system') || entries.find(entry => entry.label.toLowerCase() === 'system') || entries[0];
-    const style = document.createElement('style'); style.textContent = css; panel.getRootNode().append(style);
+    const style = document.createElement('style'); style.textContent = css;
+    const styleRoot = panel.getRootNode();
+    (styleRoot instanceof view.ShadowRoot ? styleRoot : (document.head || document.documentElement)).append(style);
     const abort = new view.AbortController();
     const on = (node, type, handler, options = {}) => node.addEventListener(type, handler, { ...options, signal: abort.signal });
     const editor = document.createElement('details'); editor.className = 'exp-menu-editor'; editor.dataset.expMenuSubmenu = '1';
