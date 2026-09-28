@@ -300,6 +300,38 @@ test('Core schedulers share one page observer while preserving character-data op
   assert.ok(result.counts.prisma >= 2);
 });
 
+test('shared schedulers execute product callbacks in presentation phase order', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage();
+  await page.setContent('<!doctype html><html><body><div id="target"></div></body></html>');
+  await page.addScriptTag({ content: source });
+  const order = await page.evaluate(() => new Promise((resolve, reject) => {
+    const target = document.querySelector('#target');
+    const order = [];
+    const wardLifecycle = ExtraPotionsCore.createLifecycle();
+    const prismaLifecycle = ExtraPotionsCore.createLifecycle();
+    let ward;
+    let prisma;
+    const note = (name, roots) => {
+      if (!roots.includes(target)) return;
+      order.push(name);
+      if (order.length === 2) {
+        ward.stop();
+        prisma.stop();
+        resolve(order);
+      }
+    };
+    // Register in reverse order to prove execution follows Core phases, not subscription order.
+    prisma = prismaLifecycle.createScheduler(roots => note('prisma', roots), { source: 'prisma', characterData: true });
+    ward = wardLifecycle.createScheduler(roots => note('ward', roots), { source: 'ward' });
+    prisma.start();
+    ward.start();
+    target.append(document.createElement('span'));
+    setTimeout(() => reject(new Error('phase-ordered scheduler batch not observed')), 1500);
+  }));
+  assert.deepEqual(order, ['ward', 'prisma']);
+});
+
 test('build-time core advertises the product coordination protocols', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
