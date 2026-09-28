@@ -1,3 +1,10 @@
+## 3.4.0-dev.4 — 2026-09-28
+
+- Preserves mutation roots and mutation types in the shared page-observer broadcaster.
+- Routes Core DOM schedulers through the shared observer when attribute observation is not required.
+- Lets WARD and PRISMA share one page MutationObserver while retaining their existing root batching and character-data behavior.
+- Keeps attribute-observing schedulers on the dedicated compatibility path.
+
 ## 3.4.0-dev.3 — 2026-09-28
 
 - Adds ancestor-aware presentation-state lookup and a shared cross-product visibility check.
