@@ -1,4 +1,4 @@
-## 3.3.17 — Unreleased
+## 3.3.17 — 2026-09-28
 
 - Preserves a Core-owned submenu after the user opens it during a menu arrangement refresh.
 - Prevents shared layout normalization from immediately re-collapsing navigation targets such as SHIFT site/profile controls.
