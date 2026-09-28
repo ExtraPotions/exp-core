@@ -236,6 +236,54 @@ test('shared page observation uses one DOM leader and broadcasts mutation batche
   assert.deepEqual(result.batches.map(item => item[1]), [1, 1]);
 });
 
+test('Core schedulers share one page observer while preserving character-data opt-in', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage();
+  await page.setContent('<!doctype html><html><body><div id="target"></div></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => new Promise((resolve, reject) => {
+    const target = document.querySelector('#target');
+    const counts = { ward: 0, prisma: 0 };
+    let stage = 0;
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      ward.stop();
+      prisma.stop();
+      resolve({
+        counts,
+        markers: document.querySelectorAll('meta[data-exp-page-observer]').length,
+        observer: ExtraPotionsCore.pageObserverState(),
+      });
+    };
+    const note = (key, roots) => {
+      if (!roots.includes(target)) return;
+      counts[key] += 1;
+      if (stage === 0 && counts.ward >= 1 && counts.prisma >= 1) {
+        stage = 1;
+        setTimeout(() => { target.firstChild.nodeValue = 'changed'; }, 25);
+      } else if (stage === 1 && counts.prisma >= 2) {
+        setTimeout(finish, 80);
+      }
+    };
+    const wardLifecycle = ExtraPotionsCore.createLifecycle();
+    const prismaLifecycle = ExtraPotionsCore.createLifecycle();
+    const ward = wardLifecycle.createScheduler(roots => note('ward', roots), { source: 'ward' });
+    const prisma = prismaLifecycle.createScheduler(roots => note('prisma', roots), { source: 'prisma', characterData: true });
+    ward.start();
+    prisma.start();
+    const text = document.createTextNode('initial');
+    target.append(text);
+    setTimeout(() => reject(new Error('shared scheduler batch not observed')), 1500);
+  }));
+  assert.equal(result.markers, 1);
+  assert.equal(result.observer.active, true);
+  assert.equal(result.observer.owner, 'ward');
+  assert.equal(result.counts.ward, 1);
+  assert.ok(result.counts.prisma >= 2);
+});
+
 test('build-time core advertises the product coordination protocols', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
