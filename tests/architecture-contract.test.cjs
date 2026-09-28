@@ -50,3 +50,12 @@ test('Core exposes shared services through the public ExtraPotionsCore API', () 
   assert.match(runtime, /mountMenuArrangement:ExpMenuArrangement\.mount/u);
   assert.match(runtime, /createDiagnosticsReport/u);
 });
+
+test('Core owns shared product-service bootstrap', () => {
+  const runtime = read('src/runtime.js');
+  assert.match(runtime, /function createProductServices\(options = \{\}\)/u);
+  assert.match(runtime, /const lifecycle = createProductLifecycle\(api\)/u);
+  assert.match(runtime, /const diagnostics = Object\.freeze/u);
+  assert.match(runtime, /const updates = createReleaseUpdateChecker/u);
+  assert.match(runtime, /createProductServices/u);
+});

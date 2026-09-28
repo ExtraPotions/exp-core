@@ -1,3 +1,9 @@
+## 3.3.14 — Unreleased
+
+- Adds a Core-owned product-services factory for lifecycle, diagnostics, and release-update plumbing.
+- Prepares SHIFT, PRISMA, and WARD to remove duplicate diagnostics and update wrapper modules on the next Core rollout.
+- Keeps product engines and product-specific error handling declarative in each consumer.
+
 ## 3.3.13 — 2026-09-27
 
 - Makes exp-core the canonical owner of shared ExtraPotions UI and runtime infrastructure, with Core-native provenance and public shared-service APIs.
