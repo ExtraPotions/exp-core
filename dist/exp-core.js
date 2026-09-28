@@ -1207,12 +1207,16 @@ function createProductLifecycle(shared) {
       metrics.roots += batch.length;
       try { callback(batch); } catch (error) { safeError(error, options.source || 'scheduler'); }
     };
-    const schedule = (root) => {
-      if (!active || !root || root.closest?.('[data-exp-owned="1"]')) return;
+    const queueRoot = (root) => {
+      if (!active || !root || root.closest?.('[data-exp-owned="1"]')) return false;
       const target = root.nodeType === Node.TEXT_NODE ? root.parentElement : root;
-      if (!target) return;
-      if (target.matches?.('style[data-exp-shift-page-style],style[data-exp-shift-sheet-style],style[data-exp-shift-adopted-style],style[data-exp-shift-adapter-style]')) return;
+      if (!target) return false;
+      if (target.matches?.('style[data-exp-shift-page-style],style[data-exp-shift-sheet-style],style[data-exp-shift-adopted-style],style[data-exp-shift-adapter-style]')) return false;
       roots.add(target);
+      return true;
+    };
+    const schedule = (root) => {
+      if (!queueRoot(root)) return;
       if (!frame) frame = requestAnimationFrame(flush);
     };
     const startDedicatedObserver = () => {
@@ -1241,7 +1245,21 @@ function createProductLifecycle(shared) {
       start() {
         if (active) return;
         active = true;
-        if (!options.attributes && typeof shared.observePage === 'function') {
+        if (!options.attributes && typeof shared.observePageBatch === 'function') {
+          const productId = options.source || 'scheduler';
+          const phase = options.phase || shared.suiteContract?.(productId)?.presentationPhases?.[0] || 'observe';
+          sharedObserverCleanup = shared.observePageBatch((batch, batchRoots, details) => {
+            for (let index = 0; index < batchRoots.length; index += 1) {
+              const types = Array.isArray(details?.[index]?.types) ? details[index].types : [];
+              if (!options.characterData && types.length && types.every(type => type === 'characterData')) continue;
+              queueRoot(batchRoots[index]);
+            }
+            if (roots.size) {
+              if (frame) { cancelAnimationFrame(frame); frame = 0; }
+              flush();
+            }
+          }, { productId, phase });
+        } else if (!options.attributes && typeof shared.observePage === 'function') {
           sharedObserverCleanup = shared.observePage((batch, root) => {
             const types = Array.isArray(batch?.types) ? batch.types : [];
             if (!options.characterData && types.length && types.every(type => type === 'characterData')) return;
