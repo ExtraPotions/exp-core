@@ -1,3 +1,10 @@
+## 3.4.0-dev.7 — 2026-09-28
+
+- Enforces Core presentation phases during shared DOM scheduler execution instead of treating phase order as metadata only.
+- Batches changed roots per phase and uses synchronous phase barriers so WARD classification/visibility completes before PRISMA annotation on the same mutations.
+- Keeps existing dedicated observers for attribute-sensitive consumers and preserves the public per-root observer API.
+- Infers scheduler phase from the Core-owned product contract while allowing explicit phase overrides.
+
 ## 3.4.0-dev.6 — 2026-09-28
 
 - Makes Core the single source of truth for product role, suite priority, capabilities, and presentation phases.
