@@ -160,6 +160,59 @@ test('Core exposes a product-neutral shared page context', async (t) => {
   assert.equal(context.topLevel, true);
 });
 
+test('presentation providers follow the shared composition order', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const providers = await page.evaluate(() => {
+    ExtraPotionsCore.registerPresentationProvider({ productId: 'prisma', phases: ['annotate'] });
+    ExtraPotionsCore.registerPresentationProvider({ productId: 'shift', phases: ['theme'] });
+    ExtraPotionsCore.registerPresentationProvider({ productId: 'ward', phases: ['classify', 'visibility'] });
+    return ExtraPotionsCore.presentationProviders();
+  });
+  assert.deepEqual(providers.map(item => item.id), ['ward', 'shift', 'prisma']);
+  assert.deepEqual(providers[0].phases, ['classify', 'visibility']);
+});
+
+test('presentation state keeps product ownership separate on one DOM element', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body><article id="card"></article></body></html>');
+  await page.addScriptTag({ content: source });
+  const state = await page.evaluate(() => {
+    const card = document.querySelector('#card');
+    ExtraPotionsCore.setPresentationState(card, 'ward', { classification: 'sponsored', visibility: 'dim' });
+    ExtraPotionsCore.setPresentationState(card, 'shift', { surface: 'secondary' });
+    ExtraPotionsCore.setPresentationState(card, 'prisma', { annotation: 'identity' });
+    return { state: ExtraPotionsCore.readPresentationState(card), raw: card.getAttribute('data-exp-presentation-state') };
+  });
+  assert.equal(state.state.ward.visibility, 'dim');
+  assert.equal(state.state.shift.surface, 'secondary');
+  assert.equal(state.state.prisma.annotation, 'identity');
+  assert.match(state.raw, /"ward"/u);
+});
+
+test('shared page observation uses one DOM leader and broadcasts mutation batches', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => new Promise((resolve, reject) => {
+    const batches = [];
+    const stopA = ExtraPotionsCore.observePage(batch => batches.push(['a', batch.epoch]), { productId: 'shift', delayMs: 20 });
+    const stopB = ExtraPotionsCore.observePage(batch => {
+      batches.push(['b', batch.epoch]);
+      stopA(); stopB();
+      resolve({ batches, state: ExtraPotionsCore.pageObserverState(), markers: document.querySelectorAll('meta[data-exp-page-observer]').length });
+    }, { productId: 'ward', delayMs: 20 });
+    document.body.append(document.createElement('section'));
+    setTimeout(() => reject(new Error('page batch not observed')), 1000);
+  }));
+  assert.equal(result.markers, 1);
+  assert.equal(result.state.active, true);
+  assert.equal(result.state.owner, 'shift');
+  assert.equal(result.batches.length, 2);
+  assert.deepEqual(result.batches.map(item => item[1]), [1, 1]);
+});
+
 test('build-time core advertises the product coordination protocols', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');

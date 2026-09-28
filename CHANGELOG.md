@@ -1,3 +1,10 @@
+## 3.4.0-dev.2 — 2026-09-28
+
+- Adds a deterministic presentation pipeline: observe, classify, visibility, theme, annotate, then product UI.
+- Adds cross-product presentation-provider discovery and lightweight semantic state on shared DOM elements.
+- Adds a single page-level mutation broadcaster so multiple ExtraPotions products can react to DOM changes without each requiring its own page MutationObserver.
+- Keeps presentation and observer APIs additive; product engines remain unchanged until they opt into the new contracts.
+
 ## 3.4.0-dev.1 — 2026-09-28
 
 - Starts the ExtraPotions interoperability layer without changing product engines.
