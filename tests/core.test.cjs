@@ -299,8 +299,19 @@ test('diagnostic reports identify their product', async (t) => {
   const page = await browser.newPage();
   await page.setContent('<!doctype html><html><body></body></html>');
   await page.addScriptTag({ content: source });
-  const report = await page.evaluate(() => ExtraPotionsCore.createDiagnosticsReport('PRISMA', { version: '3.0.1' }));
+  const report = await page.evaluate(() => {
+    ExtraPotionsCore.registerSuiteProduct({ productId: 'prisma', productVersion: '3.0.1' });
+    ExtraPotionsCore.registerPresentationProvider({ productId: 'prisma', phases: ['annotate'] });
+    const stop = ExtraPotionsCore.observePage(() => {}, { productId: 'prisma' });
+    stop();
+    return ExtraPotionsCore.createDiagnosticsReport('PRISMA', { version: '3.0.1' });
+  });
   assert.equal(report.report, 'PRISMA Diagnostics');
+  assert.equal(report.interoperability.suite.products[0].id, 'prisma');
+  assert.deepEqual(report.interoperability.suite.products[0].capabilities, ['text.identity-detection', 'text.identity-highlighting', 'identity.catalog']);
+  assert.deepEqual(report.interoperability.presentation.providers[0].phases, ['annotate']);
+  assert.equal(report.interoperability.pageObserver.active, true);
+  assert.equal(report.interoperability.pageObserver.protocol, 'exp-page-observer-v1');
   assert.equal(report.version, '3.0.1');
   assert.equal(report.schemaVersion, 3);
   assert.ok(report.page.structure.elements >= 3);
