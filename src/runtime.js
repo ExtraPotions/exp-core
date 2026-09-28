@@ -597,7 +597,9 @@ const ExtraPotionsCore = (() => {
 
   function registerDiagnosticsProduct(productId, productVersion, host) {
     const result = ExtraPotionsDiagnostics.registerProduct(productId, productVersion, host);
+    const contract = suiteContract(productId);
     registerSuiteProduct({ productId, productVersion });
+    if (contract?.presentationPhases?.length) registerPresentationProvider({ productId });
     return result;
   }
   function menuThemeOwner() {
