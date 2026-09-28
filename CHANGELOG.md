@@ -1,4 +1,4 @@
-## 3.3.14 — Unreleased
+## 3.3.14 — 2026-09-28
 
 - Adds a Core-owned product-services factory for lifecycle, diagnostics, and release-update plumbing.
 - Prepares SHIFT, PRISMA, and WARD to remove duplicate diagnostics and update wrapper modules on the next Core rollout.
