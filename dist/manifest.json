@@ -1,17 +1,17 @@
 {
-  "coreVersion": "3.4.0-dev.2",
+  "coreVersion": "3.4.0-dev.3",
   "source": {
     "source": "ExtraPotions/exp-core",
-    "sourceVersion": "3.4.0-dev.2",
+    "sourceVersion": "3.4.0-dev.3",
     "architecture": "core-native"
   },
-  "bundleSha256": "71416ce9d36caef03eb83c3c4e5a20f4422a5d4f8f4f83e667c4c81f9db440e1",
+  "bundleSha256": "3f7592bb491dec616b7392ee9e1254b2e3d0fa1f2e9bc37909bacfb216b322ab",
   "files": {
     "foundation.js": "6d9d8540ab1e750cc0f256da71fe7d575bfd55633ef7e45f40b0c8aff5002c56",
     "diagnostic-report.js": "9d1c588495e07e411262184a8263a3d03d0e3dbc7f45c7ff71898a7f3c131861",
     "lifecycle.js": "50a3584b708d155ce03c7d1a622d9be4f8345e91f6c4c71f8c42dc98f1ed5691",
     "product-tools.js": "e9b774ab0891b17fcb58696281dd8b092d9e0ae0d8e53d0111b39d6fdc768b96",
     "menu-arrangement.js": "06bbd7568ab5c7483e070cb7f009b3290f21fc1644d1743284776c119e86660a",
-    "runtime.js": "8e379c40226359c673c22860de3acc2cdfaedf159ee803dd986a0f102c3fc979"
+    "runtime.js": "59c4533cac9dc3e5254e467d4c8bdb71d91f2dd3898ca383dc0d8c1fcf909c47"
   }
 }
