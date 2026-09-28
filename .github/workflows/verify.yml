@@ -22,8 +22,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: Verify pinned Dropper reference
-        run: npm run extract:check
       - name: Verify generated Core bundle
         run: npm run build:check
       - name: Run Core regression suite

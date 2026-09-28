@@ -190,8 +190,8 @@ const ExtraPotionsDiagnostics = (() => {
     removeEventListener('error', onError, true); removeEventListener('unhandledrejection', onRejection);
     for (const marker of registrations.values()) marker.remove();
   }
-  // Dropper is the source of truth: Show/Hide first, Copy second, transient
-  // Diagnostics Copied / Copy Failed feedback, and fresh reports per action.
+  // Core owns the shared diagnostics interaction contract: Show/Hide first, Copy second,
+  // transient Diagnostics Copied / Copy Failed feedback, and fresh reports per action.
   function bindControls({ show, copy, output, getReport, notify = () => {}, onShow = () => {}, onCopy = () => {} }) {
     let timer, generation = 0;
     output.hidden = true; output.setAttribute('role', 'region');

@@ -17,7 +17,7 @@ test('Core exposes the locked common order and swaps Twitch for Crimson outside 
   }
   assert.match(reference, /const CRIMSON_THEME = Object\.freeze\(\{ id:"crimson"/u);
   assert.match(runtime, /filter\(t => !\['twitch', 'dropper'\]\.includes\(t\.id\)\)/u);
-  assert.match(runtime, /\.\.\.common, DropperReference\.CRIMSON_THEME/u);
+  assert.match(runtime, /\.\.\.common, CoreFoundation\.CRIMSON_THEME/u);
 });
 
 test('locked Midnight and deep Crimson tokens are exact', () => {

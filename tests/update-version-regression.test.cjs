@@ -25,7 +25,7 @@ function fixture(cached = {}, version = '3.2.13', enabled = true) {
     GM_xmlhttpRequest: options => requests.push(options),
     Date, JSON, Object, String, Number, Array, Promise, Error,
   };
-  vm.runInNewContext(`const DropperReference = { compareVersions: (${compare}) };\n${factory}\nthis.checker = createReleaseUpdateChecker(options);`, context);
+  vm.runInNewContext(`const CoreFoundation = { compareVersions: (${compare}) };\n${factory}\nthis.checker = createReleaseUpdateChecker(options);`, context);
   return { checker: context.checker, requests, state: () => JSON.parse(storage.get(key)) };
 }
 function respond(request, version = '3.2.14') {

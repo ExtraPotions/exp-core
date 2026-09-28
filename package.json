@@ -3,12 +3,10 @@
   "version": "3.3.12",
   "private": true,
   "scripts": {
-    "extract": "node scripts/extract-dropper.cjs",
-    "extract:check": "node scripts/extract-dropper.cjs --check",
     "build": "node scripts/build.cjs",
     "build:check": "node scripts/build.cjs --check",
     "sync:check": "node scripts/sync-products.cjs --check",
-    "test": "npm run extract:check && npm run build:check && node --test tests/*.test.cjs"
+    "test": "npm run build:check && node --test tests/*.test.cjs"
   },
   "devDependencies": {
     "acorn": "8.18.0",

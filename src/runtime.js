@@ -1,9 +1,9 @@
-// Product-neutral host for the code extracted from Dropper 3.3.15.
-// Product engines own their settings, content, and actions. Core owns shared UI.
+// Product-neutral shared runtime. Product engines own their settings, content, and actions.
+// exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
   const version = '3.3.12';
-  const sourceVersion = '3.3.15';
+  const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
   const gridProtocol = 'exp-launcher-grid-v3';
@@ -83,7 +83,7 @@ const ExtraPotionsCore = (() => {
     'tdh-opacity-range': 'opacity-range', 'tdh-opacity-value': 'opacity-value'
   };
   const canonicalCss = Object.entries(partIds).reduce((css, [id, part]) =>
-    css.replaceAll('#' + id, '[data-exp-part="' + part + '"]'), DropperReference.css())
+    css.replaceAll('#' + id, '[data-exp-part="' + part + '"]'), CoreFoundation.css())
     .replaceAll('.cluster', '.exp-core-theme');
   const compositionCss = `
     [data-exp-part="dock"]{box-sizing:border-box;overflow-x:hidden;overscroll-behavior:contain}
@@ -181,7 +181,7 @@ const ExtraPotionsCore = (() => {
   function menuPalette(host) {
     if (host?.dataset.productId === 'dropper') {
       const selected = host.shadowRoot?.querySelector('#tdh-cluster')?.dataset.uiTheme;
-      const theme = DropperReference.UI_THEMES.find(item => item.id === selected);
+      const theme = CoreFoundation.UI_THEMES.find(item => item.id === selected);
       if (theme) return semanticTheme(theme);
     }
     try {
@@ -339,7 +339,7 @@ const ExtraPotionsCore = (() => {
     const backdropStyle = host.shadowRoot ? injectStyle(host.shadowRoot,
       ':host::backdrop{all:initial!important;display:none!important;background:transparent!important;pointer-events:none!important}',
       { expLauncherBackdrop: '1' }) : null;
-    const stopProtect = DropperReference.protectLauncherHost(host);
+    const stopProtect = CoreFoundation.protectLauncherHost(host);
     let frame = 0;
     const refresh = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; layoutGrid(); controllers.get(host)?.layout(); }); };
     document.addEventListener('exp-core:coordination', refresh);
@@ -350,8 +350,8 @@ const ExtraPotionsCore = (() => {
     return dispose;
   }
   function themes(productTheme) {
-    const common = DropperReference.UI_THEMES.filter(t => !['twitch', 'dropper'].includes(t.id));
-    return Object.freeze([...common, DropperReference.CRIMSON_THEME, ...(productTheme ? [productTheme] : [DropperReference.UI_THEMES.at(-1)])].map(t => { const theme = semanticTheme(t); return Object.freeze({ ...theme, vars: Object.fromEntries(tokenNames.map(k => [k, theme[k]])) }); }));
+    const common = CoreFoundation.UI_THEMES.filter(t => !['twitch', 'dropper'].includes(t.id));
+    return Object.freeze([...common, CoreFoundation.CRIMSON_THEME, ...(productTheme ? [productTheme] : [CoreFoundation.UI_THEMES.at(-1)])].map(t => { const theme = semanticTheme(t); return Object.freeze({ ...theme, vars: Object.fromEntries(tokenNames.map(k => [k, theme[k]])) }); }));
   }
   function createThemeSwatches({ container, themes: choices, value, onChange = () => {} }) {
     const root = resolveShadowRoot(container);
@@ -758,7 +758,7 @@ const ExtraPotionsCore = (() => {
         latest: latest || null,
         state: stateName || next.state || 'idle',
         current: currentVersion,
-        available: Boolean(latest && DropperReference.compareVersions(latest, currentVersion) > 0),
+        available: Boolean(latest && CoreFoundation.compareVersions(latest, currentVersion) > 0),
         details: next.details.slice(0, 4),
         checkedForVersion: next.checkedForVersion || null,
         lastRemoteVersion: latest || null,
@@ -827,7 +827,7 @@ const ExtraPotionsCore = (() => {
         state.lastError = '';
         state.details = releaseDetails(payload.body);
         state.state = 'checked';
-        if (DropperReference.compareVersions(latest, currentVersion) > 0) {
+        if (CoreFoundation.compareVersions(latest, currentVersion) > 0) {
           state.availableVersion = latest;
           state.availableAt = Date.now();
         } else {
@@ -855,7 +855,7 @@ const ExtraPotionsCore = (() => {
       CHECK_INTERVAL,
       check,
       status,
-      compare: DropperReference.compareVersions,
+      compare: CoreFoundation.compareVersions,
     });
   }
 
@@ -1010,6 +1010,6 @@ const ExtraPotionsCore = (() => {
   if(document.documentElement)startGrid();else addEventListener('DOMContentLoaded',startGrid,{once:true});
   document.addEventListener('exp-core:coordination',scheduleGrid);
   addEventListener('resize',scheduleGrid,{passive:true});
-  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:DropperReference,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct:ExtraPotionsDiagnostics.registerProduct,productCompatibility:ExtraPotionsDiagnostics.compatibility,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,compareVersions:DropperReference.compareVersions});
+  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct:ExtraPotionsDiagnostics.registerProduct,productCompatibility:ExtraPotionsDiagnostics.compatibility,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,compareVersions:CoreFoundation.compareVersions});
   return api;
 })();
