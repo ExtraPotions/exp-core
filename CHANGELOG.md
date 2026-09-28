@@ -1,4 +1,4 @@
-## 3.3.16 — Unreleased
+## 3.3.16 — 2026-09-28
 
 - Adds Core-owned Main, Appearance, Advanced, and System menu category primitives.
 - Classifies current SHIFT, PRISMA, WARD, and Dropper sections centrally without moving product-specific controls into Core.
