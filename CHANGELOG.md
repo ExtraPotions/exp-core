@@ -3,6 +3,7 @@
 - Lets Core-owned product services resolve the consumer version lazily during bootstrap.
 - Preserves version-scoped update caching once the product version becomes available.
 - Prevents the Core-services migration from aborting consumers that define their version after shared bootstrap.
+- Uses package.json as the single Core version source when generating the runtime bundle.
 
 ## 3.3.14 — 2026-09-28
 
