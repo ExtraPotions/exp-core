@@ -21,6 +21,8 @@ test('exp-core owns the shared foundation and no release path extracts from Drop
   assert.doesNotMatch(build, /dropper-reference\.js/u);
   assert.equal(provenance.source, 'ExtraPotions/exp-core');
   assert.equal(provenance.architecture, 'core-native');
+  assert.doesNotMatch(read('src/runtime.js'), /source:\s*['"]Dropper['"]/u);
+  assert.doesNotMatch(read('src/runtime.js'), /Dropper's menu-width notice/u);
 });
 
 test('Core synchronization treats Dropper as a downstream consumer', () => {

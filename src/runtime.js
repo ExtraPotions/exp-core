@@ -411,8 +411,8 @@ const ExtraPotionsCore = (() => {
     dismiss.addEventListener('click',hide);versionButton?.addEventListener('click',versionClick);addEventListener('resize',layout,{passive:true});document.addEventListener('exp-core:coordination',coordination);
     return Object.freeze({show,hide,toggle,layout,setMenuOpen,destroy(){destroyed=true;clearTimer();unregisterNotice();dismiss.removeEventListener('click',hide);versionButton?.removeEventListener('click',versionClick);removeEventListener('resize',layout);document.removeEventListener('exp-core:coordination',coordination);}});
   }
-  // Core-owned update and changelog cards use Dropper's menu-width notice
-  // geometry directly. The legacy floating-notice coordinator remains exported
+  // Core-owned update and changelog cards use the canonical menu-width notice
+  // geometry. The legacy floating-notice coordinator remains exported
   // for compatibility, but it no longer owns these product notices.
   function createMenuNotice(options = {}) {
     const { shadow, panel, notice, versionButton = null } = options;
@@ -978,7 +978,7 @@ const ExtraPotionsCore = (() => {
   }
 
   function createDiagnosticsReport(product, details = {}) {
-    return ExtraPotionsDiagnostics.createReport(product, details, { version, source: 'Dropper', sourceVersion });
+    return ExtraPotionsDiagnostics.createReport(product, details, { version, source: 'exp-core', sourceVersion });
   }
   function downloadDiagnostics(report) {
     const name=`${String(report.report||'Diagnostics').toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;
