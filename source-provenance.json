@@ -1,7 +1,7 @@
 {
   "source": "ExtraPotions/Dropper",
-  "sourceVersion": "3.3.5",
-  "behaviorSourceVersion": "3.3.5",
+  "sourceVersion": "3.3.15",
+  "behaviorSourceVersion": "3.3.15",
   "behaviorParity": [
     "launcher-and-menu-badge-sizing",
     "launcher-host-protection",
@@ -12,51 +12,51 @@
     "diagnostic-ui-geometry",
     "support-control-chrome"
   ],
-  "commit": "0fe4fb9d90a112767d46fc13aba27918fd783f92",
+  "commit": "8540fc3c94883d76eb4c1f8d6056d6227e8373a3",
   "path": "dropper.user.js",
-  "sha256": "4de0029a03fd5217a65e28888eb38a28705f19138fbcb22dc8c9066fb879352b",
+  "sha256": "438fa8c0468f58181429ab17b1a44c803b51365d130ab6aef430f7df09536de8",
   "entries": [
     {
       "name": "PRIDE_RAINBOW",
       "kind": "constant",
-      "startLine": 828,
-      "endLine": 828
+      "startLine": 946,
+      "endLine": 946
     },
     {
       "name": "PRIDE_RAINBOW_VERTICAL",
       "kind": "constant",
-      "startLine": 829,
-      "endLine": 829
+      "startLine": 947,
+      "endLine": 947
     },
     {
       "name": "CRIMSON_THEME",
       "kind": "constant",
-      "startLine": 830,
-      "endLine": 830
+      "startLine": 948,
+      "endLine": 948
     },
     {
       "name": "UI_THEMES",
       "kind": "constant",
-      "startLine": 831,
-      "endLine": 840
+      "startLine": 949,
+      "endLine": 958
     },
     {
       "name": "css",
       "kind": "function",
-      "startLine": 12706,
-      "endLine": 13449
+      "startLine": 12894,
+      "endLine": 13645
     },
     {
       "name": "protectLauncherHost",
       "kind": "function",
-      "startLine": 258,
-      "endLine": 333
+      "startLine": 369,
+      "endLine": 444
     },
     {
       "name": "compareVersions",
       "kind": "function",
-      "startLine": 15451,
-      "endLine": 15455
+      "startLine": 15649,
+      "endLine": 15653
     }
   ]
 }
