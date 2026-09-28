@@ -81,6 +81,10 @@ const ExpMenuArrangement = (() => {
     details.dataset.expMenuCategory = CATEGORY_META[category] ? category : 'advanced';
     if (key) details.dataset.expMenuKey = slug(key);
     details.open = false;
+    // Core created this submenu in its canonical collapsed state. Mark it initialized
+    // immediately so a later arrangement refresh cannot re-collapse a user-opened
+    // disclosure during the same interaction.
+    details.dataset.expMenuInitialized = '1';
     const summary = document.createElement('summary');
     summary.textContent = String(label || CATEGORY_META[category]?.label || 'Advanced');
     details.append(summary, ...contents);
