@@ -103,6 +103,7 @@ function createProductLifecycle(shared) {
 
   function createScheduler(callback, options = {}) {
     let observer;
+    let sharedObserverCleanup;
     let frame = 0;
     let active = false;
     const roots = new Set();
@@ -119,32 +120,57 @@ function createProductLifecycle(shared) {
       if (!active || !root || root.closest?.('[data-exp-owned="1"]')) return;
       const target = root.nodeType === Node.TEXT_NODE ? root.parentElement : root;
       if (!target) return;
+      if (target.matches?.('style[data-exp-shift-page-style],style[data-exp-shift-sheet-style],style[data-exp-shift-adopted-style],style[data-exp-shift-adapter-style]')) return;
       roots.add(target);
       if (!frame) frame = requestAnimationFrame(flush);
+    };
+    const startDedicatedObserver = () => {
+      observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          const target = mutation.target?.nodeType === Node.TEXT_NODE ? mutation.target.parentElement : mutation.target;
+          if (!target) continue;
+          if (target.closest?.('[data-exp-owned="1"]')) continue;
+          if (target.matches?.('style[data-exp-shift-page-style],style[data-exp-shift-sheet-style],style[data-exp-shift-adopted-style],style[data-exp-shift-adapter-style]')) continue;
+          if (mutation.type === 'childList') {
+            const changed = [...mutation.addedNodes, ...mutation.removedNodes];
+            if (changed.length && changed.every((node) => node.nodeType === 1 && (node.matches?.('[data-exp-owned="1"],style[data-exp-shift-page-style],style[data-exp-shift-sheet-style],style[data-exp-shift-adopted-style],style[data-exp-shift-adapter-style]') || node.closest?.('[data-exp-owned="1"]')))) continue;
+          }
+          schedule(target);
+        }
+      });
+      observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: Boolean(options.attributes),
+        characterData: Boolean(options.characterData),
+        attributeFilter: options.attributeFilter
+      });
     };
     return Object.freeze({
       start() {
         if (active) return;
         active = true;
-        observer = new MutationObserver((mutations) => {
-          for (const mutation of mutations) {
-            const target = mutation.target?.nodeType === Node.TEXT_NODE ? mutation.target.parentElement : mutation.target;
-            if (!target) continue;
-            // Ignore SHIFT-owned style/UI writes. These are implementation output, not page
-            // changes, and feeding them back into the scheduler creates self-rescan loops.
-            if (target.closest?.('[data-exp-owned="1"]')) continue;
-            if (target.matches?.('style[data-exp-shift-page-style],style[data-exp-shift-sheet-style],style[data-exp-shift-adopted-style],style[data-exp-shift-adapter-style]')) continue;
-            if (mutation.type === 'childList') {
-              const changed = [...mutation.addedNodes, ...mutation.removedNodes];
-              if (changed.length && changed.every((node) => node.nodeType === 1 && (node.matches?.('[data-exp-owned="1"],style[data-exp-shift-page-style],style[data-exp-shift-sheet-style],style[data-exp-shift-adopted-style],style[data-exp-shift-adapter-style]') || node.closest?.('[data-exp-owned="1"]')))) continue;
-            }
-            schedule(target);
-          }
-        });
-        observer.observe(document.documentElement, { childList: true, subtree: true, attributes: Boolean(options.attributes), characterData: Boolean(options.characterData), attributeFilter: options.attributeFilter });
+        if (!options.attributes && typeof shared.observePage === 'function') {
+          sharedObserverCleanup = shared.observePage((batch, root) => {
+            const types = Array.isArray(batch?.types) ? batch.types : [];
+            if (!options.characterData && types.length && types.every(type => type === 'characterData')) return;
+            schedule(root);
+          }, { productId: options.source || 'scheduler' });
+        } else {
+          startDedicatedObserver();
+        }
         schedule(document.documentElement);
       },
-      stop() { active = false; observer?.disconnect(); observer = null; roots.clear(); if (frame) cancelAnimationFrame(frame); frame = 0; },
+      stop() {
+        active = false;
+        sharedObserverCleanup?.();
+        sharedObserverCleanup = null;
+        observer?.disconnect();
+        observer = null;
+        roots.clear();
+        if (frame) cancelAnimationFrame(frame);
+        frame = 0;
+      },
       schedule,
       flush
     });
