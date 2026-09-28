@@ -1,3 +1,11 @@
+## 3.3.16 — Unreleased
+
+- Adds Core-owned Main, Appearance, Advanced, and System menu category primitives.
+- Classifies current SHIFT, PRISMA, WARD, and Dropper sections centrally without moving product-specific controls into Core.
+- Keeps existing menu order and hidden-section storage keys compatible while grouping the arrangement editor by shared category.
+- Makes Core-created submenus collapsed by default and tags them for shared menu behavior.
+- Adds full, compact, and narrow width regression coverage for shared menu arrangement and nested disclosures.
+
 ## 3.3.15 — 2026-09-28
 
 - Lets Core-owned product services resolve the consumer version lazily during bootstrap.
