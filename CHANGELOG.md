@@ -1,3 +1,14 @@
+## 3.3.12 — 2026-09-27
+
+- Adds the shared themed outer menu border across ExtraPotions products.
+- Keeps palette-specific border treatment inside the shared Core instead of duplicating product CSS.
+- Adds regression coverage for the themed menu shell border.
+
+## 3.3.11 — 2026-09-27
+
+- Lets every launcher move left, right, up, or down within the shared grid.
+- Persists launcher order and supports Alt+Arrow keyboard reordering.
+
 ## 3.3.10 — 2026-09-27
 
 - Adds distinct raised and inset surfaces so menus retain visible depth across every palette.
