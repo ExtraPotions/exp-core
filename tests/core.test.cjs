@@ -391,8 +391,7 @@ test('diagnostic reports identify their product', async (t) => {
   await page.setContent('<!doctype html><html><body></body></html>');
   await page.addScriptTag({ content: source });
   const report = await page.evaluate(() => {
-    ExtraPotionsCore.registerSuiteProduct({ productId: 'prisma', productVersion: '3.0.1' });
-    ExtraPotionsCore.registerPresentationProvider({ productId: 'prisma', phases: ['annotate'] });
+    ExtraPotionsCore.registerDiagnosticsProduct('prisma', '3.0.1');
     const stop = ExtraPotionsCore.observePage(() => {}, { productId: 'prisma' });
     stop();
     return ExtraPotionsCore.createDiagnosticsReport('PRISMA', { version: '3.0.1' });
@@ -403,6 +402,8 @@ test('diagnostic reports identify their product', async (t) => {
   assert.deepEqual(report.interoperability.presentation.providers[0].phases, ['annotate']);
   assert.equal(report.interoperability.pageObserver.active, true);
   assert.equal(report.interoperability.pageObserver.protocol, 'exp-page-observer-v1');
+  assert.equal(report.interoperability.health.status, 'healthy');
+  assert.deepEqual(report.interoperability.health.coreVersions, [pkg.version]);
   assert.equal(report.version, '3.0.1');
   assert.equal(report.schemaVersion, 3);
   assert.ok(report.page.structure.elements >= 3);
@@ -411,6 +412,36 @@ test('diagnostic reports identify their product', async (t) => {
   assert.equal(report.environment.topLevelContext, true);
   assert.ok(Date.parse(report.generatedAt));
   assert.deepEqual(report.ui.swatches, []);
+});
+
+test('suite health reports interoperability drift without page content', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage();
+  await page.setContent('<!doctype html><html><body><div>PRIVATE_TEXT</div></body></html>');
+  await page.addScriptTag({ content: source });
+  const health = await page.evaluate(() => {
+    ExtraPotionsCore.registerDiagnosticsProduct('ward', '3.2.25');
+    ExtraPotionsCore.registerDiagnosticsProduct('prisma', '3.1.11');
+    const stop = ExtraPotionsCore.observePage(() => {}, { productId: 'ward' });
+    stop();
+    document.querySelector('meta[data-exp-suite-product="ward"]').dataset.expSuiteCapabilities = '[]';
+    document.querySelector('meta[data-exp-presentation-provider="prisma"]').dataset.expPresentationPhases = '["theme"]';
+    const oldCore = document.createElement('meta');
+    oldCore.dataset.expDiagnosticsProduct = 'shift';
+    oldCore.dataset.expCoreVersion = '3.3.17';
+    document.documentElement.append(oldCore);
+    const duplicateObserver = document.createElement('meta');
+    duplicateObserver.dataset.expPageObserver = 'duplicate';
+    document.documentElement.append(duplicateObserver);
+    return ExtraPotionsCore.suiteHealth();
+  });
+  const types = health.conflicts.map(conflict => conflict.type);
+  assert.equal(health.status, 'conflicts-detected');
+  assert.ok(types.includes('suite-capability-mismatch'));
+  assert.ok(types.includes('presentation-phase-mismatch'));
+  assert.ok(types.includes('mixed-core-versions'));
+  assert.ok(types.includes('duplicate-page-observer'));
+  assert.equal(JSON.stringify(health).includes('PRIVATE_TEXT'), false);
 });
 
 test('menu surfaces receive focus without activating the first helper row', async (t) => {
