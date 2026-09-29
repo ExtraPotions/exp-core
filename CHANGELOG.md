@@ -1,3 +1,10 @@
+## 3.4.0-dev.14 — 2026-09-28
+
+- Marks shared suite events and retained suite state as `shared-dom-advisory` coordination data, not an authorization boundary.
+- Adds Core-owned suite-state subscriptions that deliver the latest retained state immediately and then meaningful updates.
+- Lets later-loaded products consume current peer state without waiting for another product transition.
+- Keeps privileged site actions outside the shared DOM state/event trust model.
+
 ## 3.4.0-dev.13 — 2026-09-28
 
 - Defines Core-owned compact state schemas for Dropper, SHIFT, WARD, and PRISMA.
