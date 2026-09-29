@@ -1,3 +1,10 @@
+## 3.4.0-dev.9 — 2026-09-28
+
+- Adds a Core-owned deduplicated suite-state publisher for product interoperability.
+- Canonicalizes state payload key order before comparison so semantically identical snapshots do not re-emit.
+- Keeps state events JSON-only and product-neutral, allowing consumers to expose compact status without passing live objects or page text.
+- Prepares Dropper, SHIFT, WARD, and PRISMA to publish interoperable runtime state through one shared channel.
+
 ## 3.4.0-dev.8 — 2026-09-28
 
 - Makes product diagnostics registration the single bootstrap point for Core-owned interoperability metadata.
