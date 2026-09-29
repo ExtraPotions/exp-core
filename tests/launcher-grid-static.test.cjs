@@ -19,7 +19,7 @@ function loadLayoutGrid(peers) {
   const read = (key, fallback) => storage.has(key) ? storage.get(key) : fallback;
   const write = (key, value) => storage.set(key, value);
   const document = { querySelectorAll: () => peers };
-  return new Function(
+  const layoutGrid = new Function(
     'read',
     'write',
     'document',
