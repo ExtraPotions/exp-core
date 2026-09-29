@@ -115,7 +115,7 @@ const ExtraPotionsDiagnostics = (() => {
     });
     const boxes = hosts.map(host => {
       // An inaccessible shadow or unknown box is not evidence of a collision.
-      const launcher = host.shadowRoot?.querySelector('[data-exp-part="launcher"],.ward-launcher,.launcher,#tdh-settings-launcher');
+      const launcher = host.shadowRoot?.querySelector('[data-exp-part="launcher"]');
       if (!launcher || !launcher.getClientRects().length || getComputedStyle(launcher).visibility === 'hidden') return null;
       return { id: host.dataset.productId, box: launcher.getBoundingClientRect() };
     }).filter(x => x && supportedProducts.includes(x.id));
@@ -152,11 +152,11 @@ const ExtraPotionsDiagnostics = (() => {
     const rect = n => { const b = n.getBoundingClientRect(); return { width: b.width, height: b.height, x: b.x, y: b.y, visible: !!n.getClientRects().length && getComputedStyle(n).visibility !== 'hidden' }; };
     const first = selector => shadow?.querySelector(selector) || null;
     const visibleFirst = selector => [...(shadow?.querySelectorAll(selector) || [])].find(n => !n.hidden && n.getClientRects().length) || first(selector);
-    const progressCard = first('#tdh-drop-card,[data-exp-part="progress-card"]');
-    const launcher = first('[data-exp-part="launcher"],.ward-launcher,.launcher,#tdh-settings-launcher');
-    const launcherRow = first('[data-exp-part="launcher-row"],.badge-row');
-    const menu = first('[data-exp-part="dock"],#tdh-tools-dock,.panel,.ward');
-    const notice = visibleFirst('#tdh-update-notice,[data-exp-update-notice],.update-notice,.changelog');
+    const progressCard = first('[data-exp-part="progress-card"]');
+    const launcher = first('[data-exp-part="launcher"]');
+    const launcherRow = first('[data-exp-part="launcher-row"]');
+    const menu = first('[data-exp-part="dock"]');
+    const notice = visibleFirst('[data-exp-update-notice],.update-notice,.changelog');
     const uiGeometry = {
       progressCardRect: progressCard ? rect(progressCard) : null,
       launcherRect: launcher ? rect(launcher) : null,
@@ -172,7 +172,7 @@ const ExtraPotionsDiagnostics = (() => {
       launcherRowWidth: launcherRow ? Math.round(launcherRow.getBoundingClientRect().width) : null,
       menuWidth: menu ? Math.round(menu.getBoundingClientRect().width) : null,
       noticeWidth: notice && !notice.hidden ? Math.round(notice.getBoundingClientRect().width) : null,
-      surfaces: [...(shadow?.querySelectorAll('.panel,.ward,#tdh-tools-dock,[data-exp-part="dock"]') || [])].map(rect),
+      surfaces: [...(shadow?.querySelectorAll('[data-exp-part="dock"]') || [])].map(rect),
       categories: [...(shadow?.querySelectorAll('.route,.nav-item,.fl-tool-header') || [])].map(n => ({ name: redact(n.textContent.trim()), expanded: n.getAttribute('aria-expanded') })),
       swatches: [...(shadow?.querySelectorAll('.exp-theme-swatch') || [])].map(n => ({ name: n.getAttribute('aria-label'), selected: n.getAttribute('aria-pressed'), ...rect(n) })),
     };

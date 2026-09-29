@@ -157,4 +157,10 @@ test('suite manifest owns launcher and theme coordination priorities', () => {
   assert.doesNotMatch(foundation, /--dropper-ui-opacity:1;/u);
   assert.match(runtime, /var\(--dropper-accent/u);
   assert.match(foundation, /var\(--dropper-ui-opacity,1\)/u);
+  const diagnostics = read('src/diagnostic-report.js');
+  assert.doesNotMatch(runtime, /\.ward-launcher|#tdh-settings-launcher|\.ward-header/u);
+  assert.doesNotMatch(diagnostics, /\.ward-launcher|#tdh-settings-launcher|#tdh-tools-dock/u);
+  assert.match(runtime, /notice\.dataset\.expUpdateNotice = '1'/u);
+  assert.match(diagnostics, /first\('\[data-exp-part="launcher"\]'\)/u);
+  assert.match(diagnostics, /first\('\[data-exp-part="dock"\]'\)/u);
 });
