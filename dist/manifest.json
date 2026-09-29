@@ -1,8 +1,8 @@
 {
-  "coreVersion": "3.4.0-dev.34",
+  "coreVersion": "3.4.0-dev.35",
   "source": {
     "source": "ExtraPotions/exp-core",
-    "sourceVersion": "3.4.0-dev.34",
+    "sourceVersion": "3.4.0-dev.35",
     "architecture": "core-native"
   },
   "suiteContract": {
@@ -173,7 +173,7 @@
       "repository": "PRISMA"
     }
   },
-  "bundleSha256": "f8e95f71aedece442307c24e8ca1fe09160e6aa20b6c974e8fb86de2e0164363",
+  "bundleSha256": "bb5c66eaa57e8f12eb95e0a116922c6f3c2d9ccf422bc17f219cb27f9fd12a77",
   "files": {
     "foundation.js": "55553c1ed956878e0aed3a410889c1deb89157fb34bc8998e01a98a5f0ccefba",
     "diagnostic-report.js": "f31ef0718c38e096fda19b3be26136c10fc8915cb970dc72ded3b225dc338ee5",
