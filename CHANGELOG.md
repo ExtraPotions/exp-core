@@ -1,3 +1,10 @@
+## 3.4.0-dev.17 — 2026-09-28
+
+- Upgrades the shared Product compatibility card to use Core suite-health and interoperability data.
+- Shows each running product's version, Core version, health, and latest safe-state age from one Core-owned UI.
+- Shows shared DOM and navigation observer ownership and reports interoperability conflicts alongside legacy compatibility checks.
+- Replaces the older local-only compatibility control without requiring product-specific menu changes.
+
 ## 3.4.0-dev.16 — 2026-09-28
 
 - Adds target-level Core presentation-state events with exact changed DOM roots and no page text in the serialized payload.
