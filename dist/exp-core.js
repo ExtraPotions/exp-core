@@ -2096,6 +2096,7 @@ const ExtraPotionsCore = (() => {
       (document.documentElement || document.head || document.body)?.append(node);
     }
     node.dataset.expSuiteVersion = productVersion;
+    node.dataset.expSuiteCoreVersion = version;
     node.dataset.expSuiteRole = role;
     node.dataset.expSuitePriority = String(Number.isFinite(priority) ? priority : 0);
     node.dataset.expSuiteCapabilities = JSON.stringify(capabilities);
@@ -2118,6 +2119,7 @@ const ExtraPotionsCore = (() => {
       return Object.freeze({
         id: node.dataset.expSuiteProduct,
         version: node.dataset.expSuiteVersion || 'unknown',
+        coreVersion: node.dataset.expSuiteCoreVersion || 'unknown',
         role: node.dataset.expSuiteRole || 'product',
         priority: Number(node.dataset.expSuitePriority || 0),
         capabilities: Object.freeze(capabilities),
@@ -2256,6 +2258,54 @@ const ExtraPotionsCore = (() => {
         const rightPhase = Math.min(...right.phases.map(phase => PRESENTATION_PHASES[phase]));
         return leftPhase - rightPhase || right.priority - left.priority || left.id.localeCompare(right.id);
       }));
+  }
+
+  function suiteHealth() {
+    const suite = suiteSnapshot();
+    const providers = presentationProviders();
+    const providerMap = new Map(providers.map(provider => [provider.id, provider]));
+    const conflicts = [];
+    const sameList = (left = [], right = []) => left.length === right.length && left.every((value, index) => value === right[index]);
+    const products = suite.products.map(product => {
+      const contract = suiteContract(product.id);
+      if (!contract) {
+        conflicts.push({ type: 'unknown-suite-product', products: [product.id] });
+        return Object.freeze({ id: product.id, status: 'unknown-product' });
+      }
+      const expectedCapabilities = [...contract.capabilities].sort();
+      const actualCapabilities = [...product.capabilities].sort();
+      const provider = providerMap.get(product.id) || null;
+      const expectedPhases = [...contract.presentationPhases];
+      const actualPhases = provider ? [...provider.phases] : [];
+      if (product.role !== contract.role) conflicts.push({ type: 'suite-role-mismatch', products: [product.id], expected: contract.role, actual: product.role });
+      if (product.priority !== contract.priority) conflicts.push({ type: 'suite-priority-mismatch', products: [product.id], expected: contract.priority, actual: product.priority });
+      if (!sameList(actualCapabilities, expectedCapabilities)) conflicts.push({ type: 'suite-capability-mismatch', products: [product.id], expected: expectedCapabilities, actual: actualCapabilities });
+      if (expectedPhases.length && !provider) conflicts.push({ type: 'missing-presentation-provider', products: [product.id], expected: expectedPhases });
+      if (!expectedPhases.length && provider) conflicts.push({ type: 'unexpected-presentation-provider', products: [product.id], actual: actualPhases });
+      if (provider && !sameList(actualPhases, expectedPhases)) conflicts.push({ type: 'presentation-phase-mismatch', products: [product.id], expected: expectedPhases, actual: actualPhases });
+      return Object.freeze({
+        id: product.id,
+        status: conflicts.some(conflict => conflict.products?.includes(product.id)) ? 'conflict' : 'healthy',
+        coreVersion: product.coreVersion,
+        capabilities: Object.freeze(actualCapabilities),
+        presentationPhases: Object.freeze(actualPhases),
+      });
+    });
+    const coreVersions = [...new Set(
+      [...document.querySelectorAll('meta[data-exp-diagnostics-product]')]
+        .map(node => node.dataset.expCoreVersion)
+        .filter(Boolean)
+    )].sort();
+    if (coreVersions.length > 1) conflicts.push({ type: 'mixed-core-versions', coreVersions });
+    const observerCount = document.querySelectorAll('meta[data-exp-page-observer]').length;
+    if (observerCount > 1) conflicts.push({ type: 'duplicate-page-observer', instances: observerCount });
+    return Object.freeze({
+      status: conflicts.length ? 'conflicts-detected' : 'healthy',
+      coreVersions: Object.freeze(coreVersions),
+      observerCount,
+      products: Object.freeze(products),
+      conflicts: Object.freeze(conflicts.map(conflict => Object.freeze({ ...conflict }))),
+    });
   }
 
   function readPresentationState(target) {
@@ -2458,6 +2508,7 @@ const ExtraPotionsCore = (() => {
 
   function registerDiagnosticsProduct(productId, productVersion, host) {
     const result = ExtraPotionsDiagnostics.registerProduct(productId, productVersion, host);
+    if (result) result.dataset.expCoreVersion = version;
     const contract = suiteContract(productId);
     registerSuiteProduct({ productId, productVersion });
     if (contract?.presentationPhases?.length) registerPresentationProvider({ productId });
@@ -3288,6 +3339,7 @@ const ExtraPotionsCore = (() => {
           providers: presentationProviders(),
         },
         pageObserver: pageObserverState(),
+        health: suiteHealth(),
       },
     };
   }
@@ -3346,6 +3398,6 @@ const ExtraPotionsCore = (() => {
     return Object.freeze({ lifecycle, diagnostics, updates });
   }
 
-  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,onSuiteEvent,pageContext,registerPresentationProvider,presentationProviders,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:ExtraPotionsDiagnostics.compatibility,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
+  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,onSuiteEvent,pageContext,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:ExtraPotionsDiagnostics.compatibility,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
   return api;
 })();
