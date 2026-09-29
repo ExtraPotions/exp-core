@@ -77,3 +77,20 @@ jobs:
           sha256sum dist/exp-core.js dist/manifest.json > SHA256SUMS
           gh release create "$TAG" dist/exp-core.js dist/manifest.json SHA256SUMS \
             --target "$RELEASE_SHA" --title "exp-core $TAG" --notes-file release-notes.md
+
+      - name: Dispatch Core release to consumers
+        env:
+          GH_TOKEN: ${{ secrets.CORE_ROLLOUT_TOKEN }}
+          TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${GH_TOKEN:-}" ]]; then
+            echo "CORE_ROLLOUT_TOKEN is not configured; scheduled consumer sync remains the fallback."
+            exit 0
+          fi
+          for repo in Dropper SHIFT WARD PRISMA; do
+            payload="$(jq -nc --arg tag "$TAG" '{event_type:"exp-core-release",client_payload:{tag:$tag}}')"
+            gh api --method POST "repos/ExtraPotions/$repo/dispatches" --input - <<<"$payload"
+            echo "Dispatched $TAG to $repo."
+          done
