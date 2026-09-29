@@ -1858,7 +1858,7 @@ const ExpMenuArrangement = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.4.0-dev.25';
+  const version = '3.4.0-dev.26';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -3053,6 +3053,20 @@ const ExtraPotionsCore = (() => {
     return { setValue: paint, destroy() { container.removeEventListener('keydown', keyboard); buttons.forEach(b => b.remove()); } };
   }
   function focusMenuSurface(panel) { if (!(panel instanceof HTMLElement)) return false; panel.tabIndex = -1; panel.style.outline = 'none'; panel.focus({ preventScroll: true }); return true; }
+  const FLOATING_NOTICE_CSS = '.exp-floating-update{position:fixed;z-index:2147483647;box-sizing:border-box;width:min(312px,calc(100vw - 24px));max-width:calc(100vw - 24px);margin:0;padding:10px 32px 10px 10px;border:1px solid var(--exp-notice-border,var(--dropper-accent,#6f42b4));border-radius:10px;background:linear-gradient(180deg,var(--exp-notice-top,#251a35),var(--exp-notice-bottom,#18181d) 70%);color:var(--exp-notice-text,#f4f4f6);box-shadow:0 10px 28px #0008;font:500 9px/1.45 system-ui,sans-serif}.exp-floating-update[hidden]{display:none!important}.exp-floating-update-dismiss{position:absolute;top:7px;right:7px;width:23px;height:23px;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;color:inherit;cursor:pointer;font:15px/1 Arial,sans-serif}.exp-floating-update-dismiss:hover,.exp-floating-update-dismiss:focus-visible{border-color:var(--exp-notice-border,var(--dropper-accent,#6f42b4));outline:none}';
+  function ensureFloatingNoticeStyle(shadow) {
+    if (!shadow.querySelector('style[data-exp-floating-notice]')) {
+      injectStyle(shadow, FLOATING_NOTICE_CSS, { expFloatingNotice: '1' });
+    }
+  }
+  function syncNoticeTheme(notice, themeSource) {
+    const theme = getComputedStyle(themeSource);
+    const first = (names, fallback) => names.map(name => theme.getPropertyValue(name).trim()).find(Boolean) || fallback;
+    notice.style.setProperty('--exp-notice-border', first(['--exp-notice-border','--theme-accent','--dropper-accent','--accent','--accent2','--teal','--mb-brand'], theme.borderTopColor || '#6f42b4'));
+    notice.style.setProperty('--exp-notice-top', first(['--exp-notice-top','--theme-panel','--surface','--panel','--raised','--mb-surface','--bg','--mb-bg'], theme.backgroundColor || '#251a35'));
+    notice.style.setProperty('--exp-notice-bottom', first(['--exp-notice-bottom','--theme-bg','--bg','--mb-bg','--surface','--mb-surface'], theme.backgroundColor || '#18181d'));
+    notice.style.setProperty('--exp-notice-text', first(['--exp-notice-text','--theme-text','--text','--mb-ink'], theme.color || '#f4f4f6'));
+  }
   function createFloatingNotice(options = {}) {
     const { shadow, panel, notice, versionButton = null } = options;
     const host = options.host || shadow?.host;
@@ -3060,22 +3074,14 @@ const ExtraPotionsCore = (() => {
     const durationMs = Math.max(0, Number(options.durationMs ?? 30000));
     const manageVersion = options.manageVersion !== false;
     let timer = 0, menuOpen = false, destroyed = false;
-    if (!shadow.querySelector('style[data-exp-floating-notice]')) {
-      injectStyle(shadow, '.exp-floating-update{position:fixed;z-index:2147483647;box-sizing:border-box;width:min(312px,calc(100vw - 24px));max-width:calc(100vw - 24px);margin:0;padding:10px 32px 10px 10px;border:1px solid var(--exp-notice-border,var(--dropper-accent,#6f42b4));border-radius:10px;background:linear-gradient(180deg,var(--exp-notice-top,#251a35),var(--exp-notice-bottom,#18181d) 70%);color:var(--exp-notice-text,#f4f4f6);box-shadow:0 10px 28px #0008;font:500 9px/1.45 system-ui,sans-serif}.exp-floating-update[hidden]{display:none!important}.exp-floating-update-dismiss{position:absolute;top:7px;right:7px;width:23px;height:23px;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;color:inherit;cursor:pointer;font:15px/1 Arial,sans-serif}.exp-floating-update-dismiss:hover,.exp-floating-update-dismiss:focus-visible{border-color:var(--exp-notice-border,var(--dropper-accent,#6f42b4));outline:none}', { expFloatingNotice: '1' });
-    }
+    ensureFloatingNoticeStyle(shadow);
     applyMatteToggleChrome(shadow);
     notice.classList.add('update-notice','exp-floating-update'); notice.setAttribute('role','status');
     let dismiss = notice.querySelector(':scope > .exp-floating-update-dismiss');
     if (!dismiss) { dismiss=document.createElement('button'); dismiss.type='button'; dismiss.className='exp-floating-update-dismiss'; dismiss.setAttribute('aria-label','Dismiss changelog'); dismiss.textContent='×'; notice.prepend(dismiss); }
     shadow.append(notice); const unregisterNotice = registerFloatingNotice(host, notice);
     const themeSource = options.themeSource instanceof Element ? options.themeSource : panel;
-    function syncTheme() {
-      const theme=getComputedStyle(themeSource); const first=(names,fallback)=>names.map(name=>theme.getPropertyValue(name).trim()).find(Boolean)||fallback;
-      notice.style.setProperty('--exp-notice-border',first(['--exp-notice-border','--theme-accent','--dropper-accent','--accent','--accent2','--teal','--mb-brand'],theme.borderTopColor||'#6f42b4'));
-      notice.style.setProperty('--exp-notice-top',first(['--exp-notice-top','--theme-panel','--surface','--panel','--raised','--mb-surface','--bg','--mb-bg'],theme.backgroundColor||'#251a35'));
-      notice.style.setProperty('--exp-notice-bottom',first(['--exp-notice-bottom','--theme-bg','--bg','--mb-bg','--surface','--mb-surface'],theme.backgroundColor||'#18181d'));
-      notice.style.setProperty('--exp-notice-text',first(['--exp-notice-text','--theme-text','--text','--mb-ink'],theme.color||'#f4f4f6'));
-    }
+    const syncTheme = () => syncNoticeTheme(notice, themeSource);
     const clearTimer=()=>{clearTimeout(timer);timer=0;};
     function layout(){if(destroyed||notice.hidden)return;syncTheme();layoutFloatingNotices();}
     function hide(){clearTimer();notice.hidden=true;versionButton?.setAttribute('aria-expanded','false');layoutFloatingNotices();}
@@ -3100,9 +3106,7 @@ const ExtraPotionsCore = (() => {
     const manageVersion = options.manageVersion !== false;
     let timer = 0, menuOpen = false, destroyed = false, frame = 0;
 
-    if (!shadow.querySelector('style[data-exp-floating-notice]')) {
-      injectStyle(shadow, '.exp-floating-update{position:fixed;z-index:2147483647;box-sizing:border-box;width:min(312px,calc(100vw - 24px));max-width:calc(100vw - 24px);margin:0;padding:10px 32px 10px 10px;border:1px solid var(--exp-notice-border,var(--dropper-accent,#6f42b4));border-radius:10px;background:linear-gradient(180deg,var(--exp-notice-top,#251a35),var(--exp-notice-bottom,#18181d) 70%);color:var(--exp-notice-text,#f4f4f6);box-shadow:0 10px 28px #0008;font:500 9px/1.45 system-ui,sans-serif}.exp-floating-update[hidden]{display:none!important}.exp-floating-update-dismiss{position:absolute;top:7px;right:7px;width:23px;height:23px;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;color:inherit;cursor:pointer;font:15px/1 Arial,sans-serif}.exp-floating-update-dismiss:hover,.exp-floating-update-dismiss:focus-visible{border-color:var(--exp-notice-border,var(--dropper-accent,#6f42b4));outline:none}', { expFloatingNotice: '1' });
-    }
+    ensureFloatingNoticeStyle(shadow);
     applyMatteToggleChrome(shadow);
     notice.classList.add('update-notice', 'exp-floating-update');
     notice.dataset.placement = 'menu';
@@ -3120,14 +3124,7 @@ const ExtraPotionsCore = (() => {
     }
 
     const themeSource = options.themeSource instanceof Element ? options.themeSource : panel;
-    function syncTheme() {
-      const theme = getComputedStyle(themeSource);
-      const first = (names, fallback) => names.map(name => theme.getPropertyValue(name).trim()).find(Boolean) || fallback;
-      notice.style.setProperty('--exp-notice-border', first(['--exp-notice-border','--theme-accent','--dropper-accent','--accent','--accent2','--teal','--mb-brand'], theme.borderTopColor || '#6f42b4'));
-      notice.style.setProperty('--exp-notice-top', first(['--exp-notice-top','--theme-panel','--surface','--panel','--raised','--mb-surface','--bg','--mb-bg'], theme.backgroundColor || '#251a35'));
-      notice.style.setProperty('--exp-notice-bottom', first(['--exp-notice-bottom','--theme-bg','--bg','--mb-bg','--surface','--mb-surface'], theme.backgroundColor || '#18181d'));
-      notice.style.setProperty('--exp-notice-text', first(['--exp-notice-text','--theme-text','--text','--mb-ink'], theme.color || '#f4f4f6'));
-    }
+    const syncTheme = () => syncNoticeTheme(notice, themeSource);
     function widthForMode() {
       return menuWidthForMode(host?.dataset.menuWidth || 'compact');
     }
