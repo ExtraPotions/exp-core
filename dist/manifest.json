@@ -1,15 +1,15 @@
 {
-  "coreVersion": "3.4.0-dev.19",
+  "coreVersion": "3.4.0-dev.20",
   "source": {
     "source": "ExtraPotions/exp-core",
-    "sourceVersion": "3.4.0-dev.19",
+    "sourceVersion": "3.4.0-dev.20",
     "architecture": "core-native"
   },
   "suiteContract": {
     "dropper": {
       "role": "flagship",
       "priority": 4,
-      "launcherPriority": 90,
+      "launcherPriority": 110,
       "themePriority": 4,
       "capabilities": [
         "twitch.drops",
@@ -101,14 +101,14 @@
       }
     }
   },
-  "bundleSha256": "0e63868ab8df2405bba127c08cc2839c84e2b6555d506c84fe86737e20117dbd",
+  "bundleSha256": "6ebb1a76be3f7f7cdfe0de689d98fff92d5dcd2f170e549358f45cf670f47298",
   "files": {
     "foundation.js": "6d9d8540ab1e750cc0f256da71fe7d575bfd55633ef7e45f40b0c8aff5002c56",
     "diagnostic-report.js": "9d1c588495e07e411262184a8263a3d03d0e3dbc7f45c7ff71898a7f3c131861",
     "lifecycle.js": "ae7998069006a6f79d0a11bdcba0bb108459365b574de43b49df6385cb86ed05",
     "product-tools.js": "e9b774ab0891b17fcb58696281dd8b092d9e0ae0d8e53d0111b39d6fdc768b96",
     "menu-arrangement.js": "06bbd7568ab5c7483e070cb7f009b3290f21fc1644d1743284776c119e86660a",
-    "runtime.js": "7a6b298ccfe8e9402bcd91ebb706185a310a93b72a43a8b3996b0a60ca6a0c05",
-    "suite-contract.json": "290279585e0ae4ba5c5bba039956715273fd8e5846c1b2e1e9b14b85a5d88041"
+    "runtime.js": "72ea549ed03a626329d1d3e71df274225160a5bff44f137a68167f8bde514dd1",
+    "suite-contract.json": "c25b0a594685814c655a2d925b1afcd929153ee20c6dccddb151edfb5256ce09"
   }
 }
