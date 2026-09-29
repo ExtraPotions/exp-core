@@ -19,6 +19,21 @@
         "progressPercent": "percent-nullable",
         "routingState": "token"
       }
+    },
+    "menuSections": {
+      "main": [
+        "drops",
+        "streams"
+      ],
+      "appearance": [
+        "appearance"
+      ],
+      "advanced": [
+        "advanced"
+      ],
+      "system": [
+        "system"
+      ]
     }
   },
   "shift": {
@@ -42,6 +57,21 @@
         "safeMode": "boolean",
         "excluded": "boolean"
       }
+    },
+    "menuSections": {
+      "appearance": [
+        "appearance",
+        "readability"
+      ],
+      "advanced": [
+        "effects",
+        "effects-integrations",
+        "profiles",
+        "profiles-sites"
+      ],
+      "system": [
+        "system"
+      ]
     }
   },
   "ward": {
@@ -69,6 +99,24 @@
         "collapse": "count",
         "annotate": "count"
       }
+    },
+    "menuSections": {
+      "main": [
+        "protection",
+        "amazon",
+        "tools"
+      ],
+      "appearance": [
+        "appearance"
+      ],
+      "advanced": [
+        "advanced",
+        "patterns",
+        "advanced-amazon"
+      ],
+      "system": [
+        "system"
+      ]
     }
   },
   "prisma": {
@@ -91,6 +139,26 @@
         "total": "count",
         "temporarilyHidden": "boolean"
       }
+    },
+    "menuSections": {
+      "main": [
+        "page",
+        "highlights"
+      ],
+      "appearance": [
+        "style",
+        "highlight-style",
+        "look",
+        "appearance"
+      ],
+      "advanced": [
+        "tools",
+        "language",
+        "sites"
+      ],
+      "system": [
+        "system"
+      ]
     }
   }
 }

@@ -7,31 +7,7 @@ const ExpMenuArrangement = (() => {
     advanced: Object.freeze({ id: 'advanced', label: 'Advanced', order: 2 }),
     system: Object.freeze({ id: 'system', label: 'System', order: 3 }),
   });
-  const PRODUCT_SECTIONS = Object.freeze({
-    shift: Object.freeze({
-      appearance: Object.freeze(['appearance', 'readability']),
-      advanced: Object.freeze(['effects', 'effects-integrations', 'profiles', 'profiles-sites']),
-      system: Object.freeze(['system']),
-    }),
-    prisma: Object.freeze({
-      main: Object.freeze(['page', 'highlights']),
-      appearance: Object.freeze(['style', 'highlight-style', 'look', 'appearance']),
-      advanced: Object.freeze(['tools', 'language', 'sites']),
-      system: Object.freeze(['system']),
-    }),
-    ward: Object.freeze({
-      main: Object.freeze(['protection', 'amazon', 'tools']),
-      appearance: Object.freeze(['appearance']),
-      advanced: Object.freeze(['advanced', 'patterns', 'advanced-amazon']),
-      system: Object.freeze(['system']),
-    }),
-    dropper: Object.freeze({
-      main: Object.freeze(['drops', 'streams']),
-      appearance: Object.freeze(['appearance']),
-      advanced: Object.freeze(['advanced']),
-      system: Object.freeze(['system']),
-    }),
-  });
+  const PRODUCT_SECTIONS = __EXP_SUITE_MENU_SECTIONS__;
   const GENERIC_SECTIONS = Object.freeze({
     appearance: Object.freeze(['appearance', 'readability', 'style', 'highlight-style', 'look', 'theme', 'themes']),
     advanced: Object.freeze(['advanced', 'effects', 'integrations', 'profiles', 'sites', 'language', 'patterns', 'routing', 'playback']),
