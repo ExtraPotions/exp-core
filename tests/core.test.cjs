@@ -188,6 +188,22 @@ test('deduplicated suite state publishing emits only meaningful changes', async 
   ]);
 });
 
+test('diagnostics bootstrap is idempotent for suite registration events', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const events = await page.evaluate(() => {
+    const seen = [];
+    const stop = ExtraPotionsCore.onSuiteEvent(event => seen.push(event.type));
+    ExtraPotionsCore.registerDiagnosticsProduct('shift', '3.4.12');
+    ExtraPotionsCore.registerDiagnosticsProduct('shift', '3.4.12');
+    stop();
+    return seen;
+  });
+  assert.equal(events.filter(type => type === 'product.registered').length, 1);
+  assert.equal(events.filter(type => type === 'presentation.provider-registered').length, 1);
+});
+
 test('suite event channel crosses product boundaries with serialized payloads', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
