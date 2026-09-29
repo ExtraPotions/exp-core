@@ -4,6 +4,7 @@
 - Adds Core-owned suite-state subscriptions that deliver the latest retained state immediately and then meaningful updates.
 - Lets later-loaded products consume current peer state without waiting for another product transition.
 - Keeps privileged site actions outside the shared DOM state/event trust model.
+- Merges suite interoperability health into the existing product compatibility report while preserving legacy duplicate, protocol, and launcher checks.
 
 ## 3.4.0-dev.13 — 2026-09-28
 
