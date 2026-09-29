@@ -2,7 +2,7 @@
   "dropper": {
     "role": "flagship",
     "priority": 4,
-    "launcherPriority": 90,
+    "launcherPriority": 110,
     "themePriority": 4,
     "capabilities": [
       "twitch.drops",

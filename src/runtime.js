@@ -1076,8 +1076,8 @@ const ExtraPotionsCore = (() => {
       const ai = Array.isArray(order) ? order.indexOf(a.dataset.productId) : -1;
       const bi = Array.isArray(order) ? order.indexOf(b.dataset.productId) : -1;
       if (ai !== bi) return ai < 0 ? 1 : bi < 0 ? -1 : ai - bi;
-      const ap = a.dataset.productId === 'dropper' ? Number.MAX_SAFE_INTEGER : Number(a.dataset.launcherPriority || 0);
-      const bp = b.dataset.productId === 'dropper' ? Number.MAX_SAFE_INTEGER : Number(b.dataset.launcherPriority || 0);
+      const ap = Number(a.dataset.launcherPriority || 0);
+      const bp = Number(b.dataset.launcherPriority || 0);
       return bp - ap || a.dataset.productId.localeCompare(b.dataset.productId);
     });
     const assign = (node, slot, span = 1) => {
@@ -1428,7 +1428,7 @@ const ExtraPotionsCore = (() => {
     const versionButton=panel.querySelector('.version,[data-exp-part="version"]');
     const menuNotices=[...themeRoot.querySelectorAll('.update-notice,.changelog')].map(notice=>createMenuNotice({host,shadow,panel,notice,versionButton:notice.classList.contains('changelog')?versionButton:null,manageVersion:false,durationMs:30000}));
     if (launcherSrc) panel.querySelectorAll('.header-icon img').forEach(image => image.src = launcherSrc);
-    host.dataset.coreVersion = version; host.dataset.coreSource = 'Dropper/3.3.15';
+    host.dataset.coreVersion = version; host.dataset.coreSource = 'exp-core';
     let choices = themes(productTheme), selected = choices.at(-1), open = false, destroyed = false, timer = 0, deadline = 0, frame = 0;
     const removers = [];
     const on = (node,type,fn,opts) => { node.addEventListener(type,fn,opts); removers.push(() => node.removeEventListener(type,fn,opts)); };

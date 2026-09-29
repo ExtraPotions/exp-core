@@ -1039,7 +1039,7 @@ test('launcher grid fills three-column rows from the bottom and respects priorit
 test('Dropper progress visibility preserves the compact launcher grid', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage();
-  await page.setContent('<!doctype html><html><body><div id="dropper" data-exp-product-launcher="1" data-product-id="dropper" data-launcher-priority="90" data-launcher-reserved-rows="4"></div><div id="shift" data-exp-product-launcher="1" data-product-id="shift" data-launcher-priority="100"></div><div id="ward" data-exp-product-launcher="1" data-product-id="ward" data-launcher-priority="60"></div><div id="prisma" data-exp-product-launcher="1" data-product-id="prisma" data-launcher-priority="40"></div></body></html>');
+  await page.setContent('<!doctype html><html><body><div id="dropper" data-exp-product-launcher="1" data-product-id="dropper" data-launcher-priority="110" data-launcher-reserved-rows="4"></div><div id="shift" data-exp-product-launcher="1" data-product-id="shift" data-launcher-priority="100"></div><div id="ward" data-exp-product-launcher="1" data-product-id="ward" data-launcher-priority="60"></div><div id="prisma" data-exp-product-launcher="1" data-product-id="prisma" data-launcher-priority="40"></div></body></html>');
   await page.addScriptTag({ content: source });
   await page.waitForFunction(() => document.querySelector('#prisma').dataset.launcherSlot);
   const result = await page.evaluate(() => Object.fromEntries(['dropper','shift','ward','prisma'].map((id) => {
