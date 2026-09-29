@@ -1,8 +1,8 @@
 {
-  "coreVersion": "3.4.0-dev.40",
+  "coreVersion": "3.4.0",
   "source": {
     "source": "ExtraPotions/exp-core",
-    "sourceVersion": "3.4.0-dev.40",
+    "sourceVersion": "3.4.0",
     "architecture": "core-native"
   },
   "suiteContract": {
@@ -177,7 +177,7 @@
       "rootId": "exp-prisma-root"
     }
   },
-  "bundleSha256": "0831f9ecb9dca8c3a61ecea5f4b71ab32af8cc2075e8b37f28294e0f94899f5f",
+  "bundleSha256": "2e7ef52874d38ce10394cf1cfc1cc43926b535d4bfc23446923a6aac272d1ff4",
   "files": {
     "foundation.js": "52c24ad642c4fbef701258279630a5c7e22003e27e97fd045afcda2058ab9e9c",
     "diagnostic-report.js": "f31ef0718c38e096fda19b3be26136c10fc8915cb970dc72ded3b225dc338ee5",
