@@ -93,6 +93,7 @@ function productSource(product) {
             width: Math.round(launcherBox.width),
             height: Math.round(launcherBox.height),
             expanded: launcher.getAttribute('aria-expanded'),
+            slot: Number(host.dataset.launcherSlot),
           },
           dockHidden: dock.hidden,
           dockDisplay: getComputedStyle(dock).display,
@@ -130,14 +131,17 @@ function productSource(product) {
       if (visible.length === 1) assert.equal(visible[0], product.id);
     }
 
-    // Shared launcher order must converge to Core's manifest priority,
-    // independent of injection order.
-    const ordered = await page.evaluate(products => products.map(product => {
-      const host = document.querySelector(product.root);
-      const box = host.shadowRoot.querySelector('[data-exp-part="launcher"]').getBoundingClientRect();
-      return { id: product.id, x: box.x, y: box.y };
-    }).sort((a, b) => a.y - b.y || a.x - b.x).map(item => item.id), PRODUCTS);
-    assert.deepEqual(ordered, ['dropper', 'shift', 'ward', 'prisma']);
+    // Shared launcher slot order must converge to Core's manifest priority,
+    // independent of injection order. Physical coordinates are intentionally
+    // anchor-dependent, so data-launcher-slot is the authoritative grid order.
+    const expectedOrder = ['dropper', 'shift', 'ward', 'prisma'];
+    const ordered = PRODUCTS
+      .map(product => ({ id: product.id, slot: snapshot[product.id].launcher.slot }))
+      .sort((a, b) => a.slot - b.slot)
+      .map(item => item.id);
+    assert.deepEqual(ordered, expectedOrder);
+    const savedOrder = await page.evaluate(() => JSON.parse(localStorage.getItem('exp:v3:launcher-order') || '[]'));
+    assert.deepEqual(savedOrder, expectedOrder);
 
     assert.deepEqual(errors, [], 'suite coexistence browser errors');
     console.log('PASS suite coexistence:', ordered.join(' > '));
