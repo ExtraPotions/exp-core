@@ -113,13 +113,8 @@ test('Core owns canonical interoperability contracts for the current suite', asy
   const contracts = await page.evaluate(() => Object.fromEntries(
     ['dropper', 'shift', 'ward', 'prisma'].map(id => [id, ExtraPotionsCore.suiteContract(id)])
   ));
-  assert.equal(contracts.dropper.role, 'flagship');
-  assert.equal(contracts.dropper.priority, 4);
-  assert.deepEqual(contracts.dropper.capabilities, ['twitch.drops', 'twitch.campaigns', 'twitch.progress', 'twitch.claims', 'twitch.stream-management']);
-  assert.deepEqual(contracts.dropper.presentationPhases, []);
-  assert.deepEqual(contracts.shift.presentationPhases, ['theme']);
-  assert.deepEqual(contracts.ward.presentationPhases, ['classify', 'visibility']);
-  assert.deepEqual(contracts.prisma.presentationPhases, ['annotate']);
+  const canonical = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'src', 'suite-contract.json'), 'utf8'));
+  assert.deepEqual(contracts, canonical);
 });
 
 test('diagnostics registration bootstraps Core-owned interoperability metadata', async (t) => {
