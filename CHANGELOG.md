@@ -1,3 +1,10 @@
+## 3.4.0-dev.10 — 2026-09-28
+
+- Makes Core-owned suite and presentation registration idempotent across repeated product bootstrap calls.
+- Emits interoperability registration events only when observed product metadata actually changes.
+- Preserves metadata refresh when product version, Core version, role, priority, capabilities, or presentation phases change.
+- Avoids duplicate suite events when products re-register diagnostics after their launcher host becomes available.
+
 ## 3.4.0-dev.9 — 2026-09-28
 
 - Adds a Core-owned deduplicated suite-state publisher for product interoperability.
