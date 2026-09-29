@@ -239,6 +239,7 @@ const ExtraPotionsCore = (() => {
       id,
       role: known.role || 'product',
       repository: known.repository || '',
+      rootId: known.rootId || '',
       priority: Number(known.priority || SUITE_PRIORITY[id] || 0),
       launcherPriority: Number(known.launcherPriority || LAUNCHER_PRIORITY[id] || 0),
       themePriority: Number(known.themePriority || THEME_PRIORITY[id] || 0),
