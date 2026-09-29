@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const repos=path.resolve(__dirname,'../..');
+const repos=process.env.EXP_SUITE_ROOT||path.resolve(__dirname,'../..');
 const suiteAvailable=['Dropper','WARD','PRISMA','SHIFT'].every(name=>fs.existsSync(path.join(repos,name,`${name.toLowerCase()}.user.js`)));
 const {chromium}=require('playwright');
 const bundle=fs.readFileSync(path.join(__dirname,'..','dist','exp-core.js'),'utf8');

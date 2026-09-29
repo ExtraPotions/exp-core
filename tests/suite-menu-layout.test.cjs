@@ -8,7 +8,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('playwright');
 
-const repos = path.resolve(__dirname, '../..');
+const repos = process.env.EXP_SUITE_ROOT || path.resolve(__dirname, '../..');
 const products = [
   { name: 'Dropper', host: '#tdh-root' },
   { name: 'WARD', host: '#exp-ward-root' },

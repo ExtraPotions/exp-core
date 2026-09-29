@@ -42,3 +42,19 @@ Install [Dropper](https://github.com/ExtraPotions/Dropper), [SHIFT](https://gith
 ## About
 
 exp-core is an independent project and is not affiliated with or endorsed by the websites where it is used.
+
+## Running the tests without a browser download
+
+Tests run in a real browser through Playwright. If you would rather use the Chrome or Edge you already have installed:
+
+```
+npm run test:installed-browser
+```
+
+To run Core together with Dropper, SHIFT, WARD, and PRISMA rebuilt on this Core, the same check CI runs before a release (the product folders must sit beside this one, each with `npm ci` done):
+
+```
+npm run suite:local
+```
+
+Set `EXP_BROWSER_PATH` to pick a specific browser. Your product folders are copied to a temporary workspace and never modified.

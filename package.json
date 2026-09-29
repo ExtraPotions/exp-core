@@ -7,7 +7,9 @@
     "build:check": "node scripts/build.cjs --check",
     "sync:check": "node scripts/sync-products.cjs --check",
     "test": "npm run build:check && node --test tests/*.test.cjs",
-    "sync": "node scripts/sync-products.cjs"
+    "sync": "node scripts/sync-products.cjs",
+    "test:installed-browser": "node scripts/test-installed-browser.cjs",
+    "suite:local": "node scripts/suite-local.cjs"
   },
   "devDependencies": {
     "acorn": "8.18.0",
