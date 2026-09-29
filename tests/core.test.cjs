@@ -379,6 +379,41 @@ test('suite state rejects oversized payloads before writing shared metadata', as
   assert.equal(result.markers, 0);
 });
 
+test('suite state subscriptions deliver retained state then meaningful updates', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', {
+      active: true, theme: 'midnight', safeMode: false, excluded: false,
+    });
+    const seen = [];
+    const stop = ExtraPotionsCore.subscribeSuiteState('shift', entry => {
+      seen.push({ trust: entry.trust, theme: entry.state.theme, active: entry.state.active });
+    });
+    ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', {
+      active: true, theme: 'crimson', safeMode: false, excluded: false,
+    });
+    stop();
+    ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', {
+      active: false, theme: 'crimson', safeMode: false, excluded: false,
+    });
+    return {
+      seen,
+      trust: ExtraPotionsCore.suiteTrust,
+      snapshotTrust: ExtraPotionsCore.suiteSnapshot().trust,
+      latestTrust: ExtraPotionsCore.latestSuiteState('shift', 'shift.state-changed')?.trust,
+    };
+  });
+  assert.deepEqual(result.seen, [
+    { trust: 'shared-dom-advisory', theme: 'midnight', active: true },
+    { trust: 'shared-dom-advisory', theme: 'crimson', active: true },
+  ]);
+  assert.equal(result.trust, 'shared-dom-advisory');
+  assert.equal(result.snapshotTrust, 'shared-dom-advisory');
+  assert.equal(result.latestTrust, 'shared-dom-advisory');
+});
+
 test('diagnostics bootstrap is idempotent for suite registration events', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
@@ -698,6 +733,20 @@ test('suite health reports interoperability drift without page content', async (
   assert.ok(types.includes('mixed-core-versions'));
   assert.ok(types.includes('duplicate-page-observer'));
   assert.equal(JSON.stringify(health).includes('PRIVATE_TEXT'), false);
+});
+
+test('suite advisory state never advertises an action invocation API', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const api = await page.evaluate(() => ({
+    trust: ExtraPotionsCore.suiteTrust,
+    invokeSuiteAction: typeof ExtraPotionsCore.invokeSuiteAction,
+    requestSuiteAction: typeof ExtraPotionsCore.requestSuiteAction,
+  }));
+  assert.equal(api.trust, 'shared-dom-advisory');
+  assert.equal(api.invokeSuiteAction, 'undefined');
+  assert.equal(api.requestSuiteAction, 'undefined');
 });
 
 test('menu surfaces receive focus without activating the first helper row', async (t) => {
