@@ -492,6 +492,64 @@ test('presentation state keeps product ownership separate on one DOM element', a
   assert.match(state.raw, /"ward"/u);
 });
 
+test('presentation state events identify the exact target and deduplicate no-op writes', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage();
+  await page.setContent('<!doctype html><html><body><section id="target">PRIVATE_TEXT</section></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    const target = document.querySelector('#target');
+    const seen = [];
+    const stop = ExtraPotionsCore.observePresentationState((event, node) => {
+      seen.push({
+        source: event.source,
+        channels: event.channels,
+        phase: event.phase,
+        targetId: node.id,
+        serialized: JSON.stringify(event),
+      });
+    }, { source: 'ward' });
+    ExtraPotionsCore.setPresentationState(target, 'ward', { visibility: 'collapse' });
+    ExtraPotionsCore.setPresentationState(target, 'ward', { visibility: 'collapse' });
+    ExtraPotionsCore.clearPresentationState(target, 'ward');
+    stop();
+    return seen;
+  });
+  assert.equal(result.length, 2);
+  assert.deepEqual(result.map(item => item.targetId), ['target', 'target']);
+  assert.deepEqual(result.map(item => item.source), ['ward', 'ward']);
+  assert.deepEqual(result.map(item => item.phase), [null, null]);
+  assert.equal(result.some(item => item.serialized.includes('PRIVATE_TEXT')), false);
+});
+
+test('presentation state events expose the active shared presentation phase', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage();
+  await page.setContent('<!doctype html><html><body><div id="target"></div></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => new Promise((resolve, reject) => {
+    const target = document.querySelector('#target');
+    const stopPresentation = ExtraPotionsCore.observePresentationState((event, node) => {
+      if (node !== target || event.source !== 'ward') return;
+      stopPresentation();
+      ward.stop();
+      resolve({
+        phase: event.phase,
+        observerPhase: ExtraPotionsCore.pageObserverState().phase,
+      });
+    }, { source: 'ward' });
+    const lifecycle = ExtraPotionsCore.createLifecycle();
+    const ward = lifecycle.createScheduler(roots => {
+      if (roots.includes(target)) ExtraPotionsCore.setPresentationState(target, 'ward', { visibility: 'dim' });
+    }, { source: 'ward' });
+    ward.start();
+    target.append(document.createElement('span'));
+    setTimeout(() => reject(new Error('presentation phase event not observed')), 1500);
+  }));
+  assert.equal(result.phase, 'classify');
+  assert.equal(result.observerPhase, 'classify');
+});
+
 test('presentation suppression follows ancestor visibility state without treating dim as hidden', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage();
