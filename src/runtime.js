@@ -1170,7 +1170,7 @@ const ExtraPotionsCore = (() => {
     return dispose;
   }
   function themes(productTheme) {
-    const common = CoreFoundation.UI_THEMES.filter(t => !['twitch', 'dropper'].includes(t.id));
+    const common = CoreFoundation.SHARED_UI_THEMES;
     return Object.freeze([...common, CoreFoundation.CRIMSON_THEME, ...(productTheme ? [productTheme] : [CoreFoundation.UI_THEMES.at(-1)])].map(t => { const theme = semanticTheme(t); return Object.freeze({ ...theme, vars: Object.fromEntries(tokenNames.map(k => [k, theme[k]])) }); }));
   }
   function createThemeSwatches({ container, themes: choices, value, onChange = () => {} }) {

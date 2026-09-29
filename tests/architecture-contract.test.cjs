@@ -102,4 +102,9 @@ test('suite manifest owns launcher and theme coordination priorities', () => {
   assert.match(runtime, /popover\.id = 'exp-support-popover'/u);
   assert.match(runtime, /--exp-ui-opacity/u);
   assert.doesNotMatch(runtime, /panel\.classList\.add\('dropper-menu-surface'\)/u);
+  assert.match(runtime, /const common = CoreFoundation\.SHARED_UI_THEMES;/u);
+  assert.doesNotMatch(runtime, /UI_THEMES\.filter\(t => !\['twitch', 'dropper'\]/u);
+  const foundation = read('src/foundation.js');
+  assert.match(foundation, /const SHARED_UI_THEMES = Object\.freeze\(UI_THEMES\.slice\(0, 6\)\)/u);
+  assert.match(foundation, /UI_THEMES, SHARED_UI_THEMES, css/u);
 });
