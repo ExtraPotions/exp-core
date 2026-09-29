@@ -51,8 +51,8 @@ test('Dropper and SHIFT Core fixtures coordinate distinct launcher cells and sha
   const result=await page.evaluate(async()=>{
     const artwork='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="%238b5cf6"/></svg>';
     const makeTheme=(id,accent)=>({id,name:id,swatch:accent,bg:'#101014',panel:'#18181d',line:'#34343b',text:'#efeff1',muted:'#adadb8',accent,accent2:accent,skin:accent,skinVertical:accent});
-    const dropper=ExtraPotionsCore.createProduct({id:'dropper',name:'Dropper',version:'3.3.2',artwork,theme:makeTheme('dropper','#9147ff'),sections:[],priority:90});
-    const shift=ExtraPotionsCore.createProduct({id:'shift',name:'Shift',version:'3.3.2',artwork,theme:makeTheme('shift','#3563a3'),sections:[],priority:100});
+    const dropper=ExtraPotionsCore.createProduct({id:'dropper',name:'Dropper',version:'3.3.2',artwork,theme:makeTheme('dropper','#9147ff'),sections:[]});
+    const shift=ExtraPotionsCore.createProduct({id:'shift',name:'Shift',version:'3.3.2',artwork,theme:makeTheme('shift','#3563a3'),sections:[]});
     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
     const slots={reserved:Number(dropper.host.dataset.launcherReservedRows||0),dropper:Number(dropper.host.dataset.launcherSlot),shift:Number(shift.host.dataset.launcherSlot)};
     const owned={owner:shift.host.dataset.expThemeOwner,hidden:shift.host.dataset.expThemeDeprioritized,theme:shift.host.dataset.uiTheme};

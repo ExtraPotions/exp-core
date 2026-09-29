@@ -8,6 +8,7 @@ const path = require('node:path');
 const runtimePath = path.join(__dirname, '..', 'src', 'runtime.js');
 const source = fs.readFileSync(runtimePath, 'utf8');
 const { chromeContract } = require('../src/chrome-contract.js');
+const suiteContract = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'src', 'suite-contract.json'), 'utf8'));
 
 function loadLayoutGrid(peers) {
   const start = source.indexOf('  function layoutGrid() {');
@@ -47,23 +48,23 @@ function placement(node) {
 }
 
 test('shared Core preserves launcher cells when progress visibility changes', () => {
-  const dropper = peer('dropper', 90, 3);
-  const shift = peer('shift', 100);
-  const prisma = peer('prisma', 80);
-  const ward = peer('ward', 60);
+  const dropper = peer('dropper', suiteContract.dropper.launcherPriority, 3);
+  const shift = peer('shift', suiteContract.shift.launcherPriority);
+  const prisma = peer('prisma', suiteContract.prisma.launcherPriority);
+  const ward = peer('ward', suiteContract.ward.launcherPriority);
   const layoutGrid = loadLayoutGrid([dropper, ward, prisma, shift]);
 
   layoutGrid();
   assert.deepEqual(placement(dropper), { slot: '0', row: '0', column: '0', span: '1' });
   assert.deepEqual(placement(shift), { slot: '1', row: '0', column: '1', span: '1' });
-  assert.deepEqual(placement(prisma), { slot: '2', row: '0', column: '2', span: '1' });
-  assert.deepEqual(placement(ward), { slot: '3', row: '1', column: '0', span: '1' });
+  assert.deepEqual(placement(ward), { slot: '2', row: '0', column: '2', span: '1' });
+  assert.deepEqual(placement(prisma), { slot: '3', row: '1', column: '0', span: '1' });
 
   dropper.dataset.launcherReservedRows = '1';
   layoutGrid();
   assert.deepEqual(placement(shift), { slot: '1', row: '0', column: '1', span: '1' });
-  assert.deepEqual(placement(prisma), { slot: '2', row: '0', column: '2', span: '1' });
-  assert.deepEqual(placement(ward), { slot: '3', row: '1', column: '0', span: '1' });
+  assert.deepEqual(placement(ward), { slot: '2', row: '0', column: '2', span: '1' });
+  assert.deepEqual(placement(prisma), { slot: '3', row: '1', column: '0', span: '1' });
 });
 
 test('shared launcher measurements match the suite contract', () => {
