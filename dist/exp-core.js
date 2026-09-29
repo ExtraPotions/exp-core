@@ -2224,6 +2224,7 @@ const ExtraPotionsCore = (() => {
 
     let previous = location.href;
     let epoch = 0;
+    let pendingHistoryKind = '';
     const publish = kind => {
       const href = location.href;
       if (href === previous) return false;
@@ -2246,14 +2247,20 @@ const ExtraPotionsCore = (() => {
       const original = history[name];
       originals[name] = original;
       history[name] = function (...args) {
-        const result = Reflect.apply(original, this, args);
-        publish(name);
-        return result;
+        const priorKind = pendingHistoryKind;
+        pendingHistoryKind = name;
+        try {
+          const result = Reflect.apply(original, this, args);
+          publish(name);
+          return result;
+        } finally {
+          pendingHistoryKind = priorKind;
+        }
       };
     }
     addEventListener('popstate', () => publish('popstate'));
     addEventListener('hashchange', () => publish('hashchange'));
-    globalThis.navigation?.addEventListener('currententrychange', () => publish('currententrychange'));
+    globalThis.navigation?.addEventListener('currententrychange', () => publish(pendingHistoryKind || 'currententrychange'));
     return Object.freeze({ leader: true, owner: marker.dataset.expNavigationObserver });
   }
 
