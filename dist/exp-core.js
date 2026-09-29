@@ -860,7 +860,7 @@ return Object.freeze({ PRIDE_RAINBOW, PRIDE_RAINBOW_VERTICAL, CRIMSON_THEME, UI_
 /* Local diagnostic capture shared at build time by ExtraPotions products. */
 const ExtraPotionsDiagnostics = (() => {
   const LIMIT = 100;
-  const supportedProducts = ['ward', 'dropper', 'prisma', 'shift'];
+  const supportedProducts = ["dropper","shift","ward","prisma"];
   const protocol = 'exp-core-coordination-v1';
   const entries = [], hooks = [], registrations = new Map();
   const startedAt = new Date().toISOString();
@@ -1858,7 +1858,7 @@ const ExpMenuArrangement = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.4.0-dev.27';
+  const version = '3.4.0-dev.28';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
