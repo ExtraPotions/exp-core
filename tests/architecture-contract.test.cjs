@@ -107,4 +107,9 @@ test('suite manifest owns launcher and theme coordination priorities', () => {
   const foundation = read('src/foundation.js');
   assert.match(foundation, /const SHARED_UI_THEMES = Object\.freeze\(UI_THEMES\.slice\(0, 6\)\)/u);
   assert.match(foundation, /UI_THEMES, SHARED_UI_THEMES, css/u);
+  assert.match(runtime, /const FLOATING_NOTICE_CSS = /u);
+  assert.match(runtime, /function ensureFloatingNoticeStyle\(shadow\)/u);
+  assert.match(runtime, /function syncNoticeTheme\(notice, themeSource\)/u);
+  assert.equal((runtime.match(/\.exp-floating-update\{position:fixed;z-index:2147483647/gu) || []).length, 1);
+  assert.equal((runtime.match(/const syncTheme = \(\) => syncNoticeTheme\(notice, themeSource\);/gu) || []).length, 2);
 });
