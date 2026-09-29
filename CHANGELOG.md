@@ -1,11 +1,11 @@
-## 3.4.0-dev.40 — 2026-09-28
+## 3.4.0 — 2026-09-28
 
 - Makes the Core suite manifest authoritative for product inventory, roles, capabilities, root IDs, menu profiles, launcher priorities, theme priorities, presentation phases, and compact shared-state schemas.
 - Derives consumer synchronization, consumer verification, compatibility inventory, diagnostics inventory, and visual-audit coverage from that single validated suite contract instead of repeating product lists in Core tooling.
 - Centralizes the shared theme catalog and floating update/changelog notice chrome in Core while removing product-specific palette inspection, theme observers, launcher overrides, provenance aliases, lifecycle style exclusions, and WARD-only shell layout.
 - Uses stable Core-owned surface selectors and neutral shared provenance throughout the common foundation while retaining only documented compatibility fallbacks required by existing consumers.
 - Validates suite root IDs and exposes them through the generated Core contract so shared tools can locate product surfaces without hard-coded product branches.
-- Confirms the candidate Core builds successfully and passes Core verification plus injected consumer verification for Dropper, SHIFT, WARD, and PRISMA.
+- Confirms Core builds successfully and passes Core verification plus injected consumer verification for Dropper, SHIFT, WARD, and PRISMA.
 
 ## 3.4.0-dev.18 — 2026-09-28
 
