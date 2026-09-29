@@ -169,6 +169,19 @@ jobs:
         working-directory: exp-core
         run: node scripts/sync-products.cjs
 
+      - name: Rebuild every consumer with candidate Core
+        working-directory: exp-core
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r repo; do
+            (
+              cd "../${repo}"
+              npm ci
+              npm run build
+            )
+          done < <(node -e "const {repositories}=require('./scripts/suite-contract.cjs').loadSuiteContract(process.cwd()); process.stdout.write(repositories.join('\\n')+'\\n')")
+
       - name: Verify rollout trigger contract
         working-directory: exp-core
         run: node scripts/check-consumer-rollout-contract.cjs
