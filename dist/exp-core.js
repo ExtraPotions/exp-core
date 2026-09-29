@@ -1857,7 +1857,7 @@ const ExpMenuArrangement = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.4.0-dev.20';
+  const version = '3.4.0-dev.21';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -2113,9 +2113,9 @@ const ExtraPotionsCore = (() => {
     const productVersion = String(options.version || options.productVersion || 'unknown');
     if (!/^[a-z][a-z0-9-]+$/.test(id)) throw new Error('Invalid suite product ID');
     const contract = suiteContract(id);
-    const capabilities = normalizeSuiteCapabilities(options.capabilities === undefined ? contract?.capabilities : options.capabilities);
-    const priority = Number(options.priority ?? contract?.priority ?? 0);
-    const role = String(options.role || contract?.role || 'product');
+    const capabilities = normalizeSuiteCapabilities(contract ? contract.capabilities : options.capabilities);
+    const priority = Number(contract?.priority ?? options.priority ?? 0);
+    const role = String(contract?.role ?? options.role ?? 'product');
     let node = suiteProductNode(id);
     const previous = node ? JSON.stringify({
       version: node.dataset.expSuiteVersion || '',
@@ -2508,7 +2508,8 @@ const ExtraPotionsCore = (() => {
     const id = String(options.id || options.productId || '').toLowerCase();
     if (!/^[a-z][a-z0-9-]+$/.test(id)) throw new Error('Invalid presentation product ID');
     const contract = suiteContract(id);
-    const phases = normalizePresentationPhases(options.phases || options.phase || contract?.presentationPhases);
+    if (contract && !contract.presentationPhases.length) throw new Error('Presentation provider is not declared for this suite product');
+    const phases = normalizePresentationPhases(contract ? contract.presentationPhases : options.phases || options.phase);
     if (!phases.length) throw new Error('Presentation provider requires at least one valid phase');
     let node = presentationProviderNode(id);
     const previous = node ? JSON.stringify({
@@ -2521,7 +2522,7 @@ const ExtraPotionsCore = (() => {
       (document.documentElement || document.head || document.body)?.append(node);
     }
     node.dataset.expPresentationPhases = JSON.stringify(phases);
-    node.dataset.expPresentationPriority = String(Number(options.priority ?? SUITE_PRIORITY[id] ?? 0) || 0);
+    node.dataset.expPresentationPriority = String(Number(contract?.priority ?? options.priority ?? 0) || 0);
     const current = JSON.stringify({
       phases: node.dataset.expPresentationPhases,
       priority: node.dataset.expPresentationPriority,
@@ -3010,7 +3011,8 @@ const ExtraPotionsCore = (() => {
     if (registrations.has(host)) return registrations.get(host);
     const id = options.productId || options.id || host.dataset.productId;
     const contract = suiteContract(id);
-    Object.assign(host.dataset, { expProductLauncher:'1', productId:id, launcherPriority:String(options.priority ?? contract?.launcherPriority ?? 0) });
+    const launcherPriority = contract ? contract.launcherPriority : options.priority ?? 0;
+    Object.assign(host.dataset, { expProductLauncher:'1', productId:id, launcherPriority:String(launcherPriority) });
     applyMatteToggleChrome(host);
     // The launcher is non-modal: site-wide dialog backdrop styles must never
     // paint over the page when the reference opens its manual popover.
