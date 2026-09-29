@@ -1,6 +1,8 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
-const source=fs.readFileSync(path.join(__dirname,'../src/product-tools.js'),'utf8');
+const contract=JSON.parse(fs.readFileSync(path.join(__dirname,'../src/suite-contract.json'),'utf8'));
+const rootIds=Object.fromEntries(Object.entries(contract).map(([id,value])=>[id,value.rootId]));
+const source=fs.readFileSync(path.join(__dirname,'../src/product-tools.js'),'utf8').replace('__EXP_SUITE_ROOT_IDS__',JSON.stringify(rootIds));
 function tools(){return vm.runInNewContext(source+';ExtraPotionsTools',{Date,Math});}
 test('shared tools no longer expose settings backups',()=>{assert.equal(tools().createSettingsRecovery,undefined);assert.equal(tools().createRecoveryControls,undefined);});
 test('compatibility controls report mixed versions and duplicate instances without network access',async t=>{
@@ -21,3 +23,6 @@ test('Bitcoin donation displays and copies the exact address with an honest clip
  await page.evaluate(()=>navigator.clipboard.writeText=async()=>{throw Error('denied');});await page.getByRole('button',{name:'Copy Bitcoin address'}).click();
  assert.equal(await page.getByRole('status').textContent(),'Select and copy the address above.');
 });
+
+
+test('compatibility inventory is injected from the suite manifest',()=>{assert.doesNotMatch(source,/\['dropper','shift','prisma','ward'\]/u);assert.doesNotMatch(source,/id==='dropper'/u);assert.match(source,/const PRODUCT_ROOT_IDS = \{/u);});

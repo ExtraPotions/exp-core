@@ -15,20 +15,26 @@ const marker = '__EXP_CORE_VERSION__';
 const contractMarker = '__EXP_SUITE_CONTRACT__';
 const productIdsMarker = '__EXP_SUITE_PRODUCT_IDS__';
 const menuSectionsMarker = '__EXP_SUITE_MENU_SECTIONS__';
+const rootIdsMarker = '__EXP_SUITE_ROOT_IDS__';
 const markerCount = rawSource.split(marker).length - 1;
 const contractMarkerCount = rawSource.split(contractMarker).length - 1;
 const productIdsMarkerCount = rawSource.split(productIdsMarker).length - 1;
 const menuSectionsMarkerCount = rawSource.split(menuSectionsMarker).length - 1;
+const rootIdsMarkerCount = rawSource.split(rootIdsMarker).length - 1;
 if (markerCount !== 1) throw new Error('Core runtime version marker must appear exactly once');
 if (contractMarkerCount !== 1) throw new Error('Core suite contract marker must appear exactly once');
 if (productIdsMarkerCount !== 1) throw new Error('Core suite product ID marker must appear exactly once');
 if (menuSectionsMarkerCount !== 1) throw new Error('Core suite menu sections marker must appear exactly once');
+if (rootIdsMarkerCount !== 1) throw new Error('Core suite root ID marker must appear exactly once');
 const source = rawSource
   .replace(marker, version)
   .replace(contractMarker, JSON.stringify(suiteContract))
   .replace(productIdsMarker, JSON.stringify(Object.keys(suiteContract)))
   .replace(menuSectionsMarker, JSON.stringify(Object.fromEntries(
     Object.entries(suiteContract).map(([id, value]) => [id, value.menuSections || {}])
+  )))
+  .replace(rootIdsMarker, JSON.stringify(Object.fromEntries(
+    Object.entries(suiteContract).map(([id, value]) => [id, value.rootId])
   )));
 const provenance = { source:'ExtraPotions/exp-core', sourceVersion:version, architecture:'core-native' };
 const fileHashes = Object.fromEntries(files.map(f=>[f,hash(normalize(fs.readFileSync(path.join(root,'src',f),'utf8')))]));

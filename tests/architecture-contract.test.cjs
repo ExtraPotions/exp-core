@@ -73,6 +73,7 @@ test('build, sync, and CI share one validated suite-contract loader', () => {
   assert.match(loader, /repository is duplicated/u);
   assert.match(loader, /presentationPhases contains an unknown phase/u);
   assert.match(loader, /menuSections has unknown category/u);
+  assert.match(loader, /has invalid rootId/u);
 });
 
 test('visual audit coverage is locked to the suite manifest inventory', () => {
@@ -120,6 +121,10 @@ test('generated manifest carries the canonical suite contract from one source fi
   assert.match(read('src/menu-arrangement.js'), /const PRODUCT_SECTIONS = __EXP_SUITE_MENU_SECTIONS__;/u);
   assert.match(build, /const menuSectionsMarker = '__EXP_SUITE_MENU_SECTIONS__'/u);
   assert.match(build, /value\.menuSections \|\| \{\}/u);
+  assert.match(build, /const rootIdsMarker = '__EXP_SUITE_ROOT_IDS__'/u);
+  assert.match(read('src/product-tools.js'), /const PRODUCT_ROOT_IDS = __EXP_SUITE_ROOT_IDS__;/u);
+  assert.doesNotMatch(read('src/product-tools.js'), /\['dropper','shift','prisma','ward'\]/u);
+  assert.doesNotMatch(read('src/product-tools.js'), /id==='dropper'/u);
   assert.deepEqual(Object.keys(contract).sort(), Object.keys(Object.fromEntries(Object.entries(contract).map(([id, value]) => [id, value.menuSections]))).sort());
   assert.match(runtime, /menuSections: Object\.freeze\(Object\.fromEntries/u);
 });

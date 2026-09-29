@@ -15,6 +15,7 @@ const ExtraPotionsCore = (() => {
     Object.entries(values || {}).map(([id, value]) => [id, Object.freeze({
       role: String(value?.role || 'product'),
       repository: String(value?.repository || ''),
+      rootId: String(value?.rootId || ''),
       priority: Number(value?.priority || 0),
       launcherPriority: Number(value?.launcherPriority || 0),
       themePriority: Number(value?.themePriority || 0),

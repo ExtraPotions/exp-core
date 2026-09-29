@@ -36,6 +36,7 @@ function validateSuiteContract(contract) {
     if (product.role === 'flagship') flagshipCount += 1;
 
     assert(REPOSITORY.test(String(product.repository || '')), id + ' has invalid repository');
+    assert(ROOT_ID.test(String(product.rootId || '')), id + ' has invalid rootId');
     assert(!repositories.has(product.repository), id + ' repository is duplicated');
     repositories.add(product.repository);
 

@@ -1,5 +1,6 @@
 // Shared, local-only compatibility controls.
 const ExtraPotionsTools = (() => {
+  const PRODUCT_ROOT_IDS = __EXP_SUITE_ROOT_IDS__;
   function placeDonationPanel(panel, trigger){
     trigger.closest('.menu-head,.ward-header,header')?.after(panel);
     panel.style.cssText='position:static!important;width:100%!important;max-width:100%!important;margin:7px 0;box-shadow:none';
@@ -16,11 +17,11 @@ const ExtraPotionsTools = (() => {
   }
   function compatibilitySnapshot(){
     const rows=[];const warnings=[];const versions=new Set();
-    for(const id of ['dropper','shift','prisma','ward']){
+    for(const [id,rootId] of Object.entries(PRODUCT_ROOT_IDS)){
       const markers=[...document.querySelectorAll('[data-exp-diagnostics-product]')].filter(n=>n.dataset.expDiagnosticsProduct===id);
       if(!markers.length)continue;
       const productVersions=[...new Set(markers.map(n=>n.dataset.expProductVersion||'unknown'))];
-      const host=document.getElementById(id==='dropper'?'tdh-root':`exp-${id}-root`);
+      const host=document.getElementById(rootId);
       const core=host?.dataset.coreVersion||null;if(core)versions.add(core);
       rows.push({id,versions:productVersions,core,instances:markers.length});
       if(markers.length>1)warnings.push(`More than one ${id.toUpperCase()} instance is active.`);

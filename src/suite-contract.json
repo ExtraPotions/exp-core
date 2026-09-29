@@ -35,7 +35,8 @@
         "system"
       ]
     },
-    "repository": "Dropper"
+    "repository": "Dropper",
+    "rootId": "tdh-root"
   },
   "shift": {
     "role": "product",
@@ -74,7 +75,8 @@
         "system"
       ]
     },
-    "repository": "SHIFT"
+    "repository": "SHIFT",
+    "rootId": "exp-shift-root"
   },
   "ward": {
     "role": "product",
@@ -120,7 +122,8 @@
         "system"
       ]
     },
-    "repository": "WARD"
+    "repository": "WARD",
+    "rootId": "exp-ward-root"
   },
   "prisma": {
     "role": "product",
@@ -163,6 +166,7 @@
         "system"
       ]
     },
-    "repository": "PRISMA"
+    "repository": "PRISMA",
+    "rootId": "exp-prisma-root"
   }
 }

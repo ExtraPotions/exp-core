@@ -7,6 +7,7 @@ function product(overrides = {}) {
   return {
     role: 'product',
     repository: 'TEST',
+    rootId: 'exp-test-root',
     priority: 1,
     launcherPriority: 1,
     themePriority: 1,
@@ -38,4 +39,7 @@ test('suite contract validator rejects ambiguous topology and invalid shared con
   assert.throws(() => validateSuiteContract({
     one: product({ role:'flagship', repository:'One', menuSections:{ mystery:['x'] } }),
   }), /unknown category/u);
+  assert.throws(() => validateSuiteContract({
+    one: product({ role:'flagship', repository:'One', rootId:'#bad-root' }),
+  }), /invalid rootId/u);
 });
