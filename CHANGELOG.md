@@ -1,3 +1,8 @@
+## 3.4.3 — 2026-09-29
+
+- Verifies automatic Core rollout to Dropper, SHIFT, WARD, and PRISMA now that the rollout token is configured.
+- Changes no product behavior.
+
 ## 3.4.2 — 2026-09-29
 
 - Simplifies every product menu so it centers on the product: one menu width, and the menu always uses its product theme.
