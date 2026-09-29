@@ -108,6 +108,11 @@ test('Core lifecycle uses product-neutral ownership and style diagnostics', () =
   assert.doesNotMatch(lifecycle, /data-exp-shift|shift\.style/u);
 });
 
+test('shared tools and diagnostics do not carry product-specific provenance aliases', () => {
+  assert.doesNotMatch(read('src/product-tools.js'), /ward-header/u);
+  assert.doesNotMatch(read('src/diagnostics.js'), /Dropper/u);
+});
+
 
 
 test('generated manifest carries the canonical suite contract from one source file', () => {

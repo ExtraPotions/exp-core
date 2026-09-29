@@ -2,7 +2,7 @@
 const ExtraPotionsTools = (() => {
   const PRODUCT_ROOT_IDS = __EXP_SUITE_ROOT_IDS__;
   function placeDonationPanel(panel, trigger){
-    trigger.closest('.menu-head,.ward-header,header')?.after(panel);
+    trigger.closest('.menu-head,header')?.after(panel);
     panel.style.cssText='position:static!important;width:100%!important;max-width:100%!important;margin:7px 0;box-shadow:none';
   }
   function createBitcoinDonation(){

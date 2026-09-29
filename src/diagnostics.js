@@ -1,4 +1,4 @@
-/* Diagnostics reports and controls follow Dropper's shared implementation. */
+/* Shared diagnostics reports and controls. */
 EXP.Diagnostics = Object.freeze({
   createDiagnosticsReport: (product, details) => ExtraPotionsCore.createDiagnosticsReport(product, details),
   downloadDiagnostics: report => ExtraPotionsCore.downloadDiagnostics(report),
