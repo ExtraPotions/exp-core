@@ -76,6 +76,14 @@ function productSource(product) {
     for (const product of PRODUCTS) {
       await page.locator(product.root).waitFor({ state: 'attached' });
     }
+    await page.waitForFunction(products => {
+      const order = JSON.parse(localStorage.getItem('exp:v3:launcher-order') || '[]');
+      return order.length === products.length && products.every(product => {
+        const host = document.querySelector(product.root);
+        return host?.dataset?.launcherSlot !== undefined
+          && Boolean(host?.shadowRoot?.querySelector('[data-exp-part="launcher"]'));
+      });
+    }, PRODUCTS);
 
     const snapshot = await page.evaluate(products => {
       const result = {};
