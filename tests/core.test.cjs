@@ -257,6 +257,40 @@ test('canonical suite state rejects schema drift before publication', async (t) 
   assert.equal(result.valid, true);
 });
 
+test('all current products publish valid canonical state snapshots', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => ({
+    dropper: ExtraPotionsCore.publishSuiteState('dropper', 'dropper.state-changed', {
+      activeReward: true,
+      progressPercent: 42.5,
+      routingState: 'earning',
+    }),
+    shift: ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', {
+      active: true,
+      theme: 'midnight',
+      safeMode: false,
+      excluded: false,
+    }),
+    ward: ExtraPotionsCore.publishSuiteState('ward', 'ward.state-changed', {
+      active: true,
+      pageType: 'search',
+      interventions: 4,
+      hide: 1,
+      dim: 1,
+      collapse: 1,
+      annotate: 1,
+    }),
+    prisma: ExtraPotionsCore.publishSuiteState('prisma', 'prisma.state-changed', {
+      status: 'ready',
+      total: 7,
+      temporarilyHidden: false,
+    }),
+  }));
+  assert.deepEqual(result, { dropper: true, shift: true, ward: true, prisma: true });
+});
+
 test('deduplicated suite state publishing emits only meaningful changes', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
