@@ -164,6 +164,30 @@ test('suite registry exposes the flagship product order and product capabilities
   assert.deepEqual(state.identity, ['prisma']);
 });
 
+test('deduplicated suite state publishing emits only meaningful changes', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    const seen = [];
+    const stop = ExtraPotionsCore.onSuiteEvent(event => {
+      if (event.type === 'shift.state-changed') seen.push(event.detail);
+    });
+    const first = ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', { active: true, theme: 'midnight' });
+    const duplicate = ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', { theme: 'midnight', active: true });
+    const changed = ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', { active: true, theme: 'crimson' });
+    stop();
+    return { first, duplicate, changed, seen };
+  });
+  assert.equal(result.first, true);
+  assert.equal(result.duplicate, false);
+  assert.equal(result.changed, true);
+  assert.deepEqual(result.seen, [
+    { active: true, theme: 'midnight' },
+    { active: true, theme: 'crimson' },
+  ]);
+});
+
 test('suite event channel crosses product boundaries with serialized payloads', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
