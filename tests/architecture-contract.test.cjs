@@ -172,4 +172,5 @@ test('suite manifest owns launcher and theme coordination priorities', () => {
   assert.match(runtime, /notice\.dataset\.expUpdateNotice = '1'/u);
   assert.match(diagnostics, /first\('\[data-exp-part="launcher"\]'\)/u);
   assert.match(diagnostics, /first\('\[data-exp-part="dock"\]'\)/u);
+  assert.doesNotMatch(runtime, /\.ward-shell\{display:contents\}/u);
 });
