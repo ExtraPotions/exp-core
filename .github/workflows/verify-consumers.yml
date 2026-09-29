@@ -9,6 +9,7 @@ on:
       - "package-lock.json"
       - "scripts/build.cjs"
       - "scripts/sync-products.cjs"
+      - "scripts/consumer-matrix.cjs"
       - ".github/workflows/verify-consumers.yml"
   workflow_dispatch:
 
@@ -20,9 +21,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  dropper:
-    name: Dropper flagship
+  discover:
+    name: Discover suite consumers
     if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    outputs:
+      flagship: ${{ steps.matrix.outputs.flagship }}
+      products: ${{ steps.matrix.outputs.products }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build consumer matrix from suite manifest
+        id: matrix
+        run: node scripts/consumer-matrix.cjs >> "$GITHUB_OUTPUT"
+
+  flagship:
+    name: ${{ needs.discover.outputs.flagship }} flagship
+    needs: discover
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -31,11 +45,11 @@ jobs:
         with:
           path: exp-core
 
-      - name: Check out Dropper
+      - name: Check out ${{ needs.discover.outputs.flagship }}
         uses: actions/checkout@v4
         with:
-          repository: ExtraPotions/Dropper
-          path: Dropper
+          repository: ExtraPotions/${{ needs.discover.outputs.flagship }}
+          path: ${{ needs.discover.outputs.flagship }}
 
       - uses: actions/setup-node@v4
         with:
@@ -43,7 +57,7 @@ jobs:
           cache: npm
           cache-dependency-path: |
             exp-core/package-lock.json
-            Dropper/package-lock.json
+            ${{ needs.discover.outputs.flagship }}/package-lock.json
 
       - name: Build candidate Core
         working-directory: exp-core
@@ -51,29 +65,30 @@ jobs:
           npm ci
           npm run build
 
-      - name: Inject candidate Core into Dropper
+      - name: Inject candidate Core into ${{ needs.discover.outputs.flagship }}
         working-directory: exp-core
-        run: node scripts/sync-products.cjs Dropper
+        run: node scripts/sync-products.cjs "${{ needs.discover.outputs.flagship }}"
 
-      - name: Install Dropper browser runtime
-        working-directory: Dropper
+      - name: Install ${{ needs.discover.outputs.flagship }} browser runtime
+        working-directory: ${{ needs.discover.outputs.flagship }}
         run: |
           npm ci
           npx playwright install --with-deps chromium
 
-      - name: Verify Dropper against candidate Core
-        working-directory: Dropper
+      - name: Verify ${{ needs.discover.outputs.flagship }} against candidate Core
+        working-directory: ${{ needs.discover.outputs.flagship }}
         run: npm test
 
   products:
     name: ${{ matrix.product }}
-    needs: dropper
+    needs: [discover, flagship]
+    if: needs.discover.outputs.products != '[]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        product: [SHIFT, WARD, PRISMA]
+        product: ${{ fromJSON(needs.discover.outputs.products) }}
     steps:
       - name: Check out candidate Core
         uses: actions/checkout@v4
@@ -102,7 +117,7 @@ jobs:
 
       - name: Inject candidate Core into ${{ matrix.product }}
         working-directory: exp-core
-        run: node scripts/sync-products.cjs ${{ matrix.product }}
+        run: node scripts/sync-products.cjs "${{ matrix.product }}"
 
       - name: Install ${{ matrix.product }} browser runtime
         working-directory: ${{ matrix.product }}

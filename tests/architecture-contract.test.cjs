@@ -50,6 +50,19 @@ test('Core synchronization discovers downstream consumers from the suite manifes
   assert.match(sync, /const pin='v'\+version/u);
 });
 
+test('consumer verification topology is discovered from the suite manifest', () => {
+  const workflow = read('.github/workflows/verify-consumers.yml');
+  const matrix = read('scripts/consumer-matrix.cjs');
+  assert.match(matrix, /suite-contract\.json/u);
+  assert.match(matrix, /product\.role==='flagship'/u);
+  assert.match(matrix, /products='\+JSON\.stringify\(products\)/u);
+  assert.match(workflow, /node scripts\/consumer-matrix\.cjs >> "\$GITHUB_OUTPUT"/u);
+  assert.match(workflow, /fromJSON\(needs\.discover\.outputs\.products\)/u);
+  assert.match(workflow, /ExtraPotions\/\$\{\{ needs\.discover\.outputs\.flagship \}\}/u);
+  assert.doesNotMatch(workflow, /repository: ExtraPotions\/Dropper/u);
+  assert.doesNotMatch(workflow, /product: \[SHIFT, WARD, PRISMA\]/u);
+});
+
 test('Core exposes shared services through the public ExtraPotionsCore API', () => {
   const runtime = read('src/runtime.js');
   assert.match(runtime, /bindDiagnosticsControls:ExtraPotionsDiagnostics\.bindControls/u);
