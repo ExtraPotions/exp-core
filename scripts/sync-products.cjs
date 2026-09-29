@@ -2,7 +2,9 @@
 const fs=require('node:fs');const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const names=process.argv.filter(x=>!x.startsWith('--')).slice(2);
-const products=names.length?names:['Dropper','SHIFT','PRISMA','WARD'];
+const suite=JSON.parse(fs.readFileSync(path.join(root,'src','suite-contract.json'),'utf8'));
+const discoveredProducts=Object.values(suite).map(product=>product.repository).filter(Boolean);
+const products=names.length?names:discoveredProducts;
 for(const name of products){
   const destination=path.resolve(root,'..',name);
   if(!fs.existsSync(path.join(destination,'package.json')))throw new Error('Product source not found: '+destination);

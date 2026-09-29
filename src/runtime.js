@@ -14,6 +14,7 @@ const ExtraPotionsCore = (() => {
   const freezeSuiteContract = values => Object.freeze(Object.fromEntries(
     Object.entries(values || {}).map(([id, value]) => [id, Object.freeze({
       role: String(value?.role || 'product'),
+      repository: String(value?.repository || ''),
       priority: Number(value?.priority || 0),
       launcherPriority: Number(value?.launcherPriority || 0),
       themePriority: Number(value?.themePriority || 0),
@@ -237,6 +238,7 @@ const ExtraPotionsCore = (() => {
     return Object.freeze({
       id,
       role: known.role || 'product',
+      repository: known.repository || '',
       priority: Number(known.priority || SUITE_PRIORITY[id] || 0),
       launcherPriority: Number(known.launcherPriority || LAUNCHER_PRIORITY[id] || 0),
       themePriority: Number(known.themePriority || THEME_PRIORITY[id] || 0),

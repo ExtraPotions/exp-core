@@ -37,9 +37,15 @@ test('legacy Dropper-to-Core generation paths are absent', () => {
   }
 });
 
-test('Core synchronization treats every product, including Dropper, as a downstream consumer', () => {
+test('Core synchronization discovers downstream consumers from the suite manifest', () => {
   const sync = read('scripts/sync-products.cjs');
-  assert.match(sync, /\['Dropper','SHIFT','PRISMA','WARD'\]/u);
+  const contract = JSON.parse(read('src/suite-contract.json'));
+  assert.match(sync, /suite-contract\.json/u);
+  assert.match(sync, /Object\.values\(suite\)\.map\(product=>product\.repository\)/u);
+  assert.doesNotMatch(sync, /\['Dropper','SHIFT','PRISMA','WARD'\]/u);
+  assert.deepEqual(Object.fromEntries(Object.entries(contract).map(([id, value]) => [id, value.repository])), {
+    dropper: 'Dropper', shift: 'SHIFT', ward: 'WARD', prisma: 'PRISMA'
+  });
   assert.match(sync, /vendor','exp-core','PIN'/u);
   assert.match(sync, /const pin='v'\+version/u);
 });
