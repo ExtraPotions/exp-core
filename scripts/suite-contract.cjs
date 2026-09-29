@@ -8,6 +8,7 @@ const PRODUCT_ID = /^[a-z][a-z0-9-]+$/u;
 const REPOSITORY = /^[A-Za-z0-9._-]+$/u;
 const CAPABILITY = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/u;
 const EVENT_TYPE = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/u;
+const ROOT_ID = /^[A-Za-z][A-Za-z0-9_-]*$/u;
 
 function assert(condition, message) {
   if (!condition) throw new Error('Invalid suite contract: ' + message);
