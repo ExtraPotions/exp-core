@@ -59,3 +59,18 @@ test('Core owns shared product-service bootstrap', () => {
   assert.match(runtime, /const updates = createReleaseUpdateChecker/u);
   assert.match(runtime, /createProductServices/u);
 });
+
+
+test('generated manifest carries the canonical suite contract from one source file', () => {
+  const contract = JSON.parse(read('src/suite-contract.json'));
+  const manifest = JSON.parse(read('dist/manifest.json'));
+  const runtime = read('src/runtime.js');
+  const build = read('scripts/build.cjs');
+  assert.deepEqual(manifest.suiteContract, contract);
+  assert.equal(typeof manifest.files['suite-contract.json'], 'string');
+  assert.match(manifest.files['suite-contract.json'], /^[0-9a-f]{64}$/u);
+  assert.match(runtime, /__EXP_SUITE_CONTRACT__/u);
+  assert.doesNotMatch(runtime, /twitch\.drops|retail\.classification|text\.identity-detection/u);
+  assert.match(build, /contractMarker = '__EXP_SUITE_CONTRACT__'/u);
+  assert.match(build, /suiteContract/u);
+});
