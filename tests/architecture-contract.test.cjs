@@ -229,3 +229,14 @@ test('Core foundation contains no Dropper-specific DOM selectors', () => {
   const foundation = read('src/foundation.js');
   assert.doesNotMatch(foundation, /#tdh(?:-|\b)|\[data-dropper-/u);
 });
+
+test('Core foundation excludes Dropper-only UI class families', () => {
+  const foundation = read('src/foundation.js');
+  for (const className of [
+    'progress-stack','badge-only-progress-slot','state-pill','stream-info','drop-section',
+    'progress-copy','skip-streamer-chip','campaign-manager','eligibility-chip',
+    'compact-inventory','inventory-head','reward-thumb','queue-collapsible'
+  ]) {
+    assert.doesNotMatch(foundation, new RegExp('\\.' + className + '(?![\\w-])', 'u'), className);
+  }
+});
