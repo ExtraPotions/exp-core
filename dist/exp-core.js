@@ -27,25 +27,25 @@ function css() {
         position: fixed; right: 12px; z-index: 2147483600;
         display: flex; flex-direction: column-reverse; align-items: flex-end;
         width: max-content; max-width: calc(100vw - 24px); gap: 8px;
-        --theme-bg:#111114; --theme-panel:#19191e; --theme-raised:#2a2a31; --theme-inset:#0e0e10; --theme-line:#34343b; --theme-text:#efeff1; --theme-muted:#adadb8; --theme-accent:#9147ff; --theme-accent2:#bf94ff; --theme-link:#c6a4ff; --theme-focus:#bf94ff; --theme-onAccent:#111114; --theme-skin:linear-gradient(135deg,#d9b5ff,#9b5af9,#7428e8); --theme-skin-vertical:linear-gradient(180deg,#d9b5ff,#9b5af9,#7428e8); --dropper-ui-opacity:1;
+        --theme-bg:#111114; --theme-panel:#19191e; --theme-raised:#2a2a31; --theme-inset:#0e0e10; --theme-line:#34343b; --theme-text:#efeff1; --theme-muted:#adadb8; --theme-accent:#9147ff; --theme-accent2:#bf94ff; --theme-link:#c6a4ff; --theme-focus:#bf94ff; --theme-onAccent:#111114; --theme-skin:linear-gradient(135deg,#d9b5ff,#9b5af9,#7428e8); --theme-skin-vertical:linear-gradient(180deg,#d9b5ff,#9b5af9,#7428e8); --exp-ui-opacity:1; --exp-menu-width:312px; --dropper-ui-opacity:1;
         font: 13px/1.42 ui-sans-serif, system-ui, "Segoe UI", sans-serif; color: var(--theme-text);
       }
       .cluster.open-up { flex-direction: column; }
       #tdh-tools-dock,
       #tdh-drop-card,
       .update-notice {
-        opacity:var(--dropper-ui-opacity,1);
+        opacity:var(--exp-ui-opacity,var(--dropper-ui-opacity,1));
         transition:opacity .15s ease;
       }
       .progress-stack {
-        width:min(var(--dropper-width, 312px), calc(100vw - 24px));
+        width:min(var(--exp-menu-width,var(--dropper-width, 312px)), calc(100vw - 24px));
         display:flex; flex-direction:column; align-items:stretch;
         transition:.15s width;
         gap:6px;
       }
       .progress-stack[data-collapsed-width="compact"] { width:min(260px, calc(100vw - 24px)); }
       .progress-stack[data-collapsed-width="narrow"] { width:min(220px, calc(100vw - 24px)); }
-      .progress-stack[data-collapsed-width="full"] { width:min(var(--dropper-width, 312px), calc(100vw - 24px)); }
+      .progress-stack[data-collapsed-width="full"] { width:min(var(--exp-menu-width,var(--dropper-width, 312px)), calc(100vw - 24px)); }
       .cluster[data-panel-width="compact"] #tdh-tools-dock,
       .cluster[data-panel-width="compact"] > .update-notice[data-placement="menu"] {
         width:min(260px, calc(100vw - 24px));
@@ -56,7 +56,7 @@ function css() {
       }
       .cluster[data-panel-width="full"] #tdh-tools-dock,
       .cluster[data-panel-width="full"] > .update-notice[data-placement="menu"] {
-        width:min(var(--dropper-width, 312px), calc(100vw - 24px));
+        width:min(var(--exp-menu-width,var(--dropper-width, 312px)), calc(100vw - 24px));
       }
       .progress-stack.badge-only .badge-row { justify-content:flex-end; min-height:48px!important; }
       .progress-stack.badge-only #tdh-settings-launcher {
@@ -251,7 +251,7 @@ function css() {
       #tdh-settings-launcher .icon { position:absolute; top:50%; left:50%; width:40px; height:40px; pointer-events:none; z-index:1; transform:translate(-50%,-50%); }
       #tdh-tools-dock {
         position:fixed; right:12px; top:auto; bottom:auto;
-        display:none; width:min(var(--dropper-width, 312px), calc(100vw - 24px)); max-width:calc(100vw - 24px);
+        display:none; width:min(var(--exp-menu-width,var(--dropper-width, 312px)), calc(100vw - 24px)); max-width:calc(100vw - 24px);
         height:max-content; min-height:0; max-height:none; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; flex:0 0 auto;
         transition:.15s width;
         padding:9px 9px 4px; background:var(--theme-bg); border:1px solid var(--theme-line); border-radius:14px; box-shadow:0 18px 50px #0008; color-scheme:dark;
@@ -267,14 +267,14 @@ function css() {
       }
       .header-actions { display:flex; align-items:flex-start; gap:5px; position:static; }
       .support-wrap { position:static; }
-      #tdh-support-button, #tdh-rail-close {
+      .support-button, #tdh-support-button, #tdh-rail-close {
         width:30px; height:30px; min-width:30px; padding:0;
         border:1px solid #3a3a42; border-radius:8px; background:#151519; color:#b8b8c0;
         cursor:pointer;
       }
-      #tdh-support-button { display:grid; place-items:center; }
-      #tdh-support-button svg { width:15px; height:15px; fill:currentColor; }
-      #tdh-support-button:hover, #tdh-support-button:focus-visible {
+      .support-button, #tdh-support-button { display:grid; place-items:center; }
+      .support-button svg, #tdh-support-button svg { width:15px; height:15px; fill:currentColor; }
+      .support-button:hover, .support-button:focus-visible, #tdh-support-button:hover, #tdh-support-button:focus-visible {
         border-color:var(--theme-accent); color:var(--theme-accent2); background:#211b2b; outline:none;
       }
       .support-popover {
@@ -1857,7 +1857,7 @@ const ExpMenuArrangement = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.4.0-dev.23';
+  const version = '3.4.0-dev.24';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -3266,7 +3266,7 @@ const ExtraPotionsCore = (() => {
     const styles = injectStyle(shadow, canonicalCss + compositionCss, { expCoreStyle:version });
     const themeRoot = document.createElement('div'); themeRoot.className = 'exp-core-theme';
     [...shadow.childNodes].filter(node => node !== styles).forEach(node => themeRoot.append(node)); shadow.append(themeRoot);
-    panel.dataset.expPart = 'dock'; panel.classList.add('dropper-menu-surface'); makeLauncher(launcher,launcherSrc); normalizeHeader(panel); normalizeControls(panel);
+    panel.dataset.expPart = 'dock'; panel.classList.add('exp-menu-surface'); makeLauncher(launcher,launcherSrc); normalizeHeader(panel); normalizeControls(panel);
     let defaultSupport = null;
     const header = panel.querySelector('.menu-head');
     if (header && !header.querySelector('.support-wrap') && options.supportUrl !== '') {
@@ -3316,7 +3316,7 @@ const ExtraPotionsCore = (() => {
       themeRoot.classList.toggle('reduce-motion', state.reduceMotion === true || state.reduceMotion === 'on' || state.reducedMotion === 'reduce' || (state.reduceMotion === 'system' || state.reducedMotion === 'system') && matchMedia('(prefers-reduced-motion:reduce)').matches);
       const opacityValue = Number(state.opacityPercent);
       const opacity = state.customOpacity ? (Number.isFinite(opacityValue) ? Math.max(40, Math.min(100, Math.round(opacityValue / 5) * 5)) : 85)/100 : 1;
-      themeRoot.style.setProperty('--dropper-ui-opacity',String(opacity));
+      themeRoot.style.setProperty('--exp-ui-opacity',String(opacity)); themeRoot.style.setProperty('--dropper-ui-opacity',String(opacity));
       const offset = parseFloat(getComputedStyle(host).getPropertyValue('--exp-launcher-offset')) || 0;
       const x = parseFloat(getComputedStyle(host).getPropertyValue('--exp-launcher-x')) || 0;
       const delta = Math.max(8-(innerHeight-60), Math.min(4, Number(read(GRID_DELTA,0)) || 0));
@@ -3540,15 +3540,15 @@ const ExtraPotionsCore = (() => {
     wrapper.className = 'support-wrap';
     const button = document.createElement('button');
     button.type = 'button';
-    button.id = 'tdh-support-button';
+    button.id = 'exp-support-button';
     button.className = 'support-button';
     button.setAttribute('aria-label', label);
     button.setAttribute('aria-expanded', 'false');
-    button.setAttribute('aria-controls', 'tdh-support-popover');
+    button.setAttribute('aria-controls', 'exp-support-popover');
     button.title = label;
     button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.2-4.35-9.55-8.45C.42 9.02 2.3 5 6.25 5c2.15 0 3.56 1.21 4.33 2.3C11.36 6.21 12.77 5 14.92 5c3.95 0 5.83 4.02 3.8 7.55C16.36 16.65 12 21 12 21Z"/></svg>';
     const popover = document.createElement('div');
-    popover.id = 'tdh-support-popover';
+    popover.id = 'exp-support-popover';
     popover.className = 'support-popover';
     popover.setAttribute('role', 'dialog');
     popover.setAttribute('aria-label', label);
