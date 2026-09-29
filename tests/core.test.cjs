@@ -800,26 +800,73 @@ test('suite-aware compatibility controls surface Core interoperability health', 
   assert.match(result.text, /advisory coordination data/u);
 });
 
-test('product compatibility merges interoperability health conflicts', async (t) => {
+test('known suite metadata cannot be overridden by product registration', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
   await page.addScriptTag({ content: source });
   const result = await page.evaluate(() => {
-    ExtraPotionsCore.registerDiagnosticsProduct('shift', '3.4.12');
-    const healthy = ExtraPotionsCore.productCompatibility();
     ExtraPotionsCore.registerSuiteProduct({
       productId: 'shift',
       productVersion: '3.4.12',
-      capabilities: ['appearance.theme'],
+      role: 'override',
+      priority: 999,
+      capabilities: ['override.capability'],
     });
-    const drift = ExtraPotionsCore.productCompatibility();
-    return { healthy, drift };
+    ExtraPotionsCore.registerPresentationProvider({
+      productId: 'shift',
+      phases: ['annotate'],
+      priority: 999,
+    });
+    const host = document.createElement('div');
+    host.attachShadow({ mode: 'open' });
+    document.documentElement.append(host);
+    const dispose = ExtraPotionsCore.registerLauncher(host, { productId: 'shift', priority: 999 });
+    const snapshot = ExtraPotionsCore.suiteSnapshot().products.find(item => item.id === 'shift');
+    const provider = ExtraPotionsCore.presentationProviders().find(item => item.id === 'shift');
+    const launcherPriority = Number(host.dataset.launcherPriority);
+    dispose();
+    host.remove();
+    return { snapshot, provider, launcherPriority, compatibility: ExtraPotionsCore.productCompatibility() };
   });
-  assert.equal(result.healthy.status, 'no-conflicts-observed');
-  assert.equal(result.healthy.interoperability.status, 'healthy');
-  assert.equal(result.drift.status, 'conflicts-detected');
-  assert.equal(result.drift.interoperability.status, 'conflicts-detected');
-  assert.ok(result.drift.conflicts.some(conflict => conflict.type === 'suite-capability-mismatch'));
+  assert.equal(result.snapshot.role, 'product');
+  assert.equal(result.snapshot.priority, 3);
+  assert.deepEqual(result.snapshot.capabilities, ['appearance.theme', 'appearance.readability', 'appearance.site-profile']);
+  assert.deepEqual(result.provider.phases, ['theme']);
+  assert.equal(result.provider.priority, 3);
+  assert.equal(result.launcherPriority, 100);
+  assert.equal(result.compatibility.status, 'no-conflicts-observed');
+});
+
+test('unknown products retain extensible registration metadata', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    ExtraPotionsCore.registerSuiteProduct({
+      productId: 'future',
+      productVersion: '0.1.0',
+      role: 'experimental',
+      priority: 7,
+      capabilities: ['future.example'],
+    });
+    ExtraPotionsCore.registerPresentationProvider({ productId: 'future', phases: ['ui'], priority: 7 });
+    const host = document.createElement('div');
+    host.attachShadow({ mode: 'open' });
+    document.documentElement.append(host);
+    const dispose = ExtraPotionsCore.registerLauncher(host, { productId: 'future', priority: 77 });
+    const snapshot = ExtraPotionsCore.suiteSnapshot().products.find(item => item.id === 'future');
+    const provider = ExtraPotionsCore.presentationProviders().find(item => item.id === 'future');
+    const launcherPriority = Number(host.dataset.launcherPriority);
+    dispose();
+    host.remove();
+    return { snapshot, provider, launcherPriority };
+  });
+  assert.equal(result.snapshot.role, 'experimental');
+  assert.equal(result.snapshot.priority, 7);
+  assert.deepEqual(result.snapshot.capabilities, ['future.example']);
+  assert.deepEqual(result.provider.phases, ['ui']);
+  assert.equal(result.provider.priority, 7);
+  assert.equal(result.launcherPriority, 77);
 });
 
 test('diagnostic reports identify their product', async (t) => {
