@@ -19,21 +19,37 @@ const ExtraPotionsCore = (() => {
       role: 'flagship',
       capabilities: Object.freeze(['twitch.drops', 'twitch.campaigns', 'twitch.progress', 'twitch.claims', 'twitch.stream-management']),
       presentationPhases: Object.freeze([]),
+      state: Object.freeze({
+        type: 'dropper.state-changed',
+        fields: Object.freeze({ activeReward: 'boolean', progressPercent: 'percent-nullable', routingState: 'token' }),
+      }),
     }),
     shift: Object.freeze({
       role: 'product',
       capabilities: Object.freeze(['appearance.theme', 'appearance.readability', 'appearance.site-profile']),
       presentationPhases: Object.freeze(['theme']),
+      state: Object.freeze({
+        type: 'shift.state-changed',
+        fields: Object.freeze({ active: 'boolean', theme: 'token', safeMode: 'boolean', excluded: 'boolean' }),
+      }),
     }),
     ward: Object.freeze({
       role: 'product',
       capabilities: Object.freeze(['retail.classification', 'retail.cleanup', 'retail.coupons']),
       presentationPhases: Object.freeze(['classify', 'visibility']),
+      state: Object.freeze({
+        type: 'ward.state-changed',
+        fields: Object.freeze({ active: 'boolean', pageType: 'token', interventions: 'count', hide: 'count', dim: 'count', collapse: 'count', annotate: 'count' }),
+      }),
     }),
     prisma: Object.freeze({
       role: 'product',
       capabilities: Object.freeze(['text.identity-detection', 'text.identity-highlighting', 'identity.catalog']),
       presentationPhases: Object.freeze(['annotate']),
+      state: Object.freeze({
+        type: 'prisma.state-changed',
+        fields: Object.freeze({ status: 'token', total: 'count', temporarilyHidden: 'boolean' }),
+      }),
     }),
   });
   const SUITE_EVENT = 'exp-core:suite';
@@ -232,6 +248,10 @@ const ExtraPotionsCore = (() => {
       priority: Number(SUITE_PRIORITY[id] || 0),
       capabilities: Object.freeze(normalizeSuiteCapabilities(known.capabilities)),
       presentationPhases: Object.freeze(normalizePresentationPhases(known.presentationPhases || [])),
+      state: known.state ? Object.freeze({
+        type: known.state.type,
+        fields: Object.freeze({ ...known.state.fields }),
+      }) : null,
     });
   }
 
@@ -350,6 +370,47 @@ const ExtraPotionsCore = (() => {
     return Object.fromEntries(Object.keys(value).sort().map(key => [key, stableSuiteValue(value[key])]));
   }
 
+  function normalizeSuiteStateForContract(productId, type, state = {}) {
+    const source = String(productId || '').toLowerCase();
+    const eventType = String(type || '').trim().toLowerCase();
+    const contract = suiteContract(source);
+    const schema = contract?.state;
+    const input = state && typeof state === 'object' && !Array.isArray(state) ? state : {};
+    if (!schema || schema.type !== eventType) return stableSuiteValue(input);
+    const keys = Object.keys(input);
+    const expected = Object.keys(schema.fields);
+    const unknown = keys.filter(key => !Object.hasOwn(schema.fields, key));
+    if (unknown.length) throw new Error(`Unknown suite state field: ${unknown[0]}`);
+    const missing = expected.filter(key => !Object.hasOwn(input, key));
+    if (missing.length) throw new Error(`Missing suite state field: ${missing[0]}`);
+    const output = {};
+    for (const [key, kind] of Object.entries(schema.fields)) {
+      const value = input[key];
+      if (kind === 'boolean') {
+        if (typeof value !== 'boolean') throw new Error(`Invalid boolean suite state field: ${key}`);
+        output[key] = value;
+      } else if (kind === 'token') {
+        const token = String(value ?? '').trim().toLowerCase();
+        if (!/^[a-z0-9][a-z0-9._:-]{0,79}$/.test(token)) throw new Error(`Invalid token suite state field: ${key}`);
+        output[key] = token;
+      } else if (kind === 'count') {
+        const count = Number(value);
+        if (!Number.isSafeInteger(count) || count < 0) throw new Error(`Invalid count suite state field: ${key}`);
+        output[key] = count;
+      } else if (kind === 'percent-nullable') {
+        if (value === null) output[key] = null;
+        else {
+          const percent = Number(value);
+          if (!Number.isFinite(percent) || percent < 0 || percent > 100) throw new Error(`Invalid percent suite state field: ${key}`);
+          output[key] = percent;
+        }
+      } else {
+        throw new Error(`Unsupported suite state schema kind: ${kind}`);
+      }
+    }
+    return stableSuiteValue(output);
+  }
+
   function suiteStateNode(productId, type) {
     const source = String(productId || '').toLowerCase();
     const eventType = String(type || '').trim().toLowerCase();
@@ -394,7 +455,11 @@ const ExtraPotionsCore = (() => {
     if (!/^[a-z][a-z0-9-]+$/.test(source)) throw new Error('Invalid suite state product ID');
     if (!/^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/.test(eventType)) throw new Error('Invalid suite state event type');
     let safeState = {};
-    try { safeState = stableSuiteValue(JSON.parse(JSON.stringify(state || {}))); } catch {}
+    try {
+      safeState = normalizeSuiteStateForContract(source, eventType, JSON.parse(JSON.stringify(state || {})));
+    } catch (error) {
+      throw error;
+    }
     const serialized = JSON.stringify(safeState);
     if (serialized.length > 4096) throw new Error('Suite state payload exceeds 4096 bytes');
     const key = `${source}:${eventType}`;
