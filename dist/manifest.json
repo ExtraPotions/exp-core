@@ -1,11 +1,11 @@
 {
-  "coreVersion": "3.4.0-dev.15",
+  "coreVersion": "3.4.0-dev.16",
   "source": {
     "source": "ExtraPotions/exp-core",
-    "sourceVersion": "3.4.0-dev.15",
+    "sourceVersion": "3.4.0-dev.16",
     "architecture": "core-native"
   },
-  "bundleSha256": "2ed3e97fc6debfecb24a9710921d3acc24b8487aaaf407a0c14caba80d55c4f2",
+  "bundleSha256": "2e951e6769e0635045e5643cee8211b273b1eb577b7791958e5b11d6daaad42e",
   "files": {
     "foundation.js": "6d9d8540ab1e750cc0f256da71fe7d575bfd55633ef7e45f40b0c8aff5002c56",
     "diagnostic-report.js": "9d1c588495e07e411262184a8263a3d03d0e3dbc7f45c7ff71898a7f3c131861",
