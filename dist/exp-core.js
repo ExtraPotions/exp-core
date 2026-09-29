@@ -1554,6 +1554,7 @@ function createProductLifecycle(shared) {
 
 // Shared, local-only compatibility controls.
 const ExtraPotionsTools = (() => {
+  const PRODUCT_ROOT_IDS = {"dropper":"tdh-root","shift":"exp-shift-root","ward":"exp-ward-root","prisma":"exp-prisma-root"};
   function placeDonationPanel(panel, trigger){
     trigger.closest('.menu-head,.ward-header,header')?.after(panel);
     panel.style.cssText='position:static!important;width:100%!important;max-width:100%!important;margin:7px 0;box-shadow:none';
@@ -1570,11 +1571,11 @@ const ExtraPotionsTools = (() => {
   }
   function compatibilitySnapshot(){
     const rows=[];const warnings=[];const versions=new Set();
-    for(const id of ['dropper','shift','prisma','ward']){
+    for(const [id,rootId] of Object.entries(PRODUCT_ROOT_IDS)){
       const markers=[...document.querySelectorAll('[data-exp-diagnostics-product]')].filter(n=>n.dataset.expDiagnosticsProduct===id);
       if(!markers.length)continue;
       const productVersions=[...new Set(markers.map(n=>n.dataset.expProductVersion||'unknown'))];
-      const host=document.getElementById(id==='dropper'?'tdh-root':`exp-${id}-root`);
+      const host=document.getElementById(rootId);
       const core=host?.dataset.coreVersion||null;if(core)versions.add(core);
       rows.push({id,versions:productVersions,core,instances:markers.length});
       if(markers.length>1)warnings.push(`More than one ${id.toUpperCase()} instance is active.`);
@@ -1834,7 +1835,7 @@ const ExpMenuArrangement = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.4.0-dev.36';
+  const version = '3.4.0-dev.37';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -1847,6 +1848,7 @@ const ExtraPotionsCore = (() => {
     Object.entries(values || {}).map(([id, value]) => [id, Object.freeze({
       role: String(value?.role || 'product'),
       repository: String(value?.repository || ''),
+      rootId: String(value?.rootId || ''),
       priority: Number(value?.priority || 0),
       launcherPriority: Number(value?.launcherPriority || 0),
       themePriority: Number(value?.themePriority || 0),
@@ -1861,7 +1863,7 @@ const ExtraPotionsCore = (() => {
       }) : null,
     })])
   ));
-  const SUITE_PRODUCTS = freezeSuiteContract({"dropper":{"role":"flagship","priority":4,"launcherPriority":110,"themePriority":4,"capabilities":["twitch.drops","twitch.campaigns","twitch.progress","twitch.claims","twitch.stream-management"],"presentationPhases":[],"state":{"type":"dropper.state-changed","fields":{"activeReward":"boolean","progressPercent":"percent-nullable","routingState":"token"}},"menuSections":{"main":["drops","streams"],"appearance":["appearance"],"advanced":["advanced"],"system":["system"]},"repository":"Dropper"},"shift":{"role":"product","priority":3,"launcherPriority":100,"themePriority":3,"capabilities":["appearance.theme","appearance.readability","appearance.site-profile"],"presentationPhases":["theme"],"state":{"type":"shift.state-changed","fields":{"active":"boolean","theme":"token","safeMode":"boolean","excluded":"boolean"}},"menuSections":{"appearance":["appearance","readability"],"advanced":["effects","effects-integrations","profiles","profiles-sites"],"system":["system"]},"repository":"SHIFT"},"ward":{"role":"product","priority":2,"launcherPriority":60,"themePriority":1,"capabilities":["retail.classification","retail.cleanup","retail.coupons"],"presentationPhases":["classify","visibility"],"state":{"type":"ward.state-changed","fields":{"active":"boolean","pageType":"token","interventions":"count","hide":"count","dim":"count","collapse":"count","annotate":"count"}},"menuSections":{"main":["protection","amazon","tools"],"appearance":["appearance"],"advanced":["advanced","patterns","advanced-amazon"],"system":["system"]},"repository":"WARD"},"prisma":{"role":"product","priority":1,"launcherPriority":40,"themePriority":2,"capabilities":["text.identity-detection","text.identity-highlighting","identity.catalog"],"presentationPhases":["annotate"],"state":{"type":"prisma.state-changed","fields":{"status":"token","total":"count","temporarilyHidden":"boolean"}},"menuSections":{"main":["page","highlights"],"appearance":["style","highlight-style","look","appearance"],"advanced":["tools","language","sites"],"system":["system"]},"repository":"PRISMA"}});
+  const SUITE_PRODUCTS = freezeSuiteContract({"dropper":{"role":"flagship","priority":4,"launcherPriority":110,"themePriority":4,"capabilities":["twitch.drops","twitch.campaigns","twitch.progress","twitch.claims","twitch.stream-management"],"presentationPhases":[],"state":{"type":"dropper.state-changed","fields":{"activeReward":"boolean","progressPercent":"percent-nullable","routingState":"token"}},"menuSections":{"main":["drops","streams"],"appearance":["appearance"],"advanced":["advanced"],"system":["system"]},"repository":"Dropper","rootId":"tdh-root"},"shift":{"role":"product","priority":3,"launcherPriority":100,"themePriority":3,"capabilities":["appearance.theme","appearance.readability","appearance.site-profile"],"presentationPhases":["theme"],"state":{"type":"shift.state-changed","fields":{"active":"boolean","theme":"token","safeMode":"boolean","excluded":"boolean"}},"menuSections":{"appearance":["appearance","readability"],"advanced":["effects","effects-integrations","profiles","profiles-sites"],"system":["system"]},"repository":"SHIFT","rootId":"exp-shift-root"},"ward":{"role":"product","priority":2,"launcherPriority":60,"themePriority":1,"capabilities":["retail.classification","retail.cleanup","retail.coupons"],"presentationPhases":["classify","visibility"],"state":{"type":"ward.state-changed","fields":{"active":"boolean","pageType":"token","interventions":"count","hide":"count","dim":"count","collapse":"count","annotate":"count"}},"menuSections":{"main":["protection","amazon","tools"],"appearance":["appearance"],"advanced":["advanced","patterns","advanced-amazon"],"system":["system"]},"repository":"WARD","rootId":"exp-ward-root"},"prisma":{"role":"product","priority":1,"launcherPriority":40,"themePriority":2,"capabilities":["text.identity-detection","text.identity-highlighting","identity.catalog"],"presentationPhases":["annotate"],"state":{"type":"prisma.state-changed","fields":{"status":"token","total":"count","temporarilyHidden":"boolean"}},"menuSections":{"main":["page","highlights"],"appearance":["style","highlight-style","look","appearance"],"advanced":["tools","language","sites"],"system":["system"]},"repository":"PRISMA","rootId":"exp-prisma-root"}});
   const SUITE_PRIORITY = Object.freeze(Object.fromEntries(
     Object.entries(SUITE_PRODUCTS).map(([id, value]) => [id, value.priority])
   ));
@@ -2070,6 +2072,7 @@ const ExtraPotionsCore = (() => {
       id,
       role: known.role || 'product',
       repository: known.repository || '',
+      rootId: known.rootId || '',
       priority: Number(known.priority || SUITE_PRIORITY[id] || 0),
       launcherPriority: Number(known.launcherPriority || LAUNCHER_PRIORITY[id] || 0),
       themePriority: Number(known.themePriority || THEME_PRIORITY[id] || 0),
