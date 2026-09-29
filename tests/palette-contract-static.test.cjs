@@ -16,7 +16,8 @@ test('Core exposes the locked common palette order and product-neutral Crimson f
     cursor = next;
   }
   assert.match(reference, /const CRIMSON_THEME = Object\.freeze\(\{ id:"crimson"/u);
-  assert.match(reference, /const SHARED_UI_THEMES = Object\.freeze\(UI_THEMES\.slice\(0, 6\)\)/u);\n  assert.match(runtime, /const common = CoreFoundation\.SHARED_UI_THEMES;/u);
+  assert.match(reference, /const SHARED_UI_THEMES = Object\.freeze\(UI_THEMES\.slice\(0, 6\)\)/u);
+  assert.match(runtime, /const common = CoreFoundation\.SHARED_UI_THEMES;/u);
   assert.match(runtime, /\.\.\.common, CoreFoundation\.CRIMSON_THEME/u);
 });
 
