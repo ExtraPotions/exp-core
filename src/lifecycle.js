@@ -239,9 +239,15 @@ function createProductLifecycle(shared) {
     return Boolean(node && node.nodeType === 11 && node.host);
   }
 
+  // Every stylesheet Core injects begins with an empty marker rule. A constructed sheet
+  // has no owner node, and a tool such as SHIFT cannot see a JavaScript flag across
+  // userscript sandboxes, but it can always read the first rule through the CSSOM.
+  const OWNED_SHEET_MARKER = '.exp-owned-sheet-marker{}';
+  const ensureMarker = (text) => { const value = String(text || ''); return value.startsWith(OWNED_SHEET_MARKER) ? value : OWNED_SHEET_MARKER + value; };
+
   function appendShadowStyle(root, css, data) {
     const node = document.createElement('style');
-    try { node.textContent = css; } catch (error) { safeError(error, 'core.style'); }
+    try { node.textContent = ensureMarker(css); } catch (error) { safeError(error, 'core.style'); }
     node.dataset.expOwned = '1';
     for (const [key, value] of Object.entries(data || {})) node.dataset[key] = String(value);
     root.append(node);
@@ -253,6 +259,7 @@ function createProductLifecycle(shared) {
   }
 
   function withPaintProbe(css, token) {
+    css = ensureMarker(css);
     return `${css}\n[data-${token}]{color:rgb(1, 2, 3)!important}`;
   }
 
@@ -276,7 +283,7 @@ function createProductLifecycle(shared) {
   }
 
   function writeSheet(sheet, text, view) {
-    const source = String(text || '');
+    const source = ensureMarker(text);
     try { sheet.replaceSync(source); return; } catch {}
     view.Function('sheet', 'css', 'sheet.replaceSync(css)')(sheet, source);
   }
@@ -395,11 +402,11 @@ function createProductLifecycle(shared) {
         const token = paintToken();
         let live = GM_addElement(parent, 'style', { textContent: withPaintProbe(css, token) });
         if (live && sawPaint(token, sample)) {
-          try { live.textContent = css; } catch {}
+          try { live.textContent = ensureMarker(css); } catch {}
           return handle(
             (text) => {
-              try { live.textContent = text; } catch {
-                const next = GM_addElement(parent, 'style', { textContent: text });
+              try { live.textContent = ensureMarker(text); } catch {
+                const next = GM_addElement(parent, 'style', { textContent: ensureMarker(text) });
                 try { live.remove(); } catch {}
                 live = next;
               }
@@ -415,10 +422,10 @@ function createProductLifecycle(shared) {
         const token = paintToken();
         let live = GM_addStyle(withPaintProbe(css, token));
         if (live && sawPaint(token, sample)) {
-          try { live.textContent = css; } catch {}
+          try { live.textContent = ensureMarker(css); } catch {}
           return handle(
             (text) => {
-              try { live.textContent = text; } catch { live = GM_addStyle(text); }
+              try { live.textContent = ensureMarker(text); } catch { live = GM_addStyle(ensureMarker(text)); }
             },
             () => { try { live.remove(); } catch {} }
           );
@@ -431,7 +438,7 @@ function createProductLifecycle(shared) {
       if (adopted) return handle((text) => adopted.write(text), () => adopted.detach());
     } catch (error) { fail(error); }
     const node = document.createElement('style');
-    try { node.textContent = css; } catch (error) { fail(error); }
+    try { node.textContent = ensureMarker(css); } catch (error) { fail(error); }
     parent.append(node);
     return mark(node);
   }

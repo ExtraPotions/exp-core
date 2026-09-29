@@ -1,3 +1,9 @@
+## 3.4.4 — 2026-09-29
+
+- Marks every stylesheet Core injects as owned by ExtraPotions with an empty first rule, so theming tools can recognize them without a list of product names.
+- Adds ExtraPotionsCore.isOwnedSheet(sheet) for products and tests.
+- Adds local commands to run the tests in an installed browser and to run the combined four-product check.
+
 ## 3.4.3 — 2026-09-29
 
 - Verifies automatic Core rollout to Dropper, SHIFT, WARD, and PRISMA now that the rollout token is configured.
