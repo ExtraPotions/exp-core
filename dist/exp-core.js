@@ -1834,7 +1834,7 @@ const ExpMenuArrangement = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.4.0-dev.35';
+  const version = '3.4.0-dev.36';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -2039,7 +2039,6 @@ const ExtraPotionsCore = (() => {
     .diag{margin:6px 0 0}
     .diag[hidden]{display:none!important}
     .diag:not([hidden]){display:block}
-    .ward-shell{display:contents}
     .utility-grid,.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
     .workspace-actions{grid-column:1/-1}
     .setting-arrow,.step-btn{width:25px;min-height:25px;border:1px solid var(--theme-line);border-radius:6px;background:var(--theme-raised);color:var(--theme-text)}
