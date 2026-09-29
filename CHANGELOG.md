@@ -1,3 +1,12 @@
+## 3.4.1 — 2026-09-29
+
+- Adds a manifest-discovered full-suite browser gate that rebuilds and runs Dropper, SHIFT, WARD, and PRISMA together before Core changes are accepted.
+- Makes fresh launcher order deterministic from the Core suite contract instead of persisting userscript injection timing, while preserving explicit user rearrangement.
+- Adds event-driven consumer rollout support for exact Core release tags, with the existing scheduled synchronization retained as a fallback.
+- Removes Dropper-specific DOM selectors and legacy --dropper-* variable fallbacks from the shared Core foundation/runtime.
+- Moves duplicated Dropper progress, campaign, inventory, eligibility, queue, and stream UI styling out of Core so product-specific presentation remains owned by Dropper.
+- Keeps candidate-Core verification green across all four consumers and the combined coexistence browser test.
+
 ## 3.4.0 — 2026-09-28
 
 - Makes the Core suite manifest authoritative for product inventory, roles, capabilities, root IDs, menu profiles, launcher priorities, theme priorities, presentation phases, and compact shared-state schemas.
