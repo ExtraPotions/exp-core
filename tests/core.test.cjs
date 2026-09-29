@@ -515,6 +515,43 @@ test('presentation suppression follows ancestor visibility state without treatin
   assert.equal(result.chain[0].ward.visibility, 'collapse');
 });
 
+test('Core lifecycle subscribers share one navigation observer', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage();
+  await page.route('https://navigation.test/**', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html><head></head><body></body></html>' }));
+  await page.goto('https://navigation.test/start');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    const events = [];
+    const first = ExtraPotionsCore.createLifecycle();
+    const second = ExtraPotionsCore.createLifecycle();
+    const stopA = first.onNavigation(event => events.push(['a', event.kind, event.epoch, event.href]));
+    const stopB = second.onNavigation(event => events.push(['b', event.kind, event.epoch, event.href]));
+    history.pushState({}, '', '/next');
+    history.pushState({}, '', '/next');
+    history.replaceState({}, '', '/final');
+    stopA();
+    stopB();
+    return {
+      events,
+      markers: document.querySelectorAll('meta[data-exp-navigation-observer]').length,
+      state: ExtraPotionsCore.navigationObserverState(),
+    };
+  });
+  assert.equal(result.markers, 1);
+  assert.equal(result.state.active, true);
+  assert.equal(result.state.owner, 'lifecycle');
+  assert.equal(result.state.epoch, 2);
+  assert.deepEqual(result.events.map(item => item.slice(0, 3)), [
+    ['a', 'pushState', 1],
+    ['b', 'pushState', 1],
+    ['a', 'replaceState', 2],
+    ['b', 'replaceState', 2],
+  ]);
+  assert.equal(result.events[0][3], 'https://navigation.test/next');
+  assert.equal(result.events[2][3], 'https://navigation.test/final');
+});
+
 test('shared page observation uses one DOM leader and broadcasts mutation batches', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
