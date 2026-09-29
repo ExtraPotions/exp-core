@@ -204,3 +204,13 @@ test('suite manifest owns launcher and theme coordination priorities', () => {
   assert.match(diagnostics, /first\('\[data-exp-part="dock"\]'\)/u);
   assert.doesNotMatch(runtime, /\.ward-shell\{display:contents\}/u);
 });
+
+test('consumer verification includes a full-suite coexistence browser gate', () => {
+  const workflow = read('.github/workflows/verify-consumers.yml');
+  const coexistence = read('scripts/check-suite-coexistence.cjs');
+  assert.match(workflow, /name: Suite coexistence/u);
+  assert.match(workflow, /node scripts\/check-suite-coexistence\.cjs/u);
+  assert.match(coexistence, /coexistence coverage must match the suite manifest/u);
+  assert.match(coexistence, /only one suite menu may be visible/u);
+  assert.match(coexistence, /\['dropper', 'shift', 'ward', 'prisma'\]/u);
+});
