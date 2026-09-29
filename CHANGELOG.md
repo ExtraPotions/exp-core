@@ -1,3 +1,10 @@
+## 3.4.0-dev.12 — 2026-09-28
+
+- Adds latest compact product state to Core suite health and diagnostics.
+- Reports state type, timestamp, and age alongside capability/presentation health for each observed product.
+- Includes the shared safe-state registry in exported interoperability diagnostics.
+- Keeps diagnostic state limited to the non-identifying payloads published through Core.
+
 ## 3.4.0-dev.11 — 2026-09-28
 
 - Persists the latest compact suite-state snapshot in the shared Core coordinator so later-loaded products can query current state.
