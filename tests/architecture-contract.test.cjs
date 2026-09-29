@@ -214,3 +214,13 @@ test('consumer verification includes a full-suite coexistence browser gate', () 
   assert.match(coexistence, /only one suite menu may be visible/u);
   assert.match(coexistence, /\['dropper', 'shift', 'ward', 'prisma'\]/u);
 });
+
+test('event-driven rollout contract is suite-discovered and keeps a scheduled fallback', () => {
+  const check = read('scripts/check-consumer-rollout-contract.cjs');
+  const release = read('.github/workflows/release.yml');
+  assert.match(check, /loadSuiteContract/u);
+  assert.match(check, /repository_dispatch/u);
+  assert.match(check, /scheduled fallback/u);
+  assert.match(release, /CORE_ROLLOUT_TOKEN/u);
+  assert.match(release, /exp-core-release/u);
+});
