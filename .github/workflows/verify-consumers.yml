@@ -1,0 +1,115 @@
+name: Verify Core consumers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/build.cjs"
+      - "scripts/sync-products.cjs"
+      - ".github/workflows/verify-consumers.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-core-consumers-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dropper:
+    name: Dropper flagship
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out candidate Core
+        uses: actions/checkout@v4
+        with:
+          path: exp-core
+
+      - name: Check out Dropper
+        uses: actions/checkout@v4
+        with:
+          repository: ExtraPotions/Dropper
+          path: Dropper
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            exp-core/package-lock.json
+            Dropper/package-lock.json
+
+      - name: Build candidate Core
+        working-directory: exp-core
+        run: |
+          npm ci
+          npm run build
+
+      - name: Inject candidate Core into Dropper
+        working-directory: exp-core
+        run: node scripts/sync-products.cjs Dropper
+
+      - name: Install Dropper browser runtime
+        working-directory: Dropper
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Verify Dropper against candidate Core
+        working-directory: Dropper
+        run: npm test
+
+  products:
+    name: ${{ matrix.product }}
+    needs: dropper
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        product: [SHIFT, WARD, PRISMA]
+    steps:
+      - name: Check out candidate Core
+        uses: actions/checkout@v4
+        with:
+          path: exp-core
+
+      - name: Check out ${{ matrix.product }}
+        uses: actions/checkout@v4
+        with:
+          repository: ExtraPotions/${{ matrix.product }}
+          path: ${{ matrix.product }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            exp-core/package-lock.json
+            ${{ matrix.product }}/package-lock.json
+
+      - name: Build candidate Core
+        working-directory: exp-core
+        run: |
+          npm ci
+          npm run build
+
+      - name: Inject candidate Core into ${{ matrix.product }}
+        working-directory: exp-core
+        run: node scripts/sync-products.cjs ${{ matrix.product }}
+
+      - name: Install ${{ matrix.product }} browser runtime
+        working-directory: ${{ matrix.product }}
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Verify ${{ matrix.product }} against candidate Core
+        working-directory: ${{ matrix.product }}
+        run: npm test
