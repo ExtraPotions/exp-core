@@ -573,7 +573,7 @@ test('presentation suppression follows ancestor visibility state without treatin
   assert.equal(result.chain[0].ward.visibility, 'collapse');
 });
 
-test('Core lifecycle subscribers share one navigation observer', async (t) => {
+test('Core lifecycle subscribers share and release one navigation observer', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage();
   await page.route('https://navigation.test/**', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html><head></head><body></body></html>' }));
@@ -581,25 +581,47 @@ test('Core lifecycle subscribers share one navigation observer', async (t) => {
   await page.addScriptTag({ content: source });
   const result = await page.evaluate(() => {
     const events = [];
+    const originalPushState = history.pushState;
     const first = ExtraPotionsCore.createLifecycle();
     const second = ExtraPotionsCore.createLifecycle();
     const stopA = first.onNavigation(event => events.push(['a', event.kind, event.epoch, event.href]));
     const stopB = second.onNavigation(event => events.push(['b', event.kind, event.epoch, event.href]));
+    const during = {
+      wrapped: history.pushState !== originalPushState,
+      markers: document.querySelectorAll('meta[data-exp-navigation-observer]').length,
+      state: ExtraPotionsCore.navigationObserverState(),
+    };
     history.pushState({}, '', '/next');
     history.pushState({}, '', '/next');
     history.replaceState({}, '', '/final');
     stopA();
-    stopB();
-    return {
-      events,
+    const afterFirst = {
+      restored: history.pushState === originalPushState,
       markers: document.querySelectorAll('meta[data-exp-navigation-observer]').length,
       state: ExtraPotionsCore.navigationObserverState(),
     };
+    stopB();
+    const afterLast = {
+      restored: history.pushState === originalPushState,
+      markers: document.querySelectorAll('meta[data-exp-navigation-observer]').length,
+      state: ExtraPotionsCore.navigationObserverState(),
+    };
+    return { events, during, afterFirst, afterLast };
   });
-  assert.equal(result.markers, 1);
-  assert.equal(result.state.active, true);
-  assert.equal(result.state.owner, 'lifecycle');
-  assert.equal(result.state.epoch, 2);
+  assert.equal(result.during.wrapped, true);
+  assert.equal(result.during.markers, 1);
+  assert.equal(result.during.state.active, true);
+  assert.equal(result.during.state.owner, 'lifecycle');
+  assert.equal(result.during.state.subscribers, 2);
+  assert.equal(result.during.state.epoch, 0);
+  assert.equal(result.afterFirst.restored, false);
+  assert.equal(result.afterFirst.markers, 1);
+  assert.equal(result.afterFirst.state.active, true);
+  assert.equal(result.afterFirst.state.subscribers, 1);
+  assert.equal(result.afterLast.restored, true);
+  assert.equal(result.afterLast.markers, 0);
+  assert.equal(result.afterLast.state.active, false);
+  assert.equal(result.afterLast.state.subscribers, 0);
   assert.deepEqual(result.events.map(item => item.slice(0, 3)), [
     ['a', 'pushState', 1],
     ['b', 'pushState', 1],
