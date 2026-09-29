@@ -101,6 +101,14 @@ test('Core owns shared product-service bootstrap', () => {
   assert.match(runtime, /createProductServices/u);
 });
 
+test('Core lifecycle uses product-neutral ownership and style diagnostics', () => {
+  const lifecycle = read('src/lifecycle.js');
+  assert.match(lifecycle, /\[data-exp-owned="1"\]/u);
+  assert.match(lifecycle, /'core\.style'/u);
+  assert.doesNotMatch(lifecycle, /data-exp-shift|shift\.style/u);
+});
+
+
 
 test('generated manifest carries the canonical suite contract from one source file', () => {
   const contract = JSON.parse(read('src/suite-contract.json'));

@@ -74,3 +74,22 @@ test('Dropper and SHIFT Core fixtures coordinate distinct launcher cells and sha
   assert.equal(result.restored.owner,'shift');
   assert.equal(result.restored.hidden,'0');
 });
+
+
+test('scheduler ignores generic Core-owned mutations without product-specific exclusions', async t => {
+  const browser=await chromium.launch();t.after(()=>browser.close());
+  const page=await browser.newPage();await page.goto('about:blank');await page.addScriptTag({content:source});
+  const result=await page.evaluate(async()=>{
+    const lifecycle=ExtraPotionsCore.createLifecycle();let calls=0;
+    const scheduler=lifecycle.createScheduler(()=>{calls+=1;},{attributes:true,source:'test-product'});
+    const settle=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    scheduler.start();await settle();const initial=calls;
+    const owned=document.createElement('style');owned.dataset.expOwned='1';owned.textContent='body{--owned-test:1}';document.documentElement.append(owned);
+    await settle();const afterOwned=calls;
+    const regular=document.createElement('div');document.body.append(regular);await settle();const afterRegular=calls;
+    scheduler.stop();owned.remove();regular.remove();
+    return {initial,afterOwned,afterRegular};
+  });
+  assert.equal(result.afterOwned,result.initial,JSON.stringify(result));
+  assert.ok(result.afterRegular>result.afterOwned,JSON.stringify(result));
+});

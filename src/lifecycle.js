@@ -1,4 +1,4 @@
-/* exp-core 3.2.19: canonical ExtraPotions shared runtime. */
+/* Canonical ExtraPotions shared lifecycle runtime. */
 function createProductLifecycle(shared) {
   const VERSION = shared.version;
   const PROTOCOL = 'exp-core-coordination-v1';
@@ -120,7 +120,6 @@ function createProductLifecycle(shared) {
       if (!active || !root || root.closest?.('[data-exp-owned="1"]')) return false;
       const target = root.nodeType === Node.TEXT_NODE ? root.parentElement : root;
       if (!target) return false;
-      if (target.matches?.('style[data-exp-shift-page-style],style[data-exp-shift-sheet-style],style[data-exp-shift-adopted-style],style[data-exp-shift-adapter-style]')) return false;
       roots.add(target);
       return true;
     };
@@ -134,10 +133,9 @@ function createProductLifecycle(shared) {
           const target = mutation.target?.nodeType === Node.TEXT_NODE ? mutation.target.parentElement : mutation.target;
           if (!target) continue;
           if (target.closest?.('[data-exp-owned="1"]')) continue;
-          if (target.matches?.('style[data-exp-shift-page-style],style[data-exp-shift-sheet-style],style[data-exp-shift-adopted-style],style[data-exp-shift-adapter-style]')) continue;
           if (mutation.type === 'childList') {
             const changed = [...mutation.addedNodes, ...mutation.removedNodes];
-            if (changed.length && changed.every((node) => node.nodeType === 1 && (node.matches?.('[data-exp-owned="1"],style[data-exp-shift-page-style],style[data-exp-shift-sheet-style],style[data-exp-shift-adopted-style],style[data-exp-shift-adapter-style]') || node.closest?.('[data-exp-owned="1"]')))) continue;
+            if (changed.length && changed.every((node) => node.nodeType === 1 && (node.matches?.('[data-exp-owned="1"]') || node.closest?.('[data-exp-owned="1"]')))) continue;
           }
           schedule(target);
         }
@@ -243,7 +241,7 @@ function createProductLifecycle(shared) {
 
   function appendShadowStyle(root, css, data) {
     const node = document.createElement('style');
-    try { node.textContent = css; } catch (error) { safeError(error, 'shift.style'); }
+    try { node.textContent = css; } catch (error) { safeError(error, 'core.style'); }
     node.dataset.expOwned = '1';
     for (const [key, value] of Object.entries(data || {})) node.dataset[key] = String(value);
     root.append(node);
@@ -329,7 +327,7 @@ function createProductLifecycle(shared) {
       for (const [key, value] of Object.entries(data || {})) node.dataset[key] = String(value);
       return node;
     };
-    const fail = (error) => safeError(Object.assign(error || new Error('Style injection failed'), { code: 'STYLE_INJECTION' }), 'shift.style');
+    const fail = (error) => safeError(Object.assign(error || new Error('Style injection failed'), { code: 'STYLE_INJECTION' }), 'core.style');
     // Adopted sheets stay inside the shadow and still apply when the page CSP
     // blocks <style>. GM_addElement / GM_addStyle are not used here: managers
     // attach those to the document and leak header/nav/button/* onto the site.
@@ -372,7 +370,7 @@ function createProductLifecycle(shared) {
       for (const [key, value] of Object.entries(data || {})) node.dataset[key] = String(value);
       return node;
     };
-    const fail = (error) => safeError(Object.assign(error || new Error('Style injection failed'), { code: 'STYLE_INJECTION' }), 'shift.style');
+    const fail = (error) => safeError(Object.assign(error || new Error('Style injection failed'), { code: 'STYLE_INJECTION' }), 'core.style');
     const handle = (write, detach) => {
       const node = document.createElement('style');
       let current = css;
