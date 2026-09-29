@@ -58,6 +58,7 @@ const ExtraPotionsCore = (() => {
   const SUITE_TRUST = 'shared-dom-advisory';
   const PAGE_BATCH_EVENT = 'exp-core:page-batch';
   const NAVIGATION_EVENT = 'exp-core:navigation';
+  const NAVIGATION_CONTROL_EVENT = 'exp-core:navigation-control';
   const PAGE_PHASE_EVENT = 'exp-core:page-phase';
   const PAGE_PHASE_END_EVENT = 'exp-core:page-phase-end';
   const PRESENTATION_STATE_EVENT = 'exp-core:presentation-state';
@@ -365,12 +366,15 @@ const ExtraPotionsCore = (() => {
     marker.dataset.expNavigationObserver = String(owner || 'core').toLowerCase();
     marker.dataset.expNavigationProtocol = 'exp-navigation-observer-v1';
     marker.dataset.expNavigationEpoch = '0';
+    marker.dataset.expNavigationSubscribers = '0';
     (document.head || document.documentElement || document.body)?.append(marker);
 
     let previous = location.href;
     let epoch = 0;
     let pendingHistoryKind = '';
+    let disposed = false;
     const publish = kind => {
+      if (disposed) return false;
       const href = location.href;
       if (href === previous) return false;
       previous = href;
@@ -388,10 +392,11 @@ const ExtraPotionsCore = (() => {
       return true;
     };
     const originals = {};
+    const wrappers = {};
     for (const name of ['pushState', 'replaceState']) {
       const original = history[name];
       originals[name] = original;
-      history[name] = function (...args) {
+      const wrapped = function (...args) {
         const priorKind = pendingHistoryKind;
         pendingHistoryKind = name;
         try {
@@ -402,16 +407,41 @@ const ExtraPotionsCore = (() => {
           pendingHistoryKind = priorKind;
         }
       };
+      wrappers[name] = wrapped;
+      history[name] = wrapped;
     }
-    addEventListener('popstate', () => publish('popstate'));
-    addEventListener('hashchange', () => publish('hashchange'));
-    globalThis.navigation?.addEventListener('currententrychange', () => publish(pendingHistoryKind || 'currententrychange'));
+    const onPopState = () => publish('popstate');
+    const onHashChange = () => publish('hashchange');
+    const onCurrentEntryChange = () => publish(pendingHistoryKind || 'currententrychange');
+    addEventListener('popstate', onPopState);
+    addEventListener('hashchange', onHashChange);
+    globalThis.navigation?.addEventListener('currententrychange', onCurrentEntryChange);
+    const teardown = () => {
+      if (disposed || Number(marker.dataset.expNavigationSubscribers || 0) > 0) return false;
+      disposed = true;
+      for (const name of Object.keys(wrappers)) if (history[name] === wrappers[name]) history[name] = originals[name];
+      removeEventListener('popstate', onPopState);
+      removeEventListener('hashchange', onHashChange);
+      globalThis.navigation?.removeEventListener('currententrychange', onCurrentEntryChange);
+      document.removeEventListener(NAVIGATION_CONTROL_EVENT, onControl);
+      if (marker.isConnected) marker.remove();
+      return true;
+    };
+    const onControl = event => {
+      let payload;
+      try { payload = typeof event.detail === 'string' ? JSON.parse(event.detail) : event.detail; } catch { return; }
+      if (!payload || payload.protocol !== 'exp-navigation-observer-v1' || payload.type !== 'release-if-idle') return;
+      teardown();
+    };
+    document.addEventListener(NAVIGATION_CONTROL_EVENT, onControl);
     return Object.freeze({ leader: true, owner: marker.dataset.expNavigationObserver });
   }
 
   function observeNavigation(callback, options = {}) {
     if (typeof callback !== 'function') throw new TypeError('Navigation callback must be a function');
     ensureSharedNavigationObserver(options.productId || options.owner || 'core');
+    let marker = navigationObserverMarker();
+    if (marker) marker.dataset.expNavigationSubscribers = String(Number(marker.dataset.expNavigationSubscribers || 0) + 1);
     const listener = event => {
       let payload;
       try { payload = typeof event.detail === 'string' ? JSON.parse(event.detail) : event.detail; } catch { return; }
@@ -419,7 +449,19 @@ const ExtraPotionsCore = (() => {
       callback(Object.freeze({ ...payload }));
     };
     document.addEventListener(NAVIGATION_EVENT, listener);
-    return () => document.removeEventListener(NAVIGATION_EVENT, listener);
+    let disposed = false;
+    return () => {
+      if (disposed) return;
+      disposed = true;
+      document.removeEventListener(NAVIGATION_EVENT, listener);
+      marker = navigationObserverMarker();
+      if (!marker) return;
+      const next = Math.max(0, Number(marker.dataset.expNavigationSubscribers || 0) - 1);
+      marker.dataset.expNavigationSubscribers = String(next);
+      if (!next) document.dispatchEvent(new CustomEvent(NAVIGATION_CONTROL_EVENT, {
+        detail: JSON.stringify({ protocol: 'exp-navigation-observer-v1', type: 'release-if-idle' }),
+      }));
+    };
   }
 
   function navigationObserverState() {
@@ -429,6 +471,7 @@ const ExtraPotionsCore = (() => {
       owner: marker?.dataset.expNavigationObserver || null,
       protocol: marker?.dataset.expNavigationProtocol || null,
       epoch: Number(marker?.dataset.expNavigationEpoch || 0),
+      subscribers: Number(marker?.dataset.expNavigationSubscribers || 0),
     });
   }
 
