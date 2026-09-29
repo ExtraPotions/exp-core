@@ -1554,7 +1554,7 @@ function createProductLifecycle(shared) {
 const ExtraPotionsTools = (() => {
   const PRODUCT_ROOT_IDS = {"dropper":"tdh-root","shift":"exp-shift-root","ward":"exp-ward-root","prisma":"exp-prisma-root"};
   function placeDonationPanel(panel, trigger){
-    trigger.closest('.menu-head,.ward-header,header')?.after(panel);
+    trigger.closest('.menu-head,header')?.after(panel);
     panel.style.cssText='position:static!important;width:100%!important;max-width:100%!important;margin:7px 0;box-shadow:none';
   }
   function createBitcoinDonation(){
@@ -1833,7 +1833,7 @@ const ExpMenuArrangement = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.4.0-dev.38';
+  const version = '3.4.0-dev.39';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
