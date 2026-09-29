@@ -128,3 +128,60 @@ jobs:
       - name: Verify ${{ matrix.product }} against candidate Core
         working-directory: ${{ matrix.product }}
         run: npm test
+
+  coexistence:
+    name: Suite coexistence
+    needs: [discover, flagship, products]
+    if: always() && needs.discover.result == 'success' && needs.flagship.result == 'success' && (needs.products.result == 'success' || needs.products.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out candidate Core
+        uses: actions/checkout@v4
+        with:
+          path: exp-core
+
+      - name: Check out Dropper
+        uses: actions/checkout@v4
+        with:
+          repository: ExtraPotions/Dropper
+          path: Dropper
+
+      - name: Check out SHIFT
+        uses: actions/checkout@v4
+        with:
+          repository: ExtraPotions/SHIFT
+          path: SHIFT
+
+      - name: Check out WARD
+        uses: actions/checkout@v4
+        with:
+          repository: ExtraPotions/WARD
+          path: WARD
+
+      - name: Check out PRISMA
+        uses: actions/checkout@v4
+        with:
+          repository: ExtraPotions/PRISMA
+          path: PRISMA
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: exp-core/package-lock.json
+
+      - name: Build candidate Core
+        working-directory: exp-core
+        run: |
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+
+      - name: Inject candidate Core into every consumer
+        working-directory: exp-core
+        run: node scripts/sync-products.cjs
+
+      - name: Verify all products together
+        working-directory: exp-core
+        run: node scripts/check-suite-coexistence.cjs
