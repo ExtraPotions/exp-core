@@ -251,6 +251,13 @@ const ExtraPotionsCore = (() => {
     const priority = Number(options.priority ?? contract?.priority ?? 0);
     const role = String(options.role || contract?.role || 'product');
     let node = suiteProductNode(id);
+    const previous = node ? JSON.stringify({
+      version: node.dataset.expSuiteVersion || '',
+      coreVersion: node.dataset.expSuiteCoreVersion || '',
+      role: node.dataset.expSuiteRole || '',
+      priority: node.dataset.expSuitePriority || '',
+      capabilities: node.dataset.expSuiteCapabilities || '[]',
+    }) : null;
     if (!node) {
       node = document.createElement('meta');
       node.dataset.expSuiteProduct = id;
@@ -261,7 +268,14 @@ const ExtraPotionsCore = (() => {
     node.dataset.expSuiteRole = role;
     node.dataset.expSuitePriority = String(Number.isFinite(priority) ? priority : 0);
     node.dataset.expSuiteCapabilities = JSON.stringify(capabilities);
-    emitSuiteEvent(id, 'product.registered', { capabilities, role, version: productVersion });
+    const current = JSON.stringify({
+      version: node.dataset.expSuiteVersion,
+      coreVersion: node.dataset.expSuiteCoreVersion,
+      role: node.dataset.expSuiteRole,
+      priority: node.dataset.expSuitePriority,
+      capabilities: node.dataset.expSuiteCapabilities,
+    });
+    if (previous !== current) emitSuiteEvent(id, 'product.registered', { capabilities, role, version: productVersion });
     return Object.freeze({
       id,
       update(next = {}) { return registerSuiteProduct({ id, version: productVersion, role, priority, capabilities, ...next }); },
@@ -385,6 +399,10 @@ const ExtraPotionsCore = (() => {
     const phases = normalizePresentationPhases(options.phases || options.phase || contract?.presentationPhases);
     if (!phases.length) throw new Error('Presentation provider requires at least one valid phase');
     let node = presentationProviderNode(id);
+    const previous = node ? JSON.stringify({
+      phases: node.dataset.expPresentationPhases || '[]',
+      priority: node.dataset.expPresentationPriority || '',
+    }) : null;
     if (!node) {
       node = document.createElement('meta');
       node.dataset.expPresentationProvider = id;
@@ -392,7 +410,11 @@ const ExtraPotionsCore = (() => {
     }
     node.dataset.expPresentationPhases = JSON.stringify(phases);
     node.dataset.expPresentationPriority = String(Number(options.priority ?? SUITE_PRIORITY[id] ?? 0) || 0);
-    emitSuiteEvent(id, 'presentation.provider-registered', { phases });
+    const current = JSON.stringify({
+      phases: node.dataset.expPresentationPhases,
+      priority: node.dataset.expPresentationPriority,
+    });
+    if (previous !== current) emitSuiteEvent(id, 'presentation.provider-registered', { phases });
     return Object.freeze({
       id,
       phases: Object.freeze([...phases]),
