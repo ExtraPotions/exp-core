@@ -1470,7 +1470,7 @@ const ExtraPotionsCore = (() => {
     function scheduleDismiss() { clearTimer(); if (!open || getSettings().menuAutoClose === false) return; deadline = Date.now()+15000; timer = setTimeout(() => { if (open && Date.now() >= deadline) setOpen(false,false); },15020); }
     function layout() {
       if (destroyed || !launcher.isConnected) return;
-      const state = getSettings(); const width = ['full','compact','narrow'].includes(state.menuWidth) ? state.menuWidth : 'compact';
+      const state = getSettings(); const width = 'full';
       host.dataset.menuWidth = width; themeRoot.dataset.panelWidth = width;
       themeRoot.classList.toggle('reduce-motion', state.reduceMotion === true || state.reduceMotion === 'on' || state.reducedMotion === 'reduce' || (state.reduceMotion === 'system' || state.reducedMotion === 'system') && matchMedia('(prefers-reduced-motion:reduce)').matches);
       const opacityValue = Number(state.opacityPercent);
@@ -1519,7 +1519,7 @@ const ExtraPotionsCore = (() => {
       get dismissAt(){return deadline;},
       destroy(){destroyed=true;arrangement.destroy();defaultSupport?.destroy();clearTimer();cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();menuNotices.forEach(notice=>notice.destroy());removers.forEach(f=>f());styles.dispose();controllers.delete(host);}
     };
-    controllers.set(host,controller);setTheme(getSettings().uiTheme || getSettings().theme || id);
+    controllers.set(host,controller);setTheme(id);
     queueLayout();return controller;
   }
   function createReleaseUpdateChecker(options = {}) {
