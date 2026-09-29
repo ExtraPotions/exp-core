@@ -94,4 +94,6 @@ test('suite manifest owns launcher and theme coordination priorities', () => {
   assert.doesNotMatch(runtime, /Number\.MAX_SAFE_INTEGER/u);
   assert.doesNotMatch(runtime, /coreSource = 'Dropper\//u);
   assert.match(runtime, /coreSource = 'exp-core'/u);
+  assert.doesNotMatch(runtime, /host\?\.dataset\.productId === 'dropper'/u);
+  assert.match(runtime, /createThemeSwatches,publishMenuPalette,createFloatingNotice/u);
 });
