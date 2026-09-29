@@ -1,0 +1,88 @@
+{
+  "dropper": {
+    "role": "flagship",
+    "priority": 4,
+    "capabilities": [
+      "twitch.drops",
+      "twitch.campaigns",
+      "twitch.progress",
+      "twitch.claims",
+      "twitch.stream-management"
+    ],
+    "presentationPhases": [],
+    "state": {
+      "type": "dropper.state-changed",
+      "fields": {
+        "activeReward": "boolean",
+        "progressPercent": "percent-nullable",
+        "routingState": "token"
+      }
+    }
+  },
+  "shift": {
+    "role": "product",
+    "priority": 3,
+    "capabilities": [
+      "appearance.theme",
+      "appearance.readability",
+      "appearance.site-profile"
+    ],
+    "presentationPhases": [
+      "theme"
+    ],
+    "state": {
+      "type": "shift.state-changed",
+      "fields": {
+        "active": "boolean",
+        "theme": "token",
+        "safeMode": "boolean",
+        "excluded": "boolean"
+      }
+    }
+  },
+  "ward": {
+    "role": "product",
+    "priority": 2,
+    "capabilities": [
+      "retail.classification",
+      "retail.cleanup",
+      "retail.coupons"
+    ],
+    "presentationPhases": [
+      "classify",
+      "visibility"
+    ],
+    "state": {
+      "type": "ward.state-changed",
+      "fields": {
+        "active": "boolean",
+        "pageType": "token",
+        "interventions": "count",
+        "hide": "count",
+        "dim": "count",
+        "collapse": "count",
+        "annotate": "count"
+      }
+    }
+  },
+  "prisma": {
+    "role": "product",
+    "priority": 1,
+    "capabilities": [
+      "text.identity-detection",
+      "text.identity-highlighting",
+      "identity.catalog"
+    ],
+    "presentationPhases": [
+      "annotate"
+    ],
+    "state": {
+      "type": "prisma.state-changed",
+      "fields": {
+        "status": "token",
+        "total": "count",
+        "temporarilyHidden": "boolean"
+      }
+    }
+  }
+}
