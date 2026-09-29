@@ -1429,7 +1429,7 @@ const ExtraPotionsCore = (() => {
     let localTheme = null;
     function paintTheme(theme) {
       selected = theme;
-      for (const key of tokenNames) { themeRoot.style.setProperty('--theme-' + key, selected[key]); host.style.setProperty('--' + key, selected[key]); host.style.setProperty('--dropper-' + key, selected[key]); }
+      for (const key of tokenNames) { themeRoot.style.setProperty('--theme-' + key, selected[key]); host.style.setProperty('--' + key, selected[key]); }
       themeRoot.style.setProperty('--theme-skin', selected.skin || selected.swatch || selected.accent);
       themeRoot.style.setProperty('--theme-skin-vertical', selected.skinVertical || selected.skin || selected.swatch || selected.accent);
       Object.assign(themeRoot.dataset, { uiTheme:selected.id, themeSkin:selected.skinMode === 'flat' ? 'flat' : 'gradient' });
@@ -1458,7 +1458,7 @@ const ExtraPotionsCore = (() => {
       themeRoot.classList.toggle('reduce-motion', state.reduceMotion === true || state.reduceMotion === 'on' || state.reducedMotion === 'reduce' || (state.reduceMotion === 'system' || state.reducedMotion === 'system') && matchMedia('(prefers-reduced-motion:reduce)').matches);
       const opacityValue = Number(state.opacityPercent);
       const opacity = state.customOpacity ? (Number.isFinite(opacityValue) ? Math.max(40, Math.min(100, Math.round(opacityValue / 5) * 5)) : 85)/100 : 1;
-      themeRoot.style.setProperty('--exp-ui-opacity',String(opacity)); themeRoot.style.setProperty('--dropper-ui-opacity',String(opacity));
+      themeRoot.style.setProperty('--exp-ui-opacity',String(opacity));
       const offset = parseFloat(getComputedStyle(host).getPropertyValue('--exp-launcher-offset')) || 0;
       const x = parseFloat(getComputedStyle(host).getPropertyValue('--exp-launcher-x')) || 0;
       const delta = Math.max(8-(innerHeight-60), Math.min(4, Number(read(GRID_DELTA,0)) || 0));

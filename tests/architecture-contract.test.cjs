@@ -112,4 +112,9 @@ test('suite manifest owns launcher and theme coordination priorities', () => {
   assert.match(runtime, /function syncNoticeTheme\(notice, themeSource\)/u);
   assert.equal((runtime.match(/\.exp-floating-update\{position:fixed;z-index:2147483647/gu) || []).length, 1);
   assert.equal((runtime.match(/const syncTheme = \(\) => syncNoticeTheme\(notice, themeSource\);/gu) || []).length, 2);
+  assert.doesNotMatch(runtime, /host\.style\.setProperty\('--dropper-'/u);
+  assert.doesNotMatch(runtime, /themeRoot\.style\.setProperty\('--dropper-ui-opacity'/u);
+  assert.doesNotMatch(foundation, /--dropper-ui-opacity:1;/u);
+  assert.match(runtime, /var\(--dropper-accent/u);
+  assert.match(foundation, /var\(--dropper-ui-opacity,1\)/u);
 });
