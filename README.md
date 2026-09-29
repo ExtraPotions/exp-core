@@ -11,16 +11,9 @@ The shared menu experience included with ExtraPotions products. No separate inst
 
 ## What you can do
 
-- Choose menu palettes with visual swatches.
+- Keep every product menu focused on the product: one menu width, the product's own colors, and sections grouped as Main, Appearance, Advanced, and System with submenus collapsed.
 - Move and rearrange launchers; opening a product menu coordinates with the other installed menus.
-- Reorder sections with their left handles and manage section visibility from System.
 - Keep controls readable in narrow or short windows with menus that scroll inside the available space.
-
-## Arrange your menu
-
-Shown in SHIFT: choose which sections appear and reset their arrangement.
-
-<img src="docs/screenshots/menu-arrangement.png" width="240" alt="Menu section visibility and arrangement controls">
 
 ## Architecture
 
