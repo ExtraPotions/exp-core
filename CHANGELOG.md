@@ -1,3 +1,10 @@
+## 3.4.0-dev.11 — 2026-09-28
+
+- Persists the latest compact suite-state snapshot in the shared Core coordinator so later-loaded products can query current state.
+- Adds product-filtered suite-state snapshots and latest-state lookup across separately bundled userscript realms.
+- Caps persisted state payloads at 4096 bytes and marks coordinator state as ExtraPotions-owned.
+- Keeps the persisted state registry limited to the non-identifying JSON payloads published through Core.
+
 ## 3.4.0-dev.10 — 2026-09-28
 
 - Makes Core-owned suite and presentation registration idempotent across repeated product bootstrap calls.
