@@ -1,8 +1,8 @@
 {
-  "coreVersion": "3.4.0-dev.28",
+  "coreVersion": "3.4.0-dev.29",
   "source": {
     "source": "ExtraPotions/exp-core",
-    "sourceVersion": "3.4.0-dev.28",
+    "sourceVersion": "3.4.0-dev.29",
     "architecture": "core-native"
   },
   "suiteContract": {
@@ -26,6 +26,21 @@
           "progressPercent": "percent-nullable",
           "routingState": "token"
         }
+      },
+      "menuSections": {
+        "main": [
+          "drops",
+          "streams"
+        ],
+        "appearance": [
+          "appearance"
+        ],
+        "advanced": [
+          "advanced"
+        ],
+        "system": [
+          "system"
+        ]
       }
     },
     "shift": {
@@ -49,6 +64,21 @@
           "safeMode": "boolean",
           "excluded": "boolean"
         }
+      },
+      "menuSections": {
+        "appearance": [
+          "appearance",
+          "readability"
+        ],
+        "advanced": [
+          "effects",
+          "effects-integrations",
+          "profiles",
+          "profiles-sites"
+        ],
+        "system": [
+          "system"
+        ]
       }
     },
     "ward": {
@@ -76,6 +106,24 @@
           "collapse": "count",
           "annotate": "count"
         }
+      },
+      "menuSections": {
+        "main": [
+          "protection",
+          "amazon",
+          "tools"
+        ],
+        "appearance": [
+          "appearance"
+        ],
+        "advanced": [
+          "advanced",
+          "patterns",
+          "advanced-amazon"
+        ],
+        "system": [
+          "system"
+        ]
       }
     },
     "prisma": {
@@ -98,17 +146,37 @@
           "total": "count",
           "temporarilyHidden": "boolean"
         }
+      },
+      "menuSections": {
+        "main": [
+          "page",
+          "highlights"
+        ],
+        "appearance": [
+          "style",
+          "highlight-style",
+          "look",
+          "appearance"
+        ],
+        "advanced": [
+          "tools",
+          "language",
+          "sites"
+        ],
+        "system": [
+          "system"
+        ]
       }
     }
   },
-  "bundleSha256": "db320f54fce37ff14851a7ff75ce97ee57a51798bb7973136035a8de5211c4f0",
+  "bundleSha256": "4a47009d00b1e2206a3fd7a457f70c7b06192a29078957e7cfa97a08d79d3154",
   "files": {
     "foundation.js": "55553c1ed956878e0aed3a410889c1deb89157fb34bc8998e01a98a5f0ccefba",
     "diagnostic-report.js": "46081f785b0418bee89ef30d4ed53ffd4f8b2f7b3edf9be662d38de749ede14c",
     "lifecycle.js": "ae7998069006a6f79d0a11bdcba0bb108459365b574de43b49df6385cb86ed05",
     "product-tools.js": "e9b774ab0891b17fcb58696281dd8b092d9e0ae0d8e53d0111b39d6fdc768b96",
-    "menu-arrangement.js": "06bbd7568ab5c7483e070cb7f009b3290f21fc1644d1743284776c119e86660a",
+    "menu-arrangement.js": "2a11c5bcbec692ad5906b2d20ee8b55c3679b5db674859f1761690b71ad90da6",
     "runtime.js": "10cd5806eda8143ebed39cf78da5efc6013e0a92758d4d9390bfee6dfcc18922",
-    "suite-contract.json": "c25b0a594685814c655a2d925b1afcd929153ee20c6dccddb151edfb5256ce09"
+    "suite-contract.json": "9c6c1c1ae9a84886e8fc23638cc7789b9abb204d71425d3f0c8475323cb241e3"
   }
 }
