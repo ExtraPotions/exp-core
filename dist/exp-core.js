@@ -1868,45 +1868,22 @@ const ExtraPotionsCore = (() => {
   const THEME_PRIORITY = { dropper: 4, shift: 3, prisma: 2, ward: 1 };
   // Product importance is separate from launcher placement/theme ownership.
   // Dropper is the flagship, followed by SHIFT, WARD, then PRISMA.
-  const SUITE_PRIORITY = Object.freeze({ dropper: 4, shift: 3, ward: 2, prisma: 1 });
-  const SUITE_PRODUCTS = Object.freeze({
-    dropper: Object.freeze({
-      role: 'flagship',
-      capabilities: Object.freeze(['twitch.drops', 'twitch.campaigns', 'twitch.progress', 'twitch.claims', 'twitch.stream-management']),
-      presentationPhases: Object.freeze([]),
-      state: Object.freeze({
-        type: 'dropper.state-changed',
-        fields: Object.freeze({ activeReward: 'boolean', progressPercent: 'percent-nullable', routingState: 'token' }),
-      }),
-    }),
-    shift: Object.freeze({
-      role: 'product',
-      capabilities: Object.freeze(['appearance.theme', 'appearance.readability', 'appearance.site-profile']),
-      presentationPhases: Object.freeze(['theme']),
-      state: Object.freeze({
-        type: 'shift.state-changed',
-        fields: Object.freeze({ active: 'boolean', theme: 'token', safeMode: 'boolean', excluded: 'boolean' }),
-      }),
-    }),
-    ward: Object.freeze({
-      role: 'product',
-      capabilities: Object.freeze(['retail.classification', 'retail.cleanup', 'retail.coupons']),
-      presentationPhases: Object.freeze(['classify', 'visibility']),
-      state: Object.freeze({
-        type: 'ward.state-changed',
-        fields: Object.freeze({ active: 'boolean', pageType: 'token', interventions: 'count', hide: 'count', dim: 'count', collapse: 'count', annotate: 'count' }),
-      }),
-    }),
-    prisma: Object.freeze({
-      role: 'product',
-      capabilities: Object.freeze(['text.identity-detection', 'text.identity-highlighting', 'identity.catalog']),
-      presentationPhases: Object.freeze(['annotate']),
-      state: Object.freeze({
-        type: 'prisma.state-changed',
-        fields: Object.freeze({ status: 'token', total: 'count', temporarilyHidden: 'boolean' }),
-      }),
-    }),
-  });
+  const freezeSuiteContract = values => Object.freeze(Object.fromEntries(
+    Object.entries(values || {}).map(([id, value]) => [id, Object.freeze({
+      role: String(value?.role || 'product'),
+      priority: Number(value?.priority || 0),
+      capabilities: Object.freeze([...(value?.capabilities || [])]),
+      presentationPhases: Object.freeze([...(value?.presentationPhases || [])]),
+      state: value?.state ? Object.freeze({
+        type: String(value.state.type || ''),
+        fields: Object.freeze({ ...(value.state.fields || {}) }),
+      }) : null,
+    })])
+  ));
+  const SUITE_PRODUCTS = freezeSuiteContract({"dropper":{"role":"flagship","priority":4,"capabilities":["twitch.drops","twitch.campaigns","twitch.progress","twitch.claims","twitch.stream-management"],"presentationPhases":[],"state":{"type":"dropper.state-changed","fields":{"activeReward":"boolean","progressPercent":"percent-nullable","routingState":"token"}}},"shift":{"role":"product","priority":3,"capabilities":["appearance.theme","appearance.readability","appearance.site-profile"],"presentationPhases":["theme"],"state":{"type":"shift.state-changed","fields":{"active":"boolean","theme":"token","safeMode":"boolean","excluded":"boolean"}}},"ward":{"role":"product","priority":2,"capabilities":["retail.classification","retail.cleanup","retail.coupons"],"presentationPhases":["classify","visibility"],"state":{"type":"ward.state-changed","fields":{"active":"boolean","pageType":"token","interventions":"count","hide":"count","dim":"count","collapse":"count","annotate":"count"}}},"prisma":{"role":"product","priority":1,"capabilities":["text.identity-detection","text.identity-highlighting","identity.catalog"],"presentationPhases":["annotate"],"state":{"type":"prisma.state-changed","fields":{"status":"token","total":"count","temporarilyHidden":"boolean"}}}});
+  const SUITE_PRIORITY = Object.freeze(Object.fromEntries(
+    Object.entries(SUITE_PRODUCTS).map(([id, value]) => [id, value.priority])
+  ));
   const SUITE_EVENT = 'exp-core:suite';
   // Suite events/state cross userscript realms through shared DOM metadata.
   // They are advisory coordination signals, never an authorization boundary.
@@ -2106,7 +2083,7 @@ const ExtraPotionsCore = (() => {
     return Object.freeze({
       id,
       role: known.role || 'product',
-      priority: Number(SUITE_PRIORITY[id] || 0),
+      priority: Number(known.priority || SUITE_PRIORITY[id] || 0),
       capabilities: Object.freeze(normalizeSuiteCapabilities(known.capabilities)),
       presentationPhases: Object.freeze(normalizePresentationPhases(known.presentationPhases || [])),
       state: known.state ? Object.freeze({
