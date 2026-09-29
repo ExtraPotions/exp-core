@@ -1,3 +1,10 @@
+## 3.4.0-dev.18 — 2026-09-28
+
+- Moves the canonical ExtraPotions suite contract into one Core-owned JSON source shared by runtime generation and build metadata.
+- Adds roles, suite priorities, capabilities, presentation phases, and compact-state schemas to the generated Core manifest.
+- Eliminates duplicated hard-coded suite metadata from the runtime source.
+- Adds regression coverage proving the source contract, generated manifest, and browser runtime remain identical.
+
 ## 3.4.0-dev.17 — 2026-09-28
 
 - Upgrades the shared Product compatibility card to use Core suite-health and interoperability data.
