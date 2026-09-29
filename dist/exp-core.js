@@ -1896,6 +1896,7 @@ const ExtraPotionsCore = (() => {
   // They are advisory coordination signals, never an authorization boundary.
   const SUITE_TRUST = 'shared-dom-advisory';
   const PAGE_BATCH_EVENT = 'exp-core:page-batch';
+  const NAVIGATION_EVENT = 'exp-core:navigation';
   const PAGE_PHASE_EVENT = 'exp-core:page-phase';
   const PAGE_PHASE_END_EVENT = 'exp-core:page-phase-end';
   const PRESENTATION_PHASES = Object.freeze({
@@ -2187,6 +2188,78 @@ const ExtraPotionsCore = (() => {
       hostname: location.hostname,
       pathname: location.pathname,
       topLevel: window.top === window.self,
+    });
+  }
+
+  function navigationObserverMarker() {
+    return document.querySelector('meta[data-exp-navigation-observer]');
+  }
+
+  function ensureSharedNavigationObserver(owner = 'core') {
+    let marker = navigationObserverMarker();
+    if (marker) return Object.freeze({ leader: false, owner: marker.dataset.expNavigationObserver || 'unknown' });
+    marker = document.createElement('meta');
+    marker.dataset.expOwned = '1';
+    marker.dataset.expNavigationObserver = String(owner || 'core').toLowerCase();
+    marker.dataset.expNavigationProtocol = 'exp-navigation-observer-v1';
+    marker.dataset.expNavigationEpoch = '0';
+    (document.head || document.documentElement || document.body)?.append(marker);
+
+    let previous = location.href;
+    let epoch = 0;
+    const publish = kind => {
+      const href = location.href;
+      if (href === previous) return false;
+      previous = href;
+      epoch += 1;
+      marker.dataset.expNavigationEpoch = String(epoch);
+      const payload = JSON.stringify({
+        protocol: 'exp-navigation-observer-v1',
+        owner: marker.dataset.expNavigationObserver,
+        epoch,
+        kind: String(kind || 'navigation'),
+        href,
+        at: Date.now(),
+      });
+      document.dispatchEvent(new CustomEvent(NAVIGATION_EVENT, { detail: payload }));
+      return true;
+    };
+    const originals = {};
+    for (const name of ['pushState', 'replaceState']) {
+      const original = history[name];
+      originals[name] = original;
+      history[name] = function (...args) {
+        const result = Reflect.apply(original, this, args);
+        publish(name);
+        return result;
+      };
+    }
+    addEventListener('popstate', () => publish('popstate'));
+    addEventListener('hashchange', () => publish('hashchange'));
+    globalThis.navigation?.addEventListener('currententrychange', () => publish('currententrychange'));
+    return Object.freeze({ leader: true, owner: marker.dataset.expNavigationObserver });
+  }
+
+  function observeNavigation(callback, options = {}) {
+    if (typeof callback !== 'function') throw new TypeError('Navigation callback must be a function');
+    ensureSharedNavigationObserver(options.productId || options.owner || 'core');
+    const listener = event => {
+      let payload;
+      try { payload = typeof event.detail === 'string' ? JSON.parse(event.detail) : event.detail; } catch { return; }
+      if (!payload || payload.protocol !== 'exp-navigation-observer-v1') return;
+      callback(Object.freeze({ ...payload }));
+    };
+    document.addEventListener(NAVIGATION_EVENT, listener);
+    return () => document.removeEventListener(NAVIGATION_EVENT, listener);
+  }
+
+  function navigationObserverState() {
+    const marker = navigationObserverMarker();
+    return Object.freeze({
+      active: Boolean(marker),
+      owner: marker?.dataset.expNavigationObserver || null,
+      protocol: marker?.dataset.expNavigationProtocol || null,
+      epoch: Number(marker?.dataset.expNavigationEpoch || 0),
     });
   }
 
@@ -3529,6 +3602,7 @@ const ExtraPotionsCore = (() => {
           providers: presentationProviders(),
         },
         pageObserver: pageObserverState(),
+        navigationObserver: navigationObserverState(),
         states: suiteStateSnapshot(),
         health: suiteHealth(),
       },
@@ -3589,6 +3663,6 @@ const ExtraPotionsCore = (() => {
     return Object.freeze({ lifecycle, diagnostics, updates });
   }
 
-  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,pageContext,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
+  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
   return api;
 })();
