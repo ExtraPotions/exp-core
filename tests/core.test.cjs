@@ -164,6 +164,33 @@ test('suite registry exposes the flagship product order and product capabilities
   assert.deepEqual(state.identity, ['prisma']);
 });
 
+test('persisted suite state is queryable across later Core realms', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><head></head><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    ExtraPotionsCore.publishSuiteState('dropper', 'dropper.state-changed', {
+      activeReward: true,
+      progressPercent: 42,
+      routingState: 'verify-stream',
+    });
+    return {
+      all: ExtraPotionsCore.suiteStateSnapshot(),
+      latest: ExtraPotionsCore.latestSuiteState('dropper', 'dropper.state-changed'),
+      markers: document.querySelectorAll('meta[data-exp-suite-state-product="dropper"]').length,
+    };
+  });
+  assert.equal(result.markers, 1);
+  assert.equal(result.all.length, 1);
+  assert.equal(result.latest.productId, 'dropper');
+  assert.equal(result.latest.type, 'dropper.state-changed');
+  assert.deepEqual(result.latest.state, {
+    activeReward: true,
+    progressPercent: 42,
+    routingState: 'verify-stream',
+  });
+});
+
 test('deduplicated suite state publishing emits only meaningful changes', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
