@@ -182,6 +182,10 @@ jobs:
         working-directory: exp-core
         run: node scripts/sync-products.cjs
 
+      - name: Verify rollout trigger contract
+        working-directory: exp-core
+        run: node scripts/check-consumer-rollout-contract.cjs
+
       - name: Verify all products together
         working-directory: exp-core
         run: node scripts/check-suite-coexistence.cjs
