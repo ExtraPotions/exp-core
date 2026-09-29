@@ -6,6 +6,7 @@
 - Removes Dropper-specific DOM selectors and legacy --dropper-* variable fallbacks from the shared Core foundation/runtime.
 - Moves duplicated Dropper progress, campaign, inventory, eligibility, queue, and stream UI styling out of Core so product-specific presentation remains owned by Dropper.
 - Keeps candidate-Core verification green across all four consumers and the combined coexistence browser test.
+- Makes release publication resilient to concurrent generated-artifact commits from the independent Core build workflow.
 
 ## 3.4.0 — 2026-09-28
 
