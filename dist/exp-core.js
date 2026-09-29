@@ -1287,6 +1287,22 @@ function createProductLifecycle(shared) {
 
   function onNavigation(callback) {
     if (typeof callback !== 'function') throw new TypeError('Navigation callback must be a function');
+    if (typeof shared.observeNavigation === 'function') {
+      let disposed = false;
+      const stop = shared.observeNavigation(event => callback({
+        href: event.href,
+        kind: event.kind,
+        epoch: event.epoch,
+      }), { owner: 'lifecycle' });
+      const cleanup = () => {
+        if (disposed) return;
+        disposed = true;
+        stop();
+        cleanups.delete(cleanup);
+      };
+      cleanups.add(cleanup);
+      return cleanup;
+    }
     let previous=location.href;
     const subscriber=({href})=>{if(href!==previous){previous=href;callback({href});}};
     if (!stopNavigationHooks) {
