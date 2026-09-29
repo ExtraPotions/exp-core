@@ -771,6 +771,37 @@ test('suite health includes latest compact product state', async (t) => {
   assert.equal(result.states[0].productId, 'shift');
 });
 
+test('suite-aware compatibility controls surface Core interoperability health', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><head></head><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    ExtraPotionsCore.registerDiagnosticsProduct('dropper', '3.3.20');
+    ExtraPotionsCore.registerDiagnosticsProduct('shift', '3.4.12');
+    ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', {
+      active: true,
+      theme: 'midnight',
+      safeMode: false,
+      excluded: false,
+    });
+    const control = ExtraPotionsCore.createCompatibilityControls();
+    document.body.append(control);
+    control.open = true;
+    control.dispatchEvent(new Event('toggle'));
+    return {
+      text: control.textContent,
+      details: control.tagName,
+    };
+  });
+  assert.equal(result.details, 'DETAILS');
+  assert.match(result.text, /DROPPER 3\.3\.20/u);
+  assert.match(result.text, /SHIFT 3\.4\.12/u);
+  assert.match(result.text, /Healthy/u);
+  assert.match(result.text, /Shared observers/u);
+  assert.match(result.text, /No interoperability conflicts detected/u);
+  assert.match(result.text, /advisory coordination data/u);
+});
+
 test('product compatibility merges interoperability health conflicts', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
