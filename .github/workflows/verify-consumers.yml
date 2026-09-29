@@ -141,35 +141,20 @@ jobs:
         with:
           path: exp-core
 
-      - name: Check out Dropper
-        uses: actions/checkout@v4
-        with:
-          repository: ExtraPotions/Dropper
-          path: Dropper
-
-      - name: Check out SHIFT
-        uses: actions/checkout@v4
-        with:
-          repository: ExtraPotions/SHIFT
-          path: SHIFT
-
-      - name: Check out WARD
-        uses: actions/checkout@v4
-        with:
-          repository: ExtraPotions/WARD
-          path: WARD
-
-      - name: Check out PRISMA
-        uses: actions/checkout@v4
-        with:
-          repository: ExtraPotions/PRISMA
-          path: PRISMA
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: exp-core/package-lock.json
+
+      - name: Check out suite consumers from manifest
+        working-directory: exp-core
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r repo; do
+            git clone --depth=1 "https://github.com/ExtraPotions/${repo}.git" "../${repo}"
+          done < <(node -e "const {repositories}=require('./scripts/suite-contract.cjs').loadSuiteContract(process.cwd()); process.stdout.write(repositories.join('\\n')+'\\n')")
 
       - name: Build candidate Core
         working-directory: exp-core
