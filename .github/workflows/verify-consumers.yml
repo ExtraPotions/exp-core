@@ -10,6 +10,8 @@ on:
       - "scripts/build.cjs"
       - "scripts/sync-products.cjs"
       - "scripts/consumer-matrix.cjs"
+      - "scripts/check-suite-coexistence.cjs"
+      - "scripts/check-consumer-rollout-contract.cjs"
       - ".github/workflows/verify-consumers.yml"
   workflow_dispatch:
 
