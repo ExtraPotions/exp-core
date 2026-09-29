@@ -40,8 +40,8 @@ test('legacy Dropper-to-Core generation paths are absent', () => {
 test('Core synchronization discovers downstream consumers from the suite manifest', () => {
   const sync = read('scripts/sync-products.cjs');
   const contract = JSON.parse(read('src/suite-contract.json'));
-  assert.match(sync, /suite-contract\.json/u);
-  assert.match(sync, /Object\.values\(suite\)\.map\(product=>product\.repository\)/u);
+  assert.match(sync, /loadSuiteContract\(root\)/u);
+  assert.match(sync, /repositories:discoveredProducts/u);
   assert.doesNotMatch(sync, /\['Dropper','SHIFT','PRISMA','WARD'\]/u);
   assert.deepEqual(Object.fromEntries(Object.entries(contract).map(([id, value]) => [id, value.repository])), {
     dropper: 'Dropper', shift: 'SHIFT', ward: 'WARD', prisma: 'PRISMA'
@@ -53,14 +53,26 @@ test('Core synchronization discovers downstream consumers from the suite manifes
 test('consumer verification topology is discovered from the suite manifest', () => {
   const workflow = read('.github/workflows/verify-consumers.yml');
   const matrix = read('scripts/consumer-matrix.cjs');
-  assert.match(matrix, /suite-contract\.json/u);
-  assert.match(matrix, /product\.role==='flagship'/u);
+  assert.match(matrix, /loadSuiteContract\(root\)/u);
+  assert.match(matrix, /\{flagship,products\}=loadSuiteContract\(root\)/u);
   assert.match(matrix, /products='\+JSON\.stringify\(products\)/u);
   assert.match(workflow, /node scripts\/consumer-matrix\.cjs >> "\$GITHUB_OUTPUT"/u);
   assert.match(workflow, /fromJSON\(needs\.discover\.outputs\.products\)/u);
   assert.match(workflow, /ExtraPotions\/\$\{\{ needs\.discover\.outputs\.flagship \}\}/u);
   assert.doesNotMatch(workflow, /repository: ExtraPotions\/Dropper/u);
   assert.doesNotMatch(workflow, /product: \[SHIFT, WARD, PRISMA\]/u);
+});
+
+test('build, sync, and CI share one validated suite-contract loader', () => {
+  const loader = read('scripts/suite-contract.cjs');
+  for (const script of ['scripts/build.cjs','scripts/sync-products.cjs','scripts/consumer-matrix.cjs']) {
+    assert.match(read(script), /suite-contract\.cjs/u, script);
+    assert.match(read(script), /loadSuiteContract/u, script);
+  }
+  assert.match(loader, /exactly one flagship is required/u);
+  assert.match(loader, /repository is duplicated/u);
+  assert.match(loader, /presentationPhases contains an unknown phase/u);
+  assert.match(loader, /menuSections has unknown category/u);
 });
 
 test('Core exposes shared services through the public ExtraPotionsCore API', () => {

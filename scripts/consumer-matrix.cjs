@@ -1,12 +1,7 @@
 'use strict';
-const fs=require('node:fs');
 const path=require('node:path');
+const {loadSuiteContract}=require('./suite-contract.cjs');
 const root=path.resolve(__dirname,'..');
-const suite=JSON.parse(fs.readFileSync(path.join(root,'src','suite-contract.json'),'utf8'));
-const entries=Object.values(suite).filter(product=>product.repository);
-const flagships=entries.filter(product=>product.role==='flagship');
-if(flagships.length!==1)throw new Error('Suite manifest must declare exactly one flagship consumer');
-const flagship=flagships[0].repository;
-const products=entries.map(product=>product.repository).filter(repository=>repository!==flagship);
+const {flagship,products}=loadSuiteContract(root);
 process.stdout.write('flagship='+flagship+'\n');
 process.stdout.write('products='+JSON.stringify(products)+'\n');

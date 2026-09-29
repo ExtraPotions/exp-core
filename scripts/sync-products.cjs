@@ -1,9 +1,9 @@
 'use strict';
 const fs=require('node:fs');const path=require('node:path');
 const root=path.resolve(__dirname,'..');
+const {loadSuiteContract}=require('./suite-contract.cjs');
 const names=process.argv.filter(x=>!x.startsWith('--')).slice(2);
-const suite=JSON.parse(fs.readFileSync(path.join(root,'src','suite-contract.json'),'utf8'));
-const discoveredProducts=Object.values(suite).map(product=>product.repository).filter(Boolean);
+const {repositories:discoveredProducts}=loadSuiteContract(root);
 const products=names.length?names:discoveredProducts;
 for(const name of products){
   const destination=path.resolve(root,'..',name);
