@@ -81,6 +81,7 @@ test('generated manifest carries the canonical suite contract from one source fi
   assert.match(build, /const menuSectionsMarker = '__EXP_SUITE_MENU_SECTIONS__'/u);
   assert.match(build, /value\.menuSections \|\| \{\}/u);
   assert.deepEqual(Object.keys(contract).sort(), Object.keys(Object.fromEntries(Object.entries(contract).map(([id, value]) => [id, value.menuSections]))).sort());
+  assert.match(runtime, /menuSections: Object\.freeze\(Object\.fromEntries/u);
 });
 
 test('suite manifest owns launcher and theme coordination priorities', () => {
