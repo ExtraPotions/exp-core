@@ -1,3 +1,11 @@
+## 3.4.0-dev.15 — 2026-09-28
+
+- Adds one Core-owned cross-realm navigation observer for ExtraPotions products on the same page.
+- Routes lifecycle navigation subscriptions through the shared broadcaster instead of independently wrapping history in every product bundle.
+- Deduplicates route notifications by URL and assigns a shared navigation epoch and transition kind.
+- Keeps the previous realm-local history/popstate/hashchange implementation as a compatibility fallback for older Core runtimes.
+- Adds shared navigation-observer state to interoperability diagnostics.
+
 ## 3.4.0-dev.14 — 2026-09-28
 
 - Marks shared suite events and retained suite state as `shared-dom-advisory` coordination data, not an authorization boundary.
