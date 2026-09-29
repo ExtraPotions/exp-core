@@ -215,6 +215,70 @@ test('deduplicated suite state publishing emits only meaningful changes', async 
   ]);
 });
 
+test('shared suite state survives independently loaded Core realms and supports late reads', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const first = await page.evaluate(() => ExtraPotionsCore.publishSuiteState(
+    'ward',
+    'ward.state-changed',
+    { active: true, interventions: 3, pageType: 'search' }
+  ));
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    const duplicate = ExtraPotionsCore.publishSuiteState(
+      'ward',
+      'ward.state-changed',
+      { pageType: 'search', interventions: 3, active: true }
+    );
+    const latest = ExtraPotionsCore.latestSuiteState('ward', 'ward.state-changed');
+    const snapshot = ExtraPotionsCore.suiteStateSnapshot('ward');
+    const changed = ExtraPotionsCore.publishSuiteState(
+      'ward',
+      'ward.state-changed',
+      { active: true, interventions: 4, pageType: 'search' }
+    );
+    return {
+      duplicate,
+      changed,
+      latest,
+      snapshot,
+      markers: document.querySelectorAll('meta[data-exp-suite-state-product="ward"]').length,
+    };
+  });
+  assert.equal(first, true);
+  assert.equal(result.duplicate, false);
+  assert.equal(result.changed, true);
+  assert.equal(result.markers, 1);
+  assert.equal(result.snapshot.length, 1);
+  assert.equal(result.latest.productId, 'ward');
+  assert.equal(result.latest.type, 'ward.state-changed');
+  assert.equal(result.latest.state.interventions, 3);
+  assert.equal(result.latest.state.pageType, 'search');
+  assert.ok(result.latest.at > 0);
+});
+
+test('suite state rejects oversized payloads before writing shared metadata', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    try {
+      ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', { value: 'x'.repeat(5000) });
+      return { threw: false };
+    } catch (error) {
+      return {
+        threw: true,
+        message: String(error?.message || error),
+        markers: document.querySelectorAll('meta[data-exp-suite-state-product="shift"]').length,
+      };
+    }
+  });
+  assert.equal(result.threw, true);
+  assert.match(result.message, /4096/u);
+  assert.equal(result.markers, 0);
+});
+
 test('diagnostics bootstrap is idempotent for suite registration events', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
