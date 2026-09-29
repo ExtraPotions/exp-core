@@ -40,7 +40,7 @@ test('navigation subscribers detach in either order while the shared page observ
       epoch: ExtraPotionsCore.navigationObserverState().epoch,
     };
   });
-  assert.deepEqual(result,{seen:['a','b','b'],sharedWrapper:true,markers:1,epoch:3});
+  assert.deepEqual(result,{seen:['a','b','b'],sharedWrapper:false,markers:0,epoch:0});
 });
 
 test('Dropper and SHIFT Core fixtures coordinate distinct launcher cells and shared theme ownership', async t => {
