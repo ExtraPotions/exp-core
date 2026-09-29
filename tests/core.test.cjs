@@ -492,6 +492,33 @@ test('build-time core advertises the product coordination protocols', async (t) 
   });
 });
 
+test('suite health includes latest compact product state', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><head></head><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    ExtraPotionsCore.registerDiagnosticsProduct('shift', '3.4.12');
+    ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', {
+      active: true,
+      theme: 'midnight',
+      safeMode: false,
+      excluded: false,
+    });
+    const health = ExtraPotionsCore.suiteHealth();
+    const report = ExtraPotionsCore.createDiagnosticsReport('SHIFT', { version: '3.4.12' });
+    return {
+      product: health.products.find(item => item.id === 'shift'),
+      states: report.interoperability.states,
+    };
+  });
+  assert.equal(result.product.stateType, 'shift.state-changed');
+  assert.equal(result.product.state.active, true);
+  assert.equal(result.product.state.theme, 'midnight');
+  assert.ok(result.product.stateAgeMs >= 0);
+  assert.equal(result.states.length, 1);
+  assert.equal(result.states[0].productId, 'shift');
+});
+
 test('diagnostic reports identify their product', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage();
