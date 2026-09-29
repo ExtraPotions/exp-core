@@ -974,7 +974,7 @@ const ExtraPotionsDiagnostics = (() => {
     });
     const boxes = hosts.map(host => {
       // An inaccessible shadow or unknown box is not evidence of a collision.
-      const launcher = host.shadowRoot?.querySelector('[data-exp-part="launcher"],.ward-launcher,.launcher,#tdh-settings-launcher');
+      const launcher = host.shadowRoot?.querySelector('[data-exp-part="launcher"]');
       if (!launcher || !launcher.getClientRects().length || getComputedStyle(launcher).visibility === 'hidden') return null;
       return { id: host.dataset.productId, box: launcher.getBoundingClientRect() };
     }).filter(x => x && supportedProducts.includes(x.id));
@@ -1011,11 +1011,11 @@ const ExtraPotionsDiagnostics = (() => {
     const rect = n => { const b = n.getBoundingClientRect(); return { width: b.width, height: b.height, x: b.x, y: b.y, visible: !!n.getClientRects().length && getComputedStyle(n).visibility !== 'hidden' }; };
     const first = selector => shadow?.querySelector(selector) || null;
     const visibleFirst = selector => [...(shadow?.querySelectorAll(selector) || [])].find(n => !n.hidden && n.getClientRects().length) || first(selector);
-    const progressCard = first('#tdh-drop-card,[data-exp-part="progress-card"]');
-    const launcher = first('[data-exp-part="launcher"],.ward-launcher,.launcher,#tdh-settings-launcher');
-    const launcherRow = first('[data-exp-part="launcher-row"],.badge-row');
-    const menu = first('[data-exp-part="dock"],#tdh-tools-dock,.panel,.ward');
-    const notice = visibleFirst('#tdh-update-notice,[data-exp-update-notice],.update-notice,.changelog');
+    const progressCard = first('[data-exp-part="progress-card"]');
+    const launcher = first('[data-exp-part="launcher"]');
+    const launcherRow = first('[data-exp-part="launcher-row"]');
+    const menu = first('[data-exp-part="dock"]');
+    const notice = visibleFirst('[data-exp-update-notice],.update-notice,.changelog');
     const uiGeometry = {
       progressCardRect: progressCard ? rect(progressCard) : null,
       launcherRect: launcher ? rect(launcher) : null,
@@ -1031,7 +1031,7 @@ const ExtraPotionsDiagnostics = (() => {
       launcherRowWidth: launcherRow ? Math.round(launcherRow.getBoundingClientRect().width) : null,
       menuWidth: menu ? Math.round(menu.getBoundingClientRect().width) : null,
       noticeWidth: notice && !notice.hidden ? Math.round(notice.getBoundingClientRect().width) : null,
-      surfaces: [...(shadow?.querySelectorAll('.panel,.ward,#tdh-tools-dock,[data-exp-part="dock"]') || [])].map(rect),
+      surfaces: [...(shadow?.querySelectorAll('[data-exp-part="dock"]') || [])].map(rect),
       categories: [...(shadow?.querySelectorAll('.route,.nav-item,.fl-tool-header') || [])].map(n => ({ name: redact(n.textContent.trim()), expanded: n.getAttribute('aria-expanded') })),
       swatches: [...(shadow?.querySelectorAll('.exp-theme-swatch') || [])].map(n => ({ name: n.getAttribute('aria-label'), selected: n.getAttribute('aria-pressed'), ...rect(n) })),
     };
@@ -1834,7 +1834,7 @@ const ExpMenuArrangement = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.4.0-dev.33';
+  const version = '3.4.0-dev.34';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -2901,7 +2901,7 @@ const ExtraPotionsCore = (() => {
     if (!(shadow instanceof ShadowRoot)) return false;
     shadow.host.dataset.expContentDrivenMenu = '1';
     if (!shadow.querySelector('style[data-exp-content-driven-menu]')) {
-      injectStyle(shadow, '.fl-tool-body .action.warn{border-color:#cb6868!important;background:#402020!important;color:#ffd7d7!important}.fl-tool-body .action.warn:hover{background:#582828!important;color:#fff!important}:host([data-exp-content-driven-menu="1"]) :is(.panel,.ward,#mb-dock,[data-exp-part="dock"]){height:auto!important;min-height:0!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-body,.panel-body,.route-body){height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-header,.panel-head,.route,.nav-item,.group>summary){height:auto!important;min-height:0!important;white-space:normal!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-title,.label,.setting-label,.setting-value,.copy strong,.copy .label){overflow:visible!important;text-overflow:clip!important;white-space:normal!important;word-break:normal!important;overflow-wrap:anywhere!important}:host([data-exp-content-driven-menu="1"]) :is(.row,.mini-row,.setting-row){height:auto!important;min-height:0!important;align-items:center!important}:host([data-exp-content-driven-menu="1"]) :is(.group,.section,.panel-body:not(.hidden)){grid-template-columns:minmax(0,1fr)!important}:host([data-exp-content-driven-menu="1"]) :is(.group,.section,.panel-body:not(.hidden))>*{grid-column:1/-1!important}.fl-tool-body .row:has(>select){display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)!important;min-width:0!important}.fl-tool-body .row>select{width:100%!important;min-width:0!important;max-width:100%!important}', { expContentDrivenMenu: '1' });
+      injectStyle(shadow, '.fl-tool-body .action.warn{border-color:#cb6868!important;background:#402020!important;color:#ffd7d7!important}.fl-tool-body .action.warn:hover{background:#582828!important;color:#fff!important}:host([data-exp-content-driven-menu="1"]) :is(.panel,#mb-dock,[data-exp-part="dock"]){height:auto!important;min-height:0!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-body,.panel-body,.route-body){height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-header,.panel-head,.route,.nav-item,.group>summary){height:auto!important;min-height:0!important;white-space:normal!important}:host([data-exp-content-driven-menu="1"]) :is(.fl-tool-title,.label,.setting-label,.setting-value,.copy strong,.copy .label){overflow:visible!important;text-overflow:clip!important;white-space:normal!important;word-break:normal!important;overflow-wrap:anywhere!important}:host([data-exp-content-driven-menu="1"]) :is(.row,.mini-row,.setting-row){height:auto!important;min-height:0!important;align-items:center!important}:host([data-exp-content-driven-menu="1"]) :is(.group,.section,.panel-body:not(.hidden)){grid-template-columns:minmax(0,1fr)!important}:host([data-exp-content-driven-menu="1"]) :is(.group,.section,.panel-body:not(.hidden))>*{grid-column:1/-1!important}.fl-tool-body .row:has(>select){display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)!important;min-width:0!important}.fl-tool-body .row>select{width:100%!important;min-width:0!important;max-width:100%!important}', { expContentDrivenMenu: '1' });
     }
     applyMatteToggleChrome(shadow);
     return true;
@@ -2955,7 +2955,7 @@ const ExtraPotionsCore = (() => {
   }
   function layoutFloatingNotices() {
     const launchers = [...document.querySelectorAll('[data-exp-product-launcher="1"][data-product-id]')]
-      .map(host => host.shadowRoot?.querySelector('[data-exp-part="launcher"],.ward-launcher,.launcher,#tdh-settings-launcher'))
+      .map(host => host.shadowRoot?.querySelector('[data-exp-part="launcher"]'))
       .filter(Boolean).map(node => node.getBoundingClientRect()).filter(box => box.width && box.height);
     const notices = visibleFloatingNotices();
     if (!launchers.length || !notices.length) return;
@@ -3124,7 +3124,7 @@ const ExtraPotionsCore = (() => {
       notice.style.setProperty('width', width + 'px', 'important');
 
       const panelBox = menuOpen && !panel.hidden && panel.getClientRects().length ? panel.getBoundingClientRect() : null;
-      const launcher = shadow.querySelector('[data-exp-part="launcher"],.ward-launcher,.launcher,#tdh-settings-launcher');
+      const launcher = shadow.querySelector('[data-exp-part="launcher"]');
       const launcherBox = launcher?.getBoundingClientRect?.();
       const anchorBox = panelBox?.width && panelBox?.height ? panelBox : launcherBox;
       if (!anchorBox?.width || !anchorBox?.height) return;
@@ -3208,7 +3208,7 @@ const ExtraPotionsCore = (() => {
     panel.querySelectorAll('.fl-tool-header').forEach(header => { if (active) header.classList.toggle('last-opened', header === active); const chevron = header.querySelector('.fl-tool-chevron'); if (chevron) { const text = header.getAttribute('aria-expanded') === 'true' ? '▾' : '▸'; if (chevron.textContent !== text) chevron.textContent = text; } });
   }
   function normalizeHeader(panel) {
-    const head = panel.querySelector('.menu-head,header,.head,.ward-header'); if (!head) return;
+    const head = panel.querySelector('.menu-head,header,.head'); if (!head) return;
     head.classList.add('menu-head');
     const brand = head.querySelector('.header-brand,.identity,.brand'); if (!brand) return;
     brand.classList.add('header-brand');
@@ -3575,6 +3575,7 @@ const ExtraPotionsCore = (() => {
     }
     const notice = document.createElement('div');
     notice.className = 'update-notice';
+    notice.dataset.expUpdateNotice = '1';
     notice.hidden = true;
     notice.innerHTML = '<button type="button" class="update-dismiss" aria-label="Dismiss Update Notice">×</button><div class="update-head"><div class="update-heading"><div class="update-kicker">What\'s New</div><div class="update-title"></div></div><div class="update-version"></div></div><div class="update-text"></div><ul class="update-list"></ul><div class="update-footer"><a class="update-release" target="_blank" rel="noopener noreferrer">GitHub Release</a><a class="update-action" target="_blank" rel="noopener noreferrer">Install Update</a></div>';
     (shadow.querySelector('.exp-core-theme') || shadow).append(notice);
