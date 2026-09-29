@@ -1411,7 +1411,7 @@ const ExtraPotionsCore = (() => {
     const styles = injectStyle(shadow, canonicalCss + compositionCss, { expCoreStyle:version });
     const themeRoot = document.createElement('div'); themeRoot.className = 'exp-core-theme';
     [...shadow.childNodes].filter(node => node !== styles).forEach(node => themeRoot.append(node)); shadow.append(themeRoot);
-    panel.dataset.expPart = 'dock'; panel.classList.add('dropper-menu-surface'); makeLauncher(launcher,launcherSrc); normalizeHeader(panel); normalizeControls(panel);
+    panel.dataset.expPart = 'dock'; panel.classList.add('exp-menu-surface'); makeLauncher(launcher,launcherSrc); normalizeHeader(panel); normalizeControls(panel);
     let defaultSupport = null;
     const header = panel.querySelector('.menu-head');
     if (header && !header.querySelector('.support-wrap') && options.supportUrl !== '') {
@@ -1461,7 +1461,7 @@ const ExtraPotionsCore = (() => {
       themeRoot.classList.toggle('reduce-motion', state.reduceMotion === true || state.reduceMotion === 'on' || state.reducedMotion === 'reduce' || (state.reduceMotion === 'system' || state.reducedMotion === 'system') && matchMedia('(prefers-reduced-motion:reduce)').matches);
       const opacityValue = Number(state.opacityPercent);
       const opacity = state.customOpacity ? (Number.isFinite(opacityValue) ? Math.max(40, Math.min(100, Math.round(opacityValue / 5) * 5)) : 85)/100 : 1;
-      themeRoot.style.setProperty('--dropper-ui-opacity',String(opacity));
+      themeRoot.style.setProperty('--exp-ui-opacity',String(opacity)); themeRoot.style.setProperty('--dropper-ui-opacity',String(opacity));
       const offset = parseFloat(getComputedStyle(host).getPropertyValue('--exp-launcher-offset')) || 0;
       const x = parseFloat(getComputedStyle(host).getPropertyValue('--exp-launcher-x')) || 0;
       const delta = Math.max(8-(innerHeight-60), Math.min(4, Number(read(GRID_DELTA,0)) || 0));
@@ -1685,15 +1685,15 @@ const ExtraPotionsCore = (() => {
     wrapper.className = 'support-wrap';
     const button = document.createElement('button');
     button.type = 'button';
-    button.id = 'tdh-support-button';
+    button.id = 'exp-support-button';
     button.className = 'support-button';
     button.setAttribute('aria-label', label);
     button.setAttribute('aria-expanded', 'false');
-    button.setAttribute('aria-controls', 'tdh-support-popover');
+    button.setAttribute('aria-controls', 'exp-support-popover');
     button.title = label;
     button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.2-4.35-9.55-8.45C.42 9.02 2.3 5 6.25 5c2.15 0 3.56 1.21 4.33 2.3C11.36 6.21 12.77 5 14.92 5c3.95 0 5.83 4.02 3.8 7.55C16.36 16.65 12 21 12 21Z"/></svg>';
     const popover = document.createElement('div');
-    popover.id = 'tdh-support-popover';
+    popover.id = 'exp-support-popover';
     popover.className = 'support-popover';
     popover.setAttribute('role', 'dialog');
     popover.setAttribute('aria-label', label);

@@ -97,4 +97,9 @@ test('suite manifest owns launcher and theme coordination priorities', () => {
   assert.doesNotMatch(runtime, /host\?\.dataset\.productId === 'dropper'/u);
   assert.match(runtime, /createThemeSwatches,publishMenuPalette,createFloatingNotice/u);
   assert.doesNotMatch(runtime, /dropperThemeObserver|observedDropper|#tdh-cluster/u);
+  assert.match(runtime, /panel\.classList\.add\('exp-menu-surface'\)/u);
+  assert.match(runtime, /button\.id = 'exp-support-button'/u);
+  assert.match(runtime, /popover\.id = 'exp-support-popover'/u);
+  assert.match(runtime, /--exp-ui-opacity/u);
+  assert.doesNotMatch(runtime, /panel\.classList\.add\('dropper-menu-surface'\)/u);
 });
