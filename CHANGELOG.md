@@ -1,3 +1,10 @@
+## 3.4.0-dev.13 — 2026-09-28
+
+- Defines Core-owned compact state schemas for Dropper, SHIFT, WARD, and PRISMA.
+- Rejects unknown state fields, missing required fields, invalid counts, invalid percentages, and non-token status values before publication.
+- Keeps product state contracts queryable through the existing Core suite contract.
+- Prevents future shared-state drift from accidentally exposing identifiers or product-private payloads.
+
 ## 3.4.0-dev.12 — 2026-09-28
 
 - Adds latest compact product state to Core suite health and diagnostics.
