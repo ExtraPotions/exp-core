@@ -517,12 +517,17 @@ const ExtraPotionsCore = (() => {
       if (expectedPhases.length && !provider) conflicts.push({ type: 'missing-presentation-provider', products: [product.id], expected: expectedPhases });
       if (!expectedPhases.length && provider) conflicts.push({ type: 'unexpected-presentation-provider', products: [product.id], actual: actualPhases });
       if (provider && !sameList(actualPhases, expectedPhases)) conflicts.push({ type: 'presentation-phase-mismatch', products: [product.id], expected: expectedPhases, actual: actualPhases });
+      const latestState = latestSuiteState(product.id);
       return Object.freeze({
         id: product.id,
         status: conflicts.some(conflict => conflict.products?.includes(product.id)) ? 'conflict' : 'healthy',
         coreVersion: product.coreVersion,
         capabilities: Object.freeze(actualCapabilities),
         presentationPhases: Object.freeze(actualPhases),
+        stateType: latestState?.type || null,
+        stateAt: latestState?.at || 0,
+        stateAgeMs: latestState?.at ? Math.max(0, Date.now() - latestState.at) : null,
+        state: latestState?.state || null,
       });
     });
     const coreVersions = [...new Set(
@@ -1573,6 +1578,7 @@ const ExtraPotionsCore = (() => {
           providers: presentationProviders(),
         },
         pageObserver: pageObserverState(),
+        states: suiteStateSnapshot(),
         health: suiteHealth(),
       },
     };
