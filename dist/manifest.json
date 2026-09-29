@@ -5,13 +5,13 @@
     "sourceVersion": "3.4.0-dev.13",
     "architecture": "core-native"
   },
-  "bundleSha256": "cda35ef856dbe911ac4ccd63d6a4ae7192985ad0206610317b9aa0bebabc0e28",
+  "bundleSha256": "ac826af6c573982c26c0b2e61f9681a4a537f461d0edc111570f38f1db09fe50",
   "files": {
     "foundation.js": "6d9d8540ab1e750cc0f256da71fe7d575bfd55633ef7e45f40b0c8aff5002c56",
     "diagnostic-report.js": "9d1c588495e07e411262184a8263a3d03d0e3dbc7f45c7ff71898a7f3c131861",
     "lifecycle.js": "b07a70e8d87ae166f682ac57268290d74e640408692bcad389df3ab4d65c9111",
     "product-tools.js": "e9b774ab0891b17fcb58696281dd8b092d9e0ae0d8e53d0111b39d6fdc768b96",
     "menu-arrangement.js": "06bbd7568ab5c7483e070cb7f009b3290f21fc1644d1743284776c119e86660a",
-    "runtime.js": "e02c7f4a47abee30e44309477de99879acf515b8b977bdd286f36f70ba3fc703"
+    "runtime.js": "a7f839c1a1dbaa646646c17818db09c81bcc46a009d7dcf62e28c74d6ea589aa"
   }
 }
