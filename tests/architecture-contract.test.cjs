@@ -224,3 +224,8 @@ test('event-driven rollout contract is suite-discovered and keeps a scheduled fa
   assert.match(release, /CORE_ROLLOUT_TOKEN/u);
   assert.match(release, /exp-core-release/u);
 });
+
+test('Core foundation contains no Dropper-specific DOM selectors', () => {
+  const foundation = read('src/foundation.js');
+  assert.doesNotMatch(foundation, /#tdh(?:-|\b)|\[data-dropper-/u);
+});
