@@ -1915,6 +1915,7 @@ const ExtraPotionsCore = (() => {
   const NAVIGATION_EVENT = 'exp-core:navigation';
   const PAGE_PHASE_EVENT = 'exp-core:page-phase';
   const PAGE_PHASE_END_EVENT = 'exp-core:page-phase-end';
+  const PRESENTATION_STATE_EVENT = 'exp-core:presentation-state';
   const PRESENTATION_PHASES = Object.freeze({
     observe: 10,
     classify: 20,
@@ -2590,6 +2591,7 @@ const ExtraPotionsCore = (() => {
     if (!(target instanceof Element)) throw new TypeError('Presentation target must be an Element');
     const id = String(productId || '').toLowerCase();
     if (!/^[a-z][a-z0-9-]+$/.test(id)) throw new Error('Invalid presentation product ID');
+    const previous = target.getAttribute('data-exp-presentation-state') || '';
     const current = JSON.parse(JSON.stringify(readPresentationState(target)));
     const next = { ...(current[id] || {}) };
     for (const [channel, raw] of Object.entries(patch || {})) {
@@ -2603,9 +2605,24 @@ const ExtraPotionsCore = (() => {
     }
     if (Object.keys(next).length) current[id] = next;
     else delete current[id];
-    if (Object.keys(current).length) target.setAttribute('data-exp-presentation-state', JSON.stringify(current));
+    const serialized = Object.keys(current).length ? JSON.stringify(current) : '';
+    if (serialized === previous) return readPresentationState(target);
+    if (serialized) target.setAttribute('data-exp-presentation-state', serialized);
     else target.removeAttribute('data-exp-presentation-state');
-    emitSuiteEvent(id, 'presentation.state-changed', { channels: Object.keys(next) });
+    const phase = pageObserverMarker()?.dataset.expPageObserverPhase || null;
+    const detail = JSON.stringify({
+      protocol: 'exp-presentation-state-v1',
+      source: id,
+      channels: Object.keys(next),
+      phase,
+      at: Date.now(),
+    });
+    target.dispatchEvent(new CustomEvent(PRESENTATION_STATE_EVENT, {
+      bubbles: true,
+      composed: true,
+      detail,
+    }));
+    emitSuiteEvent(id, 'presentation.state-changed', { channels: Object.keys(next), phase });
     return readPresentationState(target);
   }
 
@@ -2682,6 +2699,7 @@ const ExtraPotionsCore = (() => {
         target.dispatchEvent(new CustomEvent(PAGE_BATCH_EVENT, { bubbles: true, composed: true, detail: payload }));
       });
       for (const phase of Object.keys(PRESENTATION_PHASES).sort((left, right) => PRESENTATION_PHASES[left] - PRESENTATION_PHASES[right])) {
+        marker.dataset.expPageObserverPhase = phase;
         for (const [target, payload] of payloads) {
           target.dispatchEvent(new CustomEvent(`${PAGE_PHASE_EVENT}:${phase}`, { bubbles: true, composed: true, detail: payload }));
         }
@@ -2696,6 +2714,7 @@ const ExtraPotionsCore = (() => {
             at: Date.now(),
           }),
         }));
+        delete marker.dataset.expPageObserverPhase;
       }
     };
     const observer = new MutationObserver(records => {
@@ -2760,6 +2779,23 @@ const ExtraPotionsCore = (() => {
     };
   }
 
+  function observePresentationState(callback, options = {}) {
+    if (typeof callback !== 'function') throw new TypeError('Presentation state callback must be a function');
+    const source = options.source ? String(options.source).toLowerCase() : '';
+    const channel = options.channel ? String(options.channel).toLowerCase() : '';
+    const listener = event => {
+      let payload;
+      try { payload = typeof event.detail === 'string' ? JSON.parse(event.detail) : event.detail; } catch { return; }
+      if (!payload || payload.protocol !== 'exp-presentation-state-v1') return;
+      if (source && payload.source !== source) return;
+      if (channel && !payload.channels?.includes(channel)) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (target) callback(Object.freeze({ ...payload }), target);
+    };
+    document.addEventListener(PRESENTATION_STATE_EVENT, listener);
+    return () => document.removeEventListener(PRESENTATION_STATE_EVENT, listener);
+  }
+
   function pageObserverState() {
     const marker = pageObserverMarker();
     return Object.freeze({
@@ -2767,6 +2803,7 @@ const ExtraPotionsCore = (() => {
       owner: marker?.dataset.expPageObserver || null,
       protocol: marker?.dataset.expPageObserverProtocol || null,
       epoch: Number(marker?.dataset.expPageObserverEpoch || 0),
+      phase: marker?.dataset.expPageObserverPhase || null,
     });
   }
 
@@ -3679,6 +3716,6 @@ const ExtraPotionsCore = (() => {
     return Object.freeze({ lifecycle, diagnostics, updates });
   }
 
-  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
+  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePresentationState,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
   return api;
 })();
