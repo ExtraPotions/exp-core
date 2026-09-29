@@ -24,7 +24,7 @@ test('queued lifecycle transitions preserve order, recover after failure, and cl
   assert.deepEqual(result,{events:['initialize','enable','initialize','enable','disable','cleanup'],state:'cleaned'});
 });
 
-test('navigation subscribers detach in either order and restore history methods', async t => {
+test('navigation subscribers detach in either order while the shared page observer remains available', async t => {
   const browser = await chromium.launch(); t.after(() => browser.close());
   const page = await browser.newPage(); await page.goto('about:blank');
   await page.addScriptTag({content:source});
@@ -33,9 +33,14 @@ test('navigation subscribers detach in either order and restore history methods'
     const stopA=lifecycle.onNavigation(()=>seen.push('a'));
     const stopB=lifecycle.onNavigation(()=>seen.push('b'));
     history.pushState({},'','#one');stopA();history.pushState({},'','#two');stopB();history.pushState({},'','#three');
-    return {seen,restored:history.pushState===original};
+    return {
+      seen,
+      sharedWrapper: history.pushState !== original,
+      markers: document.querySelectorAll('meta[data-exp-navigation-observer]').length,
+      epoch: ExtraPotionsCore.navigationObserverState().epoch,
+    };
   });
-  assert.deepEqual(result,{seen:['a','b','b'],restored:true});
+  assert.deepEqual(result,{seen:['a','b','b'],sharedWrapper:true,markers:1,epoch:3});
 });
 
 test('Dropper and SHIFT Core fixtures coordinate distinct launcher cells and shared theme ownership', async t => {
