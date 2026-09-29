@@ -13,11 +13,17 @@ const suiteContract = JSON.parse(contractText);
 const rawSource = files.map(file => normalize(fs.readFileSync(path.join(root,'src',file),'utf8')).trim()).join('\n\n') + '\n';
 const marker = '__EXP_CORE_VERSION__';
 const contractMarker = '__EXP_SUITE_CONTRACT__';
+const productIdsMarker = '__EXP_SUITE_PRODUCT_IDS__';
 const markerCount = rawSource.split(marker).length - 1;
 const contractMarkerCount = rawSource.split(contractMarker).length - 1;
+const productIdsMarkerCount = rawSource.split(productIdsMarker).length - 1;
 if (markerCount !== 1) throw new Error('Core runtime version marker must appear exactly once');
 if (contractMarkerCount !== 1) throw new Error('Core suite contract marker must appear exactly once');
-const source = rawSource.replace(marker, version).replace(contractMarker, JSON.stringify(suiteContract));
+if (productIdsMarkerCount !== 1) throw new Error('Core suite product ID marker must appear exactly once');
+const source = rawSource
+  .replace(marker, version)
+  .replace(contractMarker, JSON.stringify(suiteContract))
+  .replace(productIdsMarker, JSON.stringify(Object.keys(suiteContract)));
 const provenance = { source:'ExtraPotions/exp-core', sourceVersion:version, architecture:'core-native' };
 const fileHashes = Object.fromEntries(files.map(f=>[f,hash(normalize(fs.readFileSync(path.join(root,'src',f),'utf8')))]));
 fileHashes[contractFile] = hash(contractText);

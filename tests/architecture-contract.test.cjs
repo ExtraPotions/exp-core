@@ -73,6 +73,10 @@ test('generated manifest carries the canonical suite contract from one source fi
   assert.doesNotMatch(runtime, /twitch\.drops|retail\.classification|text\.identity-detection/u);
   assert.match(build, /contractMarker = '__EXP_SUITE_CONTRACT__'/u);
   assert.match(build, /suiteContract/u);
+  assert.match(read('src/diagnostic-report.js'), /const supportedProducts = __EXP_SUITE_PRODUCT_IDS__;/u);
+  assert.match(build, /const productIdsMarker = '__EXP_SUITE_PRODUCT_IDS__'/u);
+  assert.match(build, /JSON\.stringify\(Object\.keys\(suiteContract\)\)/u);
+  assert.doesNotMatch(read('src/diagnostic-report.js'), /\['ward', 'dropper', 'prisma', 'shift'\]/u);
 });
 
 test('suite manifest owns launcher and theme coordination priorities', () => {

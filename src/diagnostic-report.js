@@ -1,7 +1,7 @@
 /* Local diagnostic capture shared at build time by ExtraPotions products. */
 const ExtraPotionsDiagnostics = (() => {
   const LIMIT = 100;
-  const supportedProducts = ['ward', 'dropper', 'prisma', 'shift'];
+  const supportedProducts = __EXP_SUITE_PRODUCT_IDS__;
   const protocol = 'exp-core-coordination-v1';
   const entries = [], hooks = [], registrations = new Map();
   const startedAt = new Date().toISOString();
