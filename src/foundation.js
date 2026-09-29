@@ -34,18 +34,18 @@ function css() {
       .exp-core-theme.open-up { flex-direction: column; }
       [data-exp-part="dock"],
       .update-notice {
-        opacity:var(--exp-ui-opacity,var(--dropper-ui-opacity,1));
+        opacity:var(--exp-ui-opacity,1);
         transition:opacity .15s ease;
       }
       .progress-stack {
-        width:min(var(--exp-menu-width,var(--dropper-width, 312px)), calc(100vw - 24px));
+        width:min(var(--exp-menu-width,312px), calc(100vw - 24px));
         display:flex; flex-direction:column; align-items:stretch;
         transition:.15s width;
         gap:6px;
       }
       .progress-stack[data-collapsed-width="compact"] { width:min(260px, calc(100vw - 24px)); }
       .progress-stack[data-collapsed-width="narrow"] { width:min(220px, calc(100vw - 24px)); }
-      .progress-stack[data-collapsed-width="full"] { width:min(var(--exp-menu-width,var(--dropper-width, 312px)), calc(100vw - 24px)); }
+      .progress-stack[data-collapsed-width="full"] { width:min(var(--exp-menu-width,312px), calc(100vw - 24px)); }
       .exp-core-theme[data-panel-width="compact"] [data-exp-part="dock"],
       .exp-core-theme[data-panel-width="compact"] > .update-notice[data-placement="menu"] {
         width:min(260px, calc(100vw - 24px));
@@ -56,7 +56,7 @@ function css() {
       }
       .exp-core-theme[data-panel-width="full"] [data-exp-part="dock"],
       .exp-core-theme[data-panel-width="full"] > .update-notice[data-placement="menu"] {
-        width:min(var(--exp-menu-width,var(--dropper-width, 312px)), calc(100vw - 24px));
+        width:min(var(--exp-menu-width,312px), calc(100vw - 24px));
       }
       .progress-stack.badge-only .badge-row { justify-content:flex-end; min-height:48px!important; }
       .progress-stack.badge-only [data-exp-part="launcher"] {
@@ -225,7 +225,7 @@ function css() {
       [data-exp-part="launcher"] .icon { position:absolute; top:50%; left:50%; width:40px; height:40px; pointer-events:none; z-index:1; transform:translate(-50%,-50%); }
       [data-exp-part="dock"] {
         position:fixed; right:12px; top:auto; bottom:auto;
-        display:none; width:min(var(--exp-menu-width,var(--dropper-width, 312px)), calc(100vw - 24px)); max-width:calc(100vw - 24px);
+        display:none; width:min(var(--exp-menu-width,312px), calc(100vw - 24px)); max-width:calc(100vw - 24px);
         height:max-content; min-height:0; max-height:none; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; flex:0 0 auto;
         transition:.15s width;
         padding:9px 9px 4px; background:var(--theme-bg); border:1px solid var(--theme-line); border-radius:14px; box-shadow:0 18px 50px #0008; color-scheme:dark;
