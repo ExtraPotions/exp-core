@@ -1,3 +1,10 @@
+## 3.4.0-dev.16 — 2026-09-28
+
+- Adds target-level Core presentation-state events with exact changed DOM roots and no page text in the serialized payload.
+- Tags presentation changes with the active shared presentation phase so consumers can distinguish normal ordered batches from manual or out-of-band changes.
+- Deduplicates no-op presentation writes and exposes an optional presentation-state observer API.
+- Lets PRISMA rescan only a WARD-revealed subtree after manual reveal/restore without duplicating normal WARD → SHIFT → PRISMA batch work.
+
 ## 3.4.0-dev.15 — 2026-09-28
 
 - Adds one Core-owned cross-realm navigation observer for ExtraPotions products on the same page.
