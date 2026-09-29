@@ -24,8 +24,11 @@ function loadLayoutGrid(peers) {
     'write',
     'document',
     'GRID_ORDER',
+    'SUITE_PRODUCTS',
     `${functionSource}\nreturn layoutGrid;`,
-  )(read, write, document, 'exp:v3:launcher-order');
+  )(read, write, document, 'exp:v3:launcher-order', suiteContract);
+  layoutGrid.storage = storage;
+  return layoutGrid;
 }
 
 function peer(productId, priority, reservedRows) {
@@ -115,4 +118,26 @@ test('cross-product audits exclude archived repositories', () => {
     const auditSource = fs.readFileSync(path.join(__dirname, '..', 'scripts', file), 'utf8');
     assert.doesNotMatch(auditSource, /\bclarity\b|\bmockingbird\b/iu, file);
   }
+});
+
+
+test('fresh registration order does not become a saved preference', () => {
+  const peers = [];
+  const layoutGrid = loadLayoutGrid(peers);
+  const prisma = peer('prisma', suiteContract.prisma.launcherPriority);
+  const ward = peer('ward', suiteContract.ward.launcherPriority);
+  const dropper = peer('dropper', suiteContract.dropper.launcherPriority);
+  const shift = peer('shift', suiteContract.shift.launcherPriority);
+
+  peers.push(prisma); layoutGrid();
+  peers.push(ward); layoutGrid();
+  peers.push(dropper); layoutGrid();
+  assert.equal(layoutGrid.storage.has('exp:v3:launcher-order'), false);
+
+  peers.push(shift); layoutGrid();
+  assert.deepEqual(layoutGrid.storage.get('exp:v3:launcher-order'), ['dropper','shift','ward','prisma']);
+  assert.deepEqual(
+    [...peers].sort((a,b)=>Number(a.dataset.launcherSlot)-Number(b.dataset.launcherSlot)).map(node=>node.dataset.productId),
+    ['dropper','shift','ward','prisma'],
+  );
 });
