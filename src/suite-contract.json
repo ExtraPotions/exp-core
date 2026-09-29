@@ -2,6 +2,8 @@
   "dropper": {
     "role": "flagship",
     "priority": 4,
+    "launcherPriority": 90,
+    "themePriority": 4,
     "capabilities": [
       "twitch.drops",
       "twitch.campaigns",
@@ -22,6 +24,8 @@
   "shift": {
     "role": "product",
     "priority": 3,
+    "launcherPriority": 100,
+    "themePriority": 3,
     "capabilities": [
       "appearance.theme",
       "appearance.readability",
@@ -43,6 +47,8 @@
   "ward": {
     "role": "product",
     "priority": 2,
+    "launcherPriority": 60,
+    "themePriority": 1,
     "capabilities": [
       "retail.classification",
       "retail.cleanup",
@@ -68,6 +74,8 @@
   "prisma": {
     "role": "product",
     "priority": 1,
+    "launcherPriority": 40,
+    "themePriority": 2,
     "capabilities": [
       "text.identity-detection",
       "text.identity-highlighting",

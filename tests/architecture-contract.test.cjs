@@ -74,3 +74,21 @@ test('generated manifest carries the canonical suite contract from one source fi
   assert.match(build, /contractMarker = '__EXP_SUITE_CONTRACT__'/u);
   assert.match(build, /suiteContract/u);
 });
+
+test('suite manifest owns launcher and theme coordination priorities', () => {
+  const contract = JSON.parse(read('src/suite-contract.json'));
+  const runtime = read('src/runtime.js');
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(contract).map(([id, value]) => [id, value.launcherPriority])),
+    { dropper: 90, shift: 100, ward: 60, prisma: 40 }
+  );
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(contract).map(([id, value]) => [id, value.themePriority])),
+    { dropper: 4, shift: 3, ward: 1, prisma: 2 }
+  );
+  assert.match(runtime, /const LAUNCHER_PRIORITY = Object\.freeze\(Object\.fromEntries/u);
+  assert.match(runtime, /const THEME_PRIORITY = Object\.freeze\(Object\.fromEntries/u);
+  assert.doesNotMatch(runtime, /const PRIORITY = \{/u);
+  assert.doesNotMatch(runtime, /const THEME_PRIORITY = \{[^\n]*dropper/u);
+  assert.match(runtime, /launcherPriority:String\(options\.priority \?\? contract\?\.launcherPriority \?\? 0\)/u);
+});

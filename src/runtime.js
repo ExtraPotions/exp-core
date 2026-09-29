@@ -9,14 +9,14 @@ const ExtraPotionsCore = (() => {
   const gridProtocol = 'exp-launcher-grid-v3';
   const GRID_ORDER = 'exp:v3:launcher-order';
   const GRID_DELTA = 'exp:v3:launcher-grid-delta';
-  const PRIORITY = { shift: 100, dropper: 90, ward: 60, prisma: 40 };
-  const THEME_PRIORITY = { dropper: 4, shift: 3, prisma: 2, ward: 1 };
-  // Product importance is separate from launcher placement/theme ownership.
-  // Dropper is the flagship, followed by SHIFT, WARD, then PRISMA.
+  // Product importance, launcher placement, and theme ownership are separate
+  // coordination policies backed by the same canonical suite manifest.
   const freezeSuiteContract = values => Object.freeze(Object.fromEntries(
     Object.entries(values || {}).map(([id, value]) => [id, Object.freeze({
       role: String(value?.role || 'product'),
       priority: Number(value?.priority || 0),
+      launcherPriority: Number(value?.launcherPriority || 0),
+      themePriority: Number(value?.themePriority || 0),
       capabilities: Object.freeze([...(value?.capabilities || [])]),
       presentationPhases: Object.freeze([...(value?.presentationPhases || [])]),
       state: value?.state ? Object.freeze({
@@ -28,6 +28,12 @@ const ExtraPotionsCore = (() => {
   const SUITE_PRODUCTS = freezeSuiteContract(__EXP_SUITE_CONTRACT__);
   const SUITE_PRIORITY = Object.freeze(Object.fromEntries(
     Object.entries(SUITE_PRODUCTS).map(([id, value]) => [id, value.priority])
+  ));
+  const LAUNCHER_PRIORITY = Object.freeze(Object.fromEntries(
+    Object.entries(SUITE_PRODUCTS).map(([id, value]) => [id, value.launcherPriority])
+  ));
+  const THEME_PRIORITY = Object.freeze(Object.fromEntries(
+    Object.entries(SUITE_PRODUCTS).map(([id, value]) => [id, value.themePriority])
   ));
   const SUITE_EVENT = 'exp-core:suite';
   // Suite events/state cross userscript realms through shared DOM metadata.
@@ -229,6 +235,8 @@ const ExtraPotionsCore = (() => {
       id,
       role: known.role || 'product',
       priority: Number(known.priority || SUITE_PRIORITY[id] || 0),
+      launcherPriority: Number(known.launcherPriority || LAUNCHER_PRIORITY[id] || 0),
+      themePriority: Number(known.themePriority || THEME_PRIORITY[id] || 0),
       capabilities: Object.freeze(normalizeSuiteCapabilities(known.capabilities)),
       presentationPhases: Object.freeze(normalizePresentationPhases(known.presentationPhases || [])),
       state: known.state ? Object.freeze({
@@ -1146,7 +1154,8 @@ const ExtraPotionsCore = (() => {
   function registerLauncher(host, options = {}) {
     if (registrations.has(host)) return registrations.get(host);
     const id = options.productId || options.id || host.dataset.productId;
-    Object.assign(host.dataset, { expProductLauncher:'1', productId:id, launcherPriority:String(options.priority ?? PRIORITY[id] ?? 0) });
+    const contract = suiteContract(id);
+    Object.assign(host.dataset, { expProductLauncher:'1', productId:id, launcherPriority:String(options.priority ?? contract?.launcherPriority ?? 0) });
     applyMatteToggleChrome(host);
     // The launcher is non-modal: site-wide dialog backdrop styles must never
     // paint over the page when the reference opens its manual popover.
