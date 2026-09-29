@@ -90,7 +90,7 @@ test('suite manifest owns launcher and theme coordination priorities', () => {
   assert.match(runtime, /const THEME_PRIORITY = Object\.freeze\(Object\.fromEntries/u);
   assert.doesNotMatch(runtime, /const PRIORITY = \{/u);
   assert.doesNotMatch(runtime, /const THEME_PRIORITY = \{[^\n]*dropper/u);
-  assert.match(runtime, /launcherPriority:String\(options\.priority \?\? contract\?\.launcherPriority \?\? 0\)/u);
+  assert.match(runtime, /const launcherPriority = contract \? contract\.launcherPriority : options\.priority \?\? 0;/u);
   assert.doesNotMatch(runtime, /Number\.MAX_SAFE_INTEGER/u);
   assert.doesNotMatch(runtime, /coreSource = 'Dropper\//u);
   assert.match(runtime, /coreSource = 'exp-core'/u);
