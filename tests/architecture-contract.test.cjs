@@ -75,6 +75,15 @@ test('build, sync, and CI share one validated suite-contract loader', () => {
   assert.match(loader, /menuSections has unknown category/u);
 });
 
+test('visual audit coverage is locked to the suite manifest inventory', () => {
+  for (const script of ['scripts/check-product-menus.cjs','scripts/check-annotations.cjs']) {
+    const source = read(script);
+    assert.match(source, /suite-contract\.cjs/u, script);
+    assert.match(source, /repositories/u, script);
+    assert.match(source, /product coverage must match suite manifest/u, script);
+  }
+});
+
 test('Core exposes shared services through the public ExtraPotionsCore API', () => {
   const runtime = read('src/runtime.js');
   assert.match(runtime, /bindDiagnosticsControls:ExtraPotionsDiagnostics\.bindControls/u);
