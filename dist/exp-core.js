@@ -1834,7 +1834,7 @@ const ExpMenuArrangement = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.4.0-dev.29';
+  const version = '3.4.0-dev.30';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -1851,6 +1851,9 @@ const ExtraPotionsCore = (() => {
       themePriority: Number(value?.themePriority || 0),
       capabilities: Object.freeze([...(value?.capabilities || [])]),
       presentationPhases: Object.freeze([...(value?.presentationPhases || [])]),
+      menuSections: Object.freeze(Object.fromEntries(
+        Object.entries(value?.menuSections || {}).map(([category, sections]) => [category, Object.freeze([...(sections || [])])])
+      )),
       state: value?.state ? Object.freeze({
         type: String(value.state.type || ''),
         fields: Object.freeze({ ...(value.state.fields || {}) }),
@@ -2071,6 +2074,9 @@ const ExtraPotionsCore = (() => {
       themePriority: Number(known.themePriority || THEME_PRIORITY[id] || 0),
       capabilities: Object.freeze(normalizeSuiteCapabilities(known.capabilities)),
       presentationPhases: Object.freeze(normalizePresentationPhases(known.presentationPhases || [])),
+      menuSections: Object.freeze(Object.fromEntries(
+        Object.entries(known.menuSections || {}).map(([category, sections]) => [category, Object.freeze([...sections])])
+      )),
       state: known.state ? Object.freeze({
         type: known.state.type,
         fields: Object.freeze({ ...known.state.fields }),
