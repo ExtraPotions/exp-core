@@ -300,9 +300,9 @@ test('deduplicated suite state publishing emits only meaningful changes', async 
     const stop = ExtraPotionsCore.onSuiteEvent(event => {
       if (event.type === 'shift.state-changed') seen.push(event.detail);
     });
-    const first = ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', { active: true, theme: 'midnight' });
-    const duplicate = ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', { theme: 'midnight', active: true });
-    const changed = ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', { active: true, theme: 'crimson' });
+    const first = ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', { active: true, theme: 'midnight', safeMode: false, excluded: false });
+    const duplicate = ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', { excluded: false, theme: 'midnight', active: true, safeMode: false });
+    const changed = ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', { active: true, theme: 'crimson', safeMode: false, excluded: false });
     stop();
     return { first, duplicate, changed, seen };
   });
@@ -310,8 +310,8 @@ test('deduplicated suite state publishing emits only meaningful changes', async 
   assert.equal(result.duplicate, false);
   assert.equal(result.changed, true);
   assert.deepEqual(result.seen, [
-    { active: true, theme: 'midnight' },
-    { active: true, theme: 'crimson' },
+    { active: true, excluded: false, safeMode: false, theme: 'midnight' },
+    { active: true, excluded: false, safeMode: false, theme: 'crimson' },
   ]);
 });
 
@@ -322,21 +322,21 @@ test('shared suite state survives independently loaded Core realms and supports 
   const first = await page.evaluate(() => ExtraPotionsCore.publishSuiteState(
     'ward',
     'ward.state-changed',
-    { active: true, interventions: 3, pageType: 'search' }
+    { active: true, pageType: 'search', interventions: 3, hide: 1, dim: 1, collapse: 0, annotate: 0 }
   ));
   await page.addScriptTag({ content: source });
   const result = await page.evaluate(() => {
     const duplicate = ExtraPotionsCore.publishSuiteState(
       'ward',
       'ward.state-changed',
-      { pageType: 'search', interventions: 3, active: true }
+      { annotate: 0, collapse: 0, dim: 1, hide: 1, interventions: 3, pageType: 'search', active: true }
     );
     const latest = ExtraPotionsCore.latestSuiteState('ward', 'ward.state-changed');
     const snapshot = ExtraPotionsCore.suiteStateSnapshot('ward');
     const changed = ExtraPotionsCore.publishSuiteState(
       'ward',
       'ward.state-changed',
-      { active: true, interventions: 4, pageType: 'search' }
+      { active: true, pageType: 'search', interventions: 4, hide: 1, dim: 1, collapse: 1, annotate: 1 }
     );
     return {
       duplicate,
@@ -364,13 +364,13 @@ test('suite state rejects oversized payloads before writing shared metadata', as
   await page.addScriptTag({ content: source });
   const result = await page.evaluate(() => {
     try {
-      ExtraPotionsCore.publishSuiteState('shift', 'shift.state-changed', { value: 'x'.repeat(5000) });
+      ExtraPotionsCore.publishSuiteState('future', 'future.state-changed', { value: 'x'.repeat(5000) });
       return { threw: false };
     } catch (error) {
       return {
         threw: true,
         message: String(error?.message || error),
-        markers: document.querySelectorAll('meta[data-exp-suite-state-product="shift"]').length,
+        markers: document.querySelectorAll('meta[data-exp-suite-state-product="future"]').length,
       };
     }
   });
