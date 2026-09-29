@@ -1085,7 +1085,23 @@ const ExtraPotionsCore = (() => {
       node.style.setProperty('--exp-launcher-offset', row * 56 + 'px');
     };
     sorted.forEach((node, index) => assign(node, index));
-    write(GRID_ORDER, sorted.map(node => node.dataset.productId));
+    const ids = sorted.map(node => node.dataset.productId);
+    const known = new Set(Object.keys(SUITE_PRODUCTS));
+    const completeSuite = ids.filter(id => known.has(id)).length === known.size;
+    // Do not turn userscript injection timing into a saved preference. A fresh
+    // install stays priority-sorted until either the complete suite is present
+    // or the user explicitly reorders the visible launchers.
+    if ((Array.isArray(order) && order.length) || completeSuite) write(GRID_ORDER, ids);
+  }
+  function interactionGridOrder() {
+    let order = read(GRID_ORDER, []);
+    if (!Array.isArray(order)) order = [];
+    const visible = [...document.querySelectorAll('[data-exp-product-launcher="1"]')]
+      .sort((a,b) => Number(a.dataset.launcherSlot || 0) - Number(b.dataset.launcherSlot || 0))
+      .map(node => node.dataset.productId);
+    if (!order.length) return visible;
+    const seen = new Set(order);
+    return [...order, ...visible.filter(id => !seen.has(id))];
   }
   function storageRead(key, fallback = null) {
     try { if (typeof GM_getValue === 'function') return GM_getValue(key, fallback); } catch {}
@@ -1483,12 +1499,12 @@ const ExtraPotionsCore = (() => {
     function queueLayout() { if (!frame && !destroyed) frame = requestAnimationFrame(() => { frame = 0; normalizeControls(panel); arrangement.update(); layout(); }); }
     let startX=0,startY=0,pointer=null,dragged=false,axis='',order=[];
     launcher.title = launcher.title || 'Drag left, right, up, or down to reorder. Alt+Arrow keys also reorder.';
-    on(launcher,'pointerdown',e=>{if(e.button!==0)return;pointer=e.pointerId;startX=e.clientX;startY=e.clientY;order=read(GRID_ORDER,[]);if(!Array.isArray(order))order=[];if(!order.includes(id))order.push(id);dragged=false;axis='';e.preventDefault();});
+    on(launcher,'pointerdown',e=>{if(e.button!==0)return;pointer=e.pointerId;startX=e.clientX;startY=e.clientY;order=interactionGridOrder();if(!order.includes(id))order.push(id);dragged=false;axis='';e.preventDefault();});
     on(document,'pointermove',e=>{if(e.pointerId!==pointer)return;const dx=e.clientX-startX,dy=e.clientY-startY;if(!axis&&Math.max(Math.abs(dx),Math.abs(dy))>4)axis='order';if(!axis)return;dragged=true;e.preventDefault();launcher.classList.add('is-dragging');const from=order.indexOf(id),offset=Math.abs(dx)>Math.abs(dy)?Math.round(-dx/56):Math.round(dy/56)*3,to=Math.max(0,Math.min(order.length-1,from+offset)),next=[...order];next.splice(from,1);next.splice(to,0,id);write(GRID_ORDER,next);layoutGrid();emit('launcher-grid-moved',id);layout();},{passive:false});
     const end=e=>{if(e.pointerId===pointer){pointer=null;launcher.classList.remove('is-dragging');}};
     on(document,'pointerup',end);on(document,'pointercancel',end);
     on(launcher,'click',e=>{if(dragged){e.preventDefault();e.stopImmediatePropagation();dragged=false;}},true);
-    on(launcher,'keydown',e=>{if(!e.altKey||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();let next=read(GRID_ORDER,[]);if(!Array.isArray(next))next=[];if(!next.includes(id))next.push(id);const from=next.indexOf(id),offset={ArrowLeft:1,ArrowRight:-1,ArrowUp:-3,ArrowDown:3}[e.key],to=Math.max(0,Math.min(next.length-1,from+offset));next=[...next];next.splice(from,1);next.splice(to,0,id);write(GRID_ORDER,next);layoutGrid();emit('launcher-grid-moved',id);layout();launcher.focus();});
+    on(launcher,'keydown',e=>{if(!e.altKey||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();let next=interactionGridOrder();if(!next.includes(id))next.push(id);const from=next.indexOf(id),offset={ArrowLeft:1,ArrowRight:-1,ArrowUp:-3,ArrowDown:3}[e.key],to=Math.max(0,Math.min(next.length-1,from+offset));next=[...next];next.splice(from,1);next.splice(to,0,id);write(GRID_ORDER,next);layoutGrid();emit('launcher-grid-moved',id);layout();launcher.focus();});
     for(const type of ['pointerdown','click','wheel','keydown','input','change'])on(panel,type,scheduleDismiss,{passive:type==='wheel'});
     on(window,'keydown',e=>{if(shortcutKey&&e.altKey&&e.shiftKey&&e.key.toLowerCase()===shortcutKey.toLowerCase()&&!e.repeat){e.preventDefault();setOpen(!open,true);} });
     on(window,'resize',queueLayout);on(document,'exp-core:coordination',queueLayout);
