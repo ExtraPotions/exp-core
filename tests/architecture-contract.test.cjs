@@ -113,6 +113,18 @@ test('shared tools and diagnostics do not carry product-specific provenance alia
   assert.doesNotMatch(read('src/diagnostics.js'), /Dropper/u);
 });
 
+test('Core foundation is authored against neutral shared surface selectors', () => {
+  const foundation = read('src/foundation.js');
+  const runtime = read('src/runtime.js');
+  assert.match(foundation, /\[data-exp-part="dock"\]/u);
+  assert.match(foundation, /\[data-exp-part="launcher"\]/u);
+  assert.match(foundation, /\.exp-core-theme/u);
+  assert.doesNotMatch(foundation, /#tdh-tools-dock|#tdh-settings-launcher|#tdh-rail-title|#tdh-header-version|#tdh-rail-subtitle|#tdh-rail-close|#tdh-opacity-range|#tdh-opacity-value/u);
+  assert.doesNotMatch(foundation, /\.cluster(?:\W|$)/u);
+  assert.match(runtime, /const canonicalCss = CoreFoundation\.css\(\);/u);
+  assert.doesNotMatch(runtime, /const partIds =|replaceAll\('#' \+ id/u);
+});
+
 
 
 test('generated manifest carries the canonical suite contract from one source file', () => {

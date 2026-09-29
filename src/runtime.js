@@ -129,15 +129,7 @@ const ExtraPotionsCore = (() => {
     const full = Number(fullWidth);
     return Number.isFinite(full) ? Math.max(280, Math.min(full, 340)) : 312;
   }
-  const partIds = {
-    'tdh-tools-dock': 'dock', 'tdh-settings-launcher': 'launcher',
-    'tdh-rail-title': 'title', 'tdh-header-version': 'version',
-    'tdh-rail-subtitle': 'subtitle', 'tdh-rail-close': 'close',
-    'tdh-opacity-range': 'opacity-range', 'tdh-opacity-value': 'opacity-value'
-  };
-  const canonicalCss = Object.entries(partIds).reduce((css, [id, part]) =>
-    css.replaceAll('#' + id, '[data-exp-part="' + part + '"]'), CoreFoundation.css())
-    .replaceAll('.cluster', '.exp-core-theme');
+  const canonicalCss = CoreFoundation.css();
   const compositionCss = `
     [data-exp-part="dock"]{box-sizing:border-box;overflow-x:hidden;overscroll-behavior:contain}
     [data-exp-part="dock"] :is(.row,.group,.section,.fl-tool-body,.route-body,.fl-tool-title){min-width:0;max-width:100%;overflow-wrap:anywhere!important}
