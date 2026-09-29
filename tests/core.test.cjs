@@ -619,6 +619,28 @@ test('suite health includes latest compact product state', async (t) => {
   assert.equal(result.states[0].productId, 'shift');
 });
 
+test('product compatibility merges interoperability health conflicts', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    ExtraPotionsCore.registerDiagnosticsProduct('shift', '3.4.12');
+    const healthy = ExtraPotionsCore.productCompatibility();
+    ExtraPotionsCore.registerSuiteProduct({
+      productId: 'shift',
+      productVersion: '3.4.12',
+      capabilities: ['appearance.theme'],
+    });
+    const drift = ExtraPotionsCore.productCompatibility();
+    return { healthy, drift };
+  });
+  assert.equal(result.healthy.status, 'no-conflicts-observed');
+  assert.equal(result.healthy.interoperability.status, 'healthy');
+  assert.equal(result.drift.status, 'conflicts-detected');
+  assert.equal(result.drift.interoperability.status, 'conflicts-detected');
+  assert.ok(result.drift.conflicts.some(conflict => conflict.type === 'suite-capability-mismatch'));
+});
+
 test('diagnostic reports identify their product', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage();
