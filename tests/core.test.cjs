@@ -1057,7 +1057,7 @@ test('shared diagnostics download includes product state and closed-shadow geome
   const browser=await chromium.launch({headless:true});t.after(()=>browser.close());const page=await browser.newPage({acceptDownloads:true});
   await page.setContent('<div id="host"></div>');await page.addScriptTag({content:source});
   await page.evaluate(()=>{
-    const host=document.querySelector('#host'),shadow=host.attachShadow({mode:'closed'}),panel=document.createElement('div');panel.className='panel';shadow.append(panel);
+    const host=document.querySelector('#host'),shadow=host.attachShadow({mode:'closed'}),panel=document.createElement('div');panel.className='panel';panel.dataset.expPart='dock';shadow.append(panel);
     const report=ExtraPotionsCore.createDiagnosticsReport('Example',{host,shadow,settings:{enabled:true},engine:{processed:12}});
     window.report=report;window.exportReport=()=>ExtraPotionsCore.downloadDiagnostics(report);
   });
@@ -1119,7 +1119,7 @@ test('floating changelogs live outside the menu and follow the launcher grid', a
   await page.addScriptTag({ content: source });
   const result = await page.evaluate(async () => {
     const host=document.createElement('div');const shadow=host.attachShadow({mode:'open'});const panel=document.createElement('aside');const version=document.createElement('button');const launcher=document.createElement('button');const notice=document.createElement('div');
-    launcher.className='launcher';launcher.style.cssText='position:fixed;right:12px;bottom:12px;width:48px;height:48px';panel.style.cssText='position:fixed;right:12px;top:300px;width:260px;height:180px;--accent:#22cc88;--surface:#123a2a;--bg:#071b13;--text:#edfff7';notice.hidden=true;notice.textContent='Version 3.0.1 changes';notice.style.cssText='position:fixed;width:260px;height:80px';shadow.append(panel,version,launcher,notice);document.body.append(host);ExtraPotionsCore.registerLauncher(host,{productId:'ward'});
+    launcher.className='launcher';launcher.dataset.expPart='launcher';panel.dataset.expPart='dock';launcher.style.cssText='position:fixed;right:12px;bottom:12px;width:48px;height:48px';panel.style.cssText='position:fixed;right:12px;top:300px;width:260px;height:180px;--accent:#22cc88;--surface:#123a2a;--bg:#071b13;--text:#edfff7';notice.hidden=true;notice.textContent='Version 3.0.1 changes';notice.style.cssText='position:fixed;width:260px;height:80px';shadow.append(panel,version,launcher,notice);document.body.append(host);ExtraPotionsCore.registerLauncher(host,{productId:'ward'});
     const floating=ExtraPotionsCore.createFloatingNotice({shadow,panel,notice,versionButton:version});floating.setMenuOpen(true);version.click();await new Promise((resolve)=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
     const launcherRect=launcher.getBoundingClientRect(),noticeRect=notice.getBoundingClientRect();
     return {outside:notice.parentNode===shadow,visible:!notice.hidden,expanded:version.getAttribute('aria-expanded'),aligned:noticeRect.right===launcherRect.right,above:noticeRect.bottom<launcherRect.top,hasDismiss:Boolean(notice.querySelector('.exp-floating-update-dismiss')),border:notice.style.getPropertyValue('--exp-notice-border'),top:notice.style.getPropertyValue('--exp-notice-top'),text:notice.style.getPropertyValue('--exp-notice-text')};
@@ -1314,7 +1314,7 @@ test('simultaneous product notices stack beside the complete launcher grid', asy
     for (const [id, priority] of [['shift',100],['ward',60]]) {
       const host=document.createElement('div');
       const shadow=host.attachShadow({mode:'open'});
-      shadow.innerHTML='<style>.launcher{position:fixed;right:calc(12px + var(--exp-launcher-x));bottom:12px;width:48px;height:48px}.notice{position:fixed;width:240px;height:70px;background:#111;color:white}</style><button class="launcher"></button><div class="notice">Update</div>';
+      shadow.innerHTML='<style>.launcher{position:fixed;right:calc(12px + var(--exp-launcher-x));bottom:12px;width:48px;height:48px}.notice{position:fixed;width:240px;height:70px;background:#111;color:white}</style><button class="launcher" data-exp-part="launcher"></button><div class="notice">Update</div>';
       document.documentElement.append(host);
       ExtraPotionsCore.registerLauncher(host,{productId:id,priority});
       ExtraPotionsCore.registerFloatingNotice(host,shadow.querySelector('.notice'));
