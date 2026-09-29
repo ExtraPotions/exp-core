@@ -1,8 +1,8 @@
 {
-  "coreVersion": "3.4.0-dev.30",
+  "coreVersion": "3.4.0-dev.31",
   "source": {
     "source": "ExtraPotions/exp-core",
-    "sourceVersion": "3.4.0-dev.30",
+    "sourceVersion": "3.4.0-dev.31",
     "architecture": "core-native"
   },
   "suiteContract": {
@@ -41,7 +41,8 @@
         "system": [
           "system"
         ]
-      }
+      },
+      "repository": "Dropper"
     },
     "shift": {
       "role": "product",
@@ -79,7 +80,8 @@
         "system": [
           "system"
         ]
-      }
+      },
+      "repository": "SHIFT"
     },
     "ward": {
       "role": "product",
@@ -124,7 +126,8 @@
         "system": [
           "system"
         ]
-      }
+      },
+      "repository": "WARD"
     },
     "prisma": {
       "role": "product",
@@ -166,17 +169,18 @@
         "system": [
           "system"
         ]
-      }
+      },
+      "repository": "PRISMA"
     }
   },
-  "bundleSha256": "03ea10c5d544ac33e81907370b715d89cc9b9b926d2ea67e7ca7e6aa2fc8ebff",
+  "bundleSha256": "54aa1e1100492ba841a1f44a6da66bbbbf9f5116c94f9344fe6df1da8fb4dd16",
   "files": {
     "foundation.js": "55553c1ed956878e0aed3a410889c1deb89157fb34bc8998e01a98a5f0ccefba",
     "diagnostic-report.js": "46081f785b0418bee89ef30d4ed53ffd4f8b2f7b3edf9be662d38de749ede14c",
     "lifecycle.js": "ae7998069006a6f79d0a11bdcba0bb108459365b574de43b49df6385cb86ed05",
     "product-tools.js": "e9b774ab0891b17fcb58696281dd8b092d9e0ae0d8e53d0111b39d6fdc768b96",
     "menu-arrangement.js": "2a11c5bcbec692ad5906b2d20ee8b55c3679b5db674859f1761690b71ad90da6",
-    "runtime.js": "e708811cc29c251e55d1df2b3b41a8065d7621b543b4a4ffe7b53e918a9f2c06",
-    "suite-contract.json": "9c6c1c1ae9a84886e8fc23638cc7789b9abb204d71425d3f0c8475323cb241e3"
+    "runtime.js": "c5d46d0d5d8cb659e806385068e787e018eb78946de7fde82f4eb364794bcbe1",
+    "suite-contract.json": "02ec8764ab1b6f8f9e67bd56c93e53cc7a4bcdcbca273c15743daaa71e264216"
   }
 }
