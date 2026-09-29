@@ -191,6 +191,72 @@ test('persisted suite state is queryable across later Core realms', async (t) =>
   });
 });
 
+test('Core owns strict compact state schemas for the current products', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const contracts = await page.evaluate(() => Object.fromEntries(
+    ['dropper', 'shift', 'ward', 'prisma'].map(id => [id, ExtraPotionsCore.suiteContract(id).state])
+  ));
+  assert.deepEqual(contracts.dropper, {
+    type: 'dropper.state-changed',
+    fields: { activeReward: 'boolean', progressPercent: 'percent-nullable', routingState: 'token' },
+  });
+  assert.deepEqual(contracts.shift, {
+    type: 'shift.state-changed',
+    fields: { active: 'boolean', theme: 'token', safeMode: 'boolean', excluded: 'boolean' },
+  });
+  assert.deepEqual(contracts.ward, {
+    type: 'ward.state-changed',
+    fields: { active: 'boolean', pageType: 'token', interventions: 'count', hide: 'count', dim: 'count', collapse: 'count', annotate: 'count' },
+  });
+  assert.deepEqual(contracts.prisma, {
+    type: 'prisma.state-changed',
+    fields: { status: 'token', total: 'count', temporarilyHidden: 'boolean' },
+  });
+});
+
+test('canonical suite state rejects schema drift before publication', async (t) => {
+  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
+  const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
+  await page.addScriptTag({ content: source });
+  const result = await page.evaluate(() => {
+    const attempt = fn => {
+      try { fn(); return null; } catch (error) { return String(error?.message || error); }
+    };
+    return {
+      identifying: attempt(() => ExtraPotionsCore.publishSuiteState('dropper', 'dropper.state-changed', {
+        activeReward: true,
+        progressPercent: 50,
+        routingState: 'earning',
+        streamer: 'private-login',
+      })),
+      percent: attempt(() => ExtraPotionsCore.publishSuiteState('dropper', 'dropper.state-changed', {
+        activeReward: true,
+        progressPercent: 101,
+        routingState: 'earning',
+      })),
+      missing: attempt(() => ExtraPotionsCore.publishSuiteState('prisma', 'prisma.state-changed', {
+        status: 'ready',
+        total: 4,
+      })),
+      valid: ExtraPotionsCore.publishSuiteState('ward', 'ward.state-changed', {
+        active: true,
+        pageType: 'search',
+        interventions: 4,
+        hide: 1,
+        dim: 1,
+        collapse: 1,
+        annotate: 1,
+      }),
+    };
+  });
+  assert.match(result.identifying, /Unknown suite state field: streamer/u);
+  assert.match(result.percent, /Invalid percent suite state field: progressPercent/u);
+  assert.match(result.missing, /Missing suite state field: temporarilyHidden/u);
+  assert.equal(result.valid, true);
+});
+
 test('deduplicated suite state publishing emits only meaningful changes', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
