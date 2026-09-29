@@ -1472,7 +1472,7 @@ const ExpMenuArrangement = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.4.1';
+  const version = '3.4.2';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -2940,7 +2940,7 @@ const ExtraPotionsCore = (() => {
     function scheduleDismiss() { clearTimer(); if (!open || getSettings().menuAutoClose === false) return; deadline = Date.now()+15000; timer = setTimeout(() => { if (open && Date.now() >= deadline) setOpen(false,false); },15020); }
     function layout() {
       if (destroyed || !launcher.isConnected) return;
-      const state = getSettings(); const width = 'full';
+      const state = getSettings(); const width = 'compact';
       host.dataset.menuWidth = width; themeRoot.dataset.panelWidth = width;
       themeRoot.classList.toggle('reduce-motion', state.reduceMotion === true || state.reduceMotion === 'on' || state.reducedMotion === 'reduce' || (state.reduceMotion === 'system' || state.reducedMotion === 'system') && matchMedia('(prefers-reduced-motion:reduce)').matches);
       const opacityValue = Number(state.opacityPercent);

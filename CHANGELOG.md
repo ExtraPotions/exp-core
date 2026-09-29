@@ -1,3 +1,9 @@
+## 3.4.2 — 2026-09-29
+
+- Simplifies every product menu so it centers on the product: one menu width, and the menu always uses its product theme.
+- Removes the Edit menu editor and section drag handles. Sections are ordered by category (Main, Appearance, Advanced, System) and submenus start collapsed.
+- Products drop their Menu width, Menu theme, and Menu notifications settings.
+
 ## 3.4.1 — 2026-09-29
 
 - Adds a manifest-discovered full-suite browser gate that rebuilds and runs Dropper, SHIFT, WARD, and PRISMA together before Core changes are accepted.

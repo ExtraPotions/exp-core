@@ -51,7 +51,7 @@ test('Core product fixtures share diagnostics and detect active peers',async t=>
   assert.deepEqual(errors,[]);
 });
 
-test('all four built menus keep arrangement recovery in System and handles left of titles',{skip:!suiteAvailable&&'Requires four sibling product builds'},async t=>{
+test('all four built menus have no menu arrangement, width, or theme controls',{skip:!suiteAvailable&&'Requires four sibling product builds'},async t=>{
  const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/*',r=>r.request().isNavigationRequest()?r.fulfill({contentType:'text/html',body:'<main>Sample community.</main>'}):r.abort());
  await page.goto('https://fixture.test/');
@@ -60,17 +60,9 @@ test('all four built menus keep arrangement recovery in System and handles left 
  for(const id of ['tdh-root','exp-ward-root','exp-prisma-root','exp-shift-root']){
   const host=page.locator('#'+id);await host.waitFor({state:'attached'});
   await host.evaluate(host=>{const s=host.shadowRoot;s.querySelector('.launcher,.ward-launcher,#tdh-settings-launcher').click();s.querySelector('[data-panel="tdh-diagnostics-body"],[data-view="system"],[data-route="system"],[data-section="system"]').click();});
-  const editor=host.locator('.exp-menu-editor');await editor.waitFor({state:'visible'});
-  assert.equal(await editor.evaluate(node=>node.closest('[data-exp-arrange-section]').querySelector('.fl-tool-title').textContent),'System');
-  assert.equal(await host.getByRole('switch',{name:'Show System'}).count(),0);
-  await editor.locator('summary').click();const toggle=editor.getByRole('switch').first();await toggle.click();
-  assert.equal(await host.locator('[data-exp-arrange-section][hidden]').count(),1);
-  await editor.getByRole('button',{name:'Reset menu arrangement',exact:true}).click();assert.equal(await host.locator('[data-exp-arrange-section][hidden]').count(),0);
-  const facts=await host.locator('[data-exp-arrange-section]').evaluateAll(nodes=>nodes.map(section=>{const grip=section.querySelector('.exp-section-grip').getBoundingClientRect(),title=section.querySelector('.fl-tool-title').getBoundingClientRect();return grip.right<=title.left+1;}));
-  assert.ok(facts.every(Boolean),id+': handles remain left');
-  const grip=host.getByRole('button',{name:/Rearrange/}).first();await grip.focus();await page.keyboard.press('Alt+ArrowDown');
-  assert.equal(await editor.isVisible(),true);
-  await editor.getByRole('button',{name:'Reset menu arrangement',exact:true}).click();
+  assert.equal(await host.locator('.exp-menu-editor').count(),0,id+': no menu editor');
+  assert.equal(await host.locator('.exp-section-grip').count(),0,id+': no drag handles');
+  assert.equal(await host.getByRole('combobox',{name:'Menu width',exact:true}).count(),0,id+': no menu width control');
   await host.evaluate(host=>host.shadowRoot.querySelector('.launcher,.ward-launcher,#tdh-settings-launcher').click());
  }
  assert.deepEqual(errors,[]);
@@ -108,19 +100,6 @@ test('compact System groups keep diagnostics visible and expand without horizont
   const host=page.locator(name==='Dropper'?'#tdh-root':'#exp-'+name.toLowerCase()+'-root');await host.waitFor({state:'attached'});
   await host.evaluate(h=>{const s=h.shadowRoot;s.querySelector('.launcher,.ward-launcher,#tdh-settings-launcher').click();s.querySelector('[data-panel="tdh-diagnostics-body"],[data-view="system"],[data-route="system"],[data-section="system"]').click();});
   assert.equal(await host.getByRole('button',{name:'Show Diagnostics',exact:true}).isVisible(),true);
-  const width=host.getByRole('combobox',{name:'Menu width',exact:true});assert.equal(await width.isVisible(),true);
-  assert.equal(await width.evaluate(n=>n.closest('[data-exp-arrange-section]').querySelector('.fl-tool-title').textContent),'System');
-  for (const mode of ['full','compact','narrow']) {
-    await width.selectOption(mode);
-    const inline=await width.evaluate(n=>{const label=n.parentElement.querySelector('.copy,.row-copy,span').getBoundingClientRect(),select=n.getBoundingClientRect();return label.right<=select.left+1&&Math.min(label.bottom,select.bottom)>Math.max(label.top,select.top)&&n.parentElement.scrollWidth<=n.parentElement.clientWidth+1;});
-    assert.equal(inline,true,name+' '+mode+' width control must remain inline');
-  }
-  const preferences=host.locator('[data-exp-system-tools]>details').filter({has:page.locator('summary',{hasText:'Menu preferences'})});assert.equal(await preferences.count(),1);
-  await preferences.locator(':scope>summary').click();
-  const notifications=preferences.getByRole('switch',{name:/^Menu notifications/});
-  await notifications.waitFor({state:'visible',timeout:3000});assert.equal(await notifications.isVisible(),true,name);const checked=await notifications.getAttribute('aria-checked');await notifications.click();
-  assert.notEqual(await notifications.getAttribute('aria-checked'),checked);assert.equal(await preferences.evaluate(n=>n.open),true);
-  await preferences.locator(':scope>summary').click();
   const grid=host.locator('[data-exp-system-tools]');assert.equal(await grid.count(),1);
   assert.doesNotMatch(await grid.textContent(),/Settings backups|Back up settings|Restore selected backup/);
   assert.equal(await grid.locator(':scope>details[open]').count(),0);

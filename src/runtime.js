@@ -1470,7 +1470,7 @@ const ExtraPotionsCore = (() => {
     function scheduleDismiss() { clearTimer(); if (!open || getSettings().menuAutoClose === false) return; deadline = Date.now()+15000; timer = setTimeout(() => { if (open && Date.now() >= deadline) setOpen(false,false); },15020); }
     function layout() {
       if (destroyed || !launcher.isConnected) return;
-      const state = getSettings(); const width = 'full';
+      const state = getSettings(); const width = 'compact';
       host.dataset.menuWidth = width; themeRoot.dataset.panelWidth = width;
       themeRoot.classList.toggle('reduce-motion', state.reduceMotion === true || state.reduceMotion === 'on' || state.reducedMotion === 'reduce' || (state.reduceMotion === 'system' || state.reducedMotion === 'system') && matchMedia('(prefers-reduced-motion:reduce)').matches);
       const opacityValue = Number(state.opacityPercent);
