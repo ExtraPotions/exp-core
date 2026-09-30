@@ -1,3 +1,9 @@
+## 3.4.7 — 2026-09-30
+
+- While Dropper's progress card is showing, every product menu opens directly above it, sharing its right edge, and below it when the launchers sit in the top half of the window.
+- Stacks update and changelog notices beyond the open menu, or directly above the progress card when no menu is open, so nothing covers the card or a launcher.
+- Adds ExtraPotionsCore.placeNotice so every product places its notices the same way.
+
 ## 3.4.6 — 2026-09-30
 
 - Opens every product menu beside the launcher grid, lined up with the launcher you clicked, so menus no longer open over or behind launchers.
