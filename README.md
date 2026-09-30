@@ -12,7 +12,7 @@ The shared menu experience included with ExtraPotions products. No separate inst
 ## What you can do
 
 - Keep every product menu focused on the product: one menu width, the product's own colors, and sections grouped as Main, Appearance, Advanced, and System with submenus collapsed.
-- Move and rearrange launchers; opening a product menu coordinates with the other installed menus.
+- Drag the launchers up or down the right edge, and Shift+drag or use Alt+Arrow keys to rearrange them; opening a product menu coordinates with the other installed menus.
 - Keep controls readable in narrow or short windows with menus that scroll inside the available space.
 
 ## The menus built on Core
