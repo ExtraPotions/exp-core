@@ -48,3 +48,27 @@ test('dragging a launcher moves the launcher group; Shift+drag reorders it',asyn
 
   await page.evaluate(()=>window.products.forEach(product=>product.destroy()));
 });
+
+test('a host page that stops pointer events cannot stall a launcher drag',async t=>{
+  const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:1280,height:900}});
+  // Twitch's player stops pointermove propagation; the cursor lands on it whenever it outruns the launcher.
+  await page.route('**/*',route=>route.request().isNavigationRequest()
+    ? route.fulfill({contentType:'text/html',body:'<!doctype html><html><body style="margin:0"><div id="player" style="position:fixed;inset:0"></div><script>for(const type of ["pointermove","pointerup"])player.addEventListener(type,e=>e.stopPropagation());</script></body></html>'})
+    : route.abort());
+  await page.goto('https://core-drag-host.test/');
+  await page.addScriptTag({content:source});
+  await page.evaluate(()=>{
+    const artwork='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="%238b5cf6"/></svg>';
+    const theme={id:'shift',name:'shift',swatch:'#8b5cf6',bg:'#101014',panel:'#18181d',line:'#34343b',text:'#efeff1',muted:'#adadb8',accent:'#8b5cf6',accent2:'#a78bfa',skin:'#8b5cf6',skinVertical:'#8b5cf6'};
+    window.product=ExtraPotionsCore.createProduct({id:'shift',name:'shift',version:'3.3.2',artwork,theme,sections:[]});
+  });
+  await page.waitForTimeout(40);
+  const box=await page.evaluate(()=>{const r=document.querySelector('[data-exp-product-launcher="1"]').shadowRoot.querySelector('[data-exp-part="launcher"],.launcher').getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};});
+  await page.mouse.move(box.x,box.y);await page.mouse.down();
+  await page.mouse.move(box.x,box.y-10);
+  await page.mouse.move(box.x-200,box.y-400);
+  await page.mouse.up();
+  await page.waitForTimeout(40);
+  assert.equal(await page.evaluate(()=>Number(localStorage.getItem('exp:v3:launcher-grid-delta'))),-400);
+  await page.evaluate(()=>window.product.destroy());
+});
