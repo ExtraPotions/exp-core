@@ -167,6 +167,15 @@ function productSource(product) {
             if (top !== host) covering.add(top?.dataset?.productId || top?.tagName || 'nothing');
           }
         }
+        // Menus open beside the launcher grid: no launcher or reserved surface (Dropper's progress row) may
+        // overlap the open menu's rectangle, whether or not it is drawn on top.
+        for (const other of document.querySelectorAll('[data-exp-product-launcher="1"]')) {
+          const parts = [other.shadowRoot.querySelector('[data-exp-part="launcher"],.launcher'), ...other.shadowRoot.querySelectorAll('[data-exp-reserved]')];
+          for (const part of parts) {
+            const b = part?.getBoundingClientRect();
+            if (b?.width && b.left < box.right && b.right > box.left && b.top < box.bottom && b.bottom > box.top) covering.add('overlaps ' + other.dataset.productId);
+          }
+        }
         return [...covering];
       }, product.id);
       assert.deepEqual(covered, [], product.id + ' menu is covered by ' + JSON.stringify(covered));

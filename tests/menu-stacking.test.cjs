@@ -42,11 +42,20 @@ test('an open product menu is never covered by another product launcher',async t
         const top=document.elementFromPoint(box.left+box.width*(0.1+0.2*column),box.top+box.height*(0.05+0.225*row));
         if(top!==product.host)covering.add(top?.dataset?.productId||top?.tagName||'nothing');
       }
+      // The menu opens beside the launcher grid, so it must not overlap any launcher at all.
+      const overlapping=[...document.querySelectorAll('[data-exp-product-launcher="1"]')].filter(other=>{
+        const b=other.shadowRoot.querySelector('[data-exp-part="launcher"],.launcher').getBoundingClientRect();
+        return b.left<box.right&&b.right>box.left&&b.top<box.bottom&&b.bottom>box.top;
+      }).map(other=>other.dataset.productId);
+      const inside=box.left>=7&&box.right<=innerWidth-7&&box.top>=7&&box.bottom<=innerHeight-7;
       product.close();
-      return{open:box.width>0&&box.height>0,covering:[...covering]};
+      return{open:box.width>0&&box.height>0,covering:[...covering],overlapping,inside,side:product.host.dataset.menuSide};
     },id);
     assert.equal(covered.open,true,`${id} menu opened`);
     assert.deepEqual(covered.covering,[],`${id} menu is covered by ${JSON.stringify(covered.covering)}`);
+    assert.equal(covered.side,'beside',`${id} menu opens beside the launcher grid`);
+    assert.deepEqual(covered.overlapping,[],`${id} menu overlaps launchers ${JSON.stringify(covered.overlapping)}`);
+    assert.equal(covered.inside,true,`${id} menu stays inside the window`);
   }
   await page.evaluate(()=>window.products.forEach(product=>product.destroy()));
 });
