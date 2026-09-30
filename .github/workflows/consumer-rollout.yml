@@ -79,19 +79,40 @@ jobs:
         run: npm test
 
       - name: Commit Core-driven patch release
+        id: commit
         if: steps.changed.outputs.value == 'true'
         shell: bash
         run: |
           set -euo pipefail
+          # This run tested the product as main was when it started. If main has moved since (for
+          # example, the product was released by hand with this Core), stop cleanly without
+          # publishing; the next scheduled run starts again from the new main.
+          started="$(git rev-parse HEAD)"
+          git fetch --quiet origin main
+          if [ "$(git rev-parse origin/main)" != "$started" ]; then
+            echo "::notice::main moved while this rollout ran (now at $(git rev-parse --short origin/main): $(git log -1 --format=%s origin/main)). Nothing published; the next run starts from the new main."
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           version="$(node -p "require('./package.json').version")"
           git add -A
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m "Release ${{ inputs.product }} $version"
-          git push origin HEAD:main
+          if ! git push origin HEAD:main; then
+            git fetch --quiet origin main
+            if [ "$(git rev-parse origin/main)" != "$started" ]; then
+              echo "::notice::main moved just before this rollout pushed. Nothing published; the next run starts from the new main."
+              echo "pushed=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "Push failed for a reason other than main moving." >&2
+            exit 1
+          fi
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
 
       - name: Publish Core-driven release
-        if: steps.changed.outputs.value == 'true'
+        if: steps.changed.outputs.value == 'true' && steps.commit.outputs.pushed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           PRODUCT: ${{ inputs.product }}

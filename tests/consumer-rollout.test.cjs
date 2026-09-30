@@ -31,6 +31,13 @@ test('Core rollout is change-gated and verifies before publication', () => {
   assert.match(workflow, /gh release create/u);
 });
 
+test('Core rollout stops cleanly without publishing when main moved while it ran', () => {
+  assert.match(workflow, /git fetch --quiet origin main/u);
+  assert.match(workflow, /if \[ "\$\(git rev-parse origin\/main\)" != "\$started" \]; then/u);
+  assert.match(workflow, /echo "pushed=false" >> "\$GITHUB_OUTPUT"/u);
+  assert.match(workflow, /steps\.changed\.outputs\.value == 'true' && steps\.commit\.outputs\.pushed == 'true'/u);
+});
+
 test('Core rollout remains product-neutral through workflow inputs', () => {
   assert.match(workflow, /product:/u);
   assert.match(workflow, /script-asset:/u);
