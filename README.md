@@ -15,6 +15,19 @@ The shared menu experience included with ExtraPotions products. No separate inst
 - Move and rearrange launchers; opening a product menu coordinates with the other installed menus.
 - Keep controls readable in narrow or short windows with menus that scroll inside the available space.
 
+## The menus built on Core
+
+Every ExtraPotions product menu shares the same shell: one width, the product's own colors, and sections grouped as Main, Appearance, Advanced, and System.
+
+<table>
+  <tr>
+    <td width="25%" valign="top" align="center"><img src="https://raw.githubusercontent.com/ExtraPotions/SHIFT/main/docs/screenshots/menu-overview.png" width="200" alt="SHIFT menu built on Core"><br><strong>SHIFT</strong></td>
+    <td width="25%" valign="top" align="center"><img src="https://raw.githubusercontent.com/ExtraPotions/PRISMA/main/docs/screenshots/menu-overview.png" width="200" alt="PRISMA menu built on Core"><br><strong>PRISMA</strong></td>
+    <td width="25%" valign="top" align="center"><img src="https://raw.githubusercontent.com/ExtraPotions/WARD/main/docs/screenshots/menu-overview.png" width="200" alt="WARD menu built on Core"><br><strong>WARD</strong></td>
+    <td width="25%" valign="top" align="center"><img src="https://raw.githubusercontent.com/ExtraPotions/Dropper/main/docs/screenshots/appearance-menu.png" width="200" alt="Dropper menu built on Core"><br><strong>Dropper</strong></td>
+  </tr>
+</table>
+
 ## Architecture
 
 exp-core is the canonical implementation of shared ExtraPotions infrastructure. Product repositories consume a pinned released Core artifact; they do not define or feed shared behavior back into Core.
