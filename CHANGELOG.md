@@ -1,3 +1,10 @@
+## 3.4.5 — 2026-09-30
+
+- Lets you drag any launcher to move the whole launcher group up or down the right edge again; Shift+drag or Alt+Arrow keys reorder launchers.
+- Keeps launcher dragging working on pages such as Twitch that stop pointer events.
+- Stacks all launchers in the right-hand column while Dropper's progress card is showing, so none sits underneath it.
+- Moves launcher dragging, placement, and reset into Core so every product, Dropper included, shares one implementation.
+
 ## 3.4.4 — 2026-09-29
 
 - Marks every stylesheet Core injects as owned by ExtraPotions with an empty first rule, so theming tools can recognize them without a list of product names.
