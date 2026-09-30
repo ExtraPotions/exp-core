@@ -41,7 +41,7 @@ jobs:
       flagship: ${{ steps.matrix.outputs.flagship }}
       products: ${{ steps.matrix.outputs.products }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build consumer matrix from suite manifest
         id: matrix
         run: node scripts/consumer-matrix.cjs >> "$GITHUB_OUTPUT"
@@ -53,17 +53,17 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out candidate Core
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: exp-core
 
       - name: Check out ${{ needs.discover.outputs.flagship }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ExtraPotions/${{ needs.discover.outputs.flagship }}
           path: ${{ needs.discover.outputs.flagship }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: npm
@@ -103,17 +103,17 @@ jobs:
         product: ${{ fromJSON(needs.discover.outputs.products) }}
     steps:
       - name: Check out candidate Core
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: exp-core
 
       - name: Check out ${{ matrix.product }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ExtraPotions/${{ matrix.product }}
           path: ${{ matrix.product }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: npm
@@ -149,11 +149,11 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out candidate Core
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: exp-core
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: npm
