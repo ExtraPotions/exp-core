@@ -14,18 +14,28 @@ on:
       - "scripts/check-consumer-rollout-contract.cjs"
       - ".github/workflows/verify-consumers.yml"
   workflow_dispatch:
+  # Publish release calls this as a gate: a Core release is published only when every
+  # product's tests and the full-suite coexistence check pass against the candidate Core.
+  workflow_call:
+    inputs:
+      gate:
+        description: Set by Publish release when this run gates a Core release.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: verify-core-consumers-${{ github.ref }}
-  cancel-in-progress: true
+  # Release gates and ordinary push checks use separate groups so neither cancels the other.
+  group: verify-core-consumers-${{ github.ref }}-${{ inputs.gate && 'release' || 'push' }}
+  cancel-in-progress: ${{ !inputs.gate }}
 
 jobs:
   discover:
     name: Discover suite consumers
-    if: github.actor != 'github-actions[bot]'
+    # Release commits are verified by the release gate instead of a second, duplicate push run.
+    if: github.actor != 'github-actions[bot]' && (inputs.gate || !startsWith(github.event.head_commit.message, 'Release exp-core '))
     runs-on: ubuntu-latest
     outputs:
       flagship: ${{ steps.matrix.outputs.flagship }}

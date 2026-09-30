@@ -13,7 +13,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Nothing is published until every product passes against this Core.
+  verify-consumers:
+    if: startsWith(github.ref, 'refs/tags/') || startsWith(github.event.head_commit.message, 'Release exp-core ')
+    uses: ./.github/workflows/verify-consumers.yml
+    with:
+      gate: true
+    permissions:
+      contents: read
+
   release:
+    needs: verify-consumers
     if: startsWith(github.ref, 'refs/tags/') || startsWith(github.event.head_commit.message, 'Release exp-core ')
     runs-on: ubuntu-latest
     steps:
