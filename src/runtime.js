@@ -1126,8 +1126,13 @@ const ExtraPotionsCore = (() => {
     if (!own || !own.width) return null;
     const hosts = [...document.querySelectorAll('[data-exp-product-launcher="1"]')];
     const launchers = hosts.map(node => launcherOf(node)?.getBoundingClientRect()).filter(box => box?.width && box?.height);
+    // A reserved surface never reaches into the launcher column: a product that marks a whole row holding
+    // its launcher gets the same geometry as one that marks only the card beside it.
+    const columnLeft = Math.min(...launchers.map(box => box.left));
     const reservedBoxes = hosts.flatMap(node => [...(node.shadowRoot?.querySelectorAll('[data-exp-reserved]') || [])])
-      .map(node => node.getBoundingClientRect()).filter(box => box.width && box.height);
+      .map(node => node.getBoundingClientRect()).filter(box => box.width && box.height)
+      .map(box => ({ top:box.top, bottom:box.bottom, left:box.left, right:box.left < columnLeft ? Math.min(box.right, columnLeft - 8) : box.right }))
+      .filter(box => box.right > box.left);
     const reserved = reservedBoxes.length ? reservedBoxes.reduce((all, box) => ({ top:Math.min(all.top, box.top), bottom:Math.max(all.bottom, box.bottom), left:Math.min(all.left, box.left), right:Math.max(all.right, box.right) })) : null;
     const gridLeft = Math.min(own.left, ...launchers.map(box => box.left), ...reservedBoxes.map(box => box.left));
     const anchorTop = document.documentElement.dataset.expLauncherAnchor === 'top';

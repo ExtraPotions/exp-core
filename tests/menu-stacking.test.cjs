@@ -63,7 +63,7 @@ test('an open product menu is never covered by another product launcher',async t
 // A surface a product marks with data-exp-reserved (Dropper's progress card) sits left of the launchers.
 // Menus open directly above it, sharing its right edge, and notices stack beyond the open menu: nothing may
 // cover the card or a launcher. With the launchers anchored at the top, the stack flips below the card.
-for(const anchor of ['bottom','top'])test(`menus and notices stack ${anchor==='bottom'?'above':'below'} a reserved progress card without covering it`,async t=>{
+for(const marker of ['card','row'])for(const anchor of ['bottom','top'])test(`menus and notices stack ${anchor==='bottom'?'above':'below'} a reserved progress card without covering it (${marker} marked)`,async t=>{
   const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:1280,height:900}});
   await page.route('**/*',route=>route.request().isNavigationRequest()
     ? route.fulfill({contentType:'text/html',body:'<!doctype html><html><body style="margin:0"><main>Reserved fixture</main></body></html>'})
@@ -75,15 +75,22 @@ for(const anchor of ['bottom','top'])test(`menus and notices stack ${anchor==='b
     const artwork='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="%238b5cf6"/></svg>';
     const theme=id=>({id,name:id,swatch:'#8b5cf6',bg:'#101014',panel:'#18181d',line:'#34343b',text:'#efeff1',muted:'#adadb8',accent:'#8b5cf6',accent2:'#a78bfa',skin:'#8b5cf6',skinVertical:'#8b5cf6'});
     window.products=['shift','ward','prisma'].map((id,index)=>ExtraPotionsCore.createProduct({id,name:id,version:'3.3.2',artwork,theme:theme(id),sections:[],priority:[100,60,40][index]}));
+    // Like Dropper: the product with the card reserves its row, so every launcher stacks in one column.
+    window.products[0].host.dataset.launcherReservedRows='1';
+    ExtraPotionsCore.layout();
+    document.dispatchEvent(new CustomEvent('exp-core:coordination',{detail:{type:'launcher-reservation'}}));
   },anchor);
   await page.waitForFunction(()=>{const key=[...document.querySelectorAll('[data-exp-product-launcher="1"]')].map(h=>{const r=h.shadowRoot.querySelector('[data-exp-part="launcher"],.launcher').getBoundingClientRect();return Math.round(r.left)+','+Math.round(r.top);}).join('|');const stable=window.__key===key&&!key.includes(',-');window.__key=key;return stable;},null,{polling:'raf'});
-  // A progress card 260 wide and 100 tall, directly left of the first launcher, like Dropper's.
-  await page.evaluate(()=>{
+  // A progress card 260 wide and 100 tall, directly left of the first launcher, like Dropper's. The marker
+  // is either the card itself or (as Dropper 3.3.33 does) the whole row holding the card and the launcher.
+  await page.evaluate(marker=>{
     const host=window.products[0].host,own=host.shadowRoot.querySelector('[data-exp-part="launcher"],.launcher').getBoundingClientRect();
-    const card=document.createElement('div');card.dataset.expReserved='1';
+    const card=document.createElement('div');
     card.style.cssText=`position:fixed;width:260px;height:100px;left:${own.left-8-260}px;top:${own.bottom-100}px;background:#222`;
     host.shadowRoot.append(card);window.card=card;
-  });
+    if(marker==='card')card.dataset.expReserved='1';
+    else{const row=document.createElement('div');row.dataset.expReserved='1';row.style.cssText=`position:fixed;pointer-events:none;left:${own.left-8-260}px;width:${own.right-(own.left-8-260)}px;top:${own.bottom-112}px;height:112px`;host.shadowRoot.append(row);}
+  },marker);
   for(const product of ['shift','ward','prisma']){
     const result=await page.evaluate(async id=>{
       const product=window.products.find(item=>item.host.dataset.productId===id);
