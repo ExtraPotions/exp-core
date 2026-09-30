@@ -4,6 +4,17 @@ const {chromium}=require('playwright');
 const bundle=fs.readFileSync(path.join(__dirname,'..','dist','exp-core.js'),'utf8');
 const source=`(()=>{\n${bundle}\nglobalThis.ExtraPotionsCore=ExtraPotionsCore;\n})();\n`;
 
+// Waits until every launcher has been laid out on the right side and has stopped moving (two identical frames).
+const settle=page=>page.waitForFunction(()=>{
+  const nodes=[...document.querySelectorAll('[data-exp-product-launcher="1"]')].map(host=>host.shadowRoot?.querySelector('[data-exp-part="launcher"],.launcher'));
+  if(!nodes.length||nodes.some(node=>!node))return false;
+  const boxes=nodes.map(node=>node.getBoundingClientRect());
+  const key=boxes.map(box=>Math.round(box.left)+','+Math.round(box.top)).join('|');
+  const stable=window.__launcherKey===key&&boxes.every(box=>box.left>innerWidth/2&&box.top>=0);
+  window.__launcherKey=key;
+  return stable;
+},null,{polling:'raf'});
+
 test('dragging a launcher moves the launcher group; Shift+drag reorders it',async t=>{
   const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:1280,height:900}});
   await page.route('**/*',route=>route.request().isNavigationRequest()
@@ -16,7 +27,7 @@ test('dragging a launcher moves the launcher group; Shift+drag reorders it',asyn
     const theme=id=>({id,name:id,swatch:'#8b5cf6',bg:'#101014',panel:'#18181d',line:'#34343b',text:'#efeff1',muted:'#adadb8',accent:'#8b5cf6',accent2:'#a78bfa',skin:'#8b5cf6',skinVertical:'#8b5cf6'});
     window.products=['dropper','shift','prisma','ward'].map((id,index)=>ExtraPotionsCore.createProduct({id,name:id,version:'3.3.2',artwork,theme:theme(id),sections:[],priority:[90,100,80,60][index]}));
   });
-  await page.waitForTimeout(40);
+  await settle(page);
   const boxes=()=>page.evaluate(()=>Object.fromEntries([...document.querySelectorAll('[data-exp-product-launcher="1"]')].map(h=>{const r=h.shadowRoot.querySelector('[data-exp-part="launcher"],.launcher').getBoundingClientRect();return[h.dataset.productId,{slot:Number(h.dataset.launcherSlot),x:r.left+r.width/2,y:r.top+r.height/2}];})));
   const drag=async(from,dx,dy,shift=false)=>{
     if(shift)await page.keyboard.down('Shift');
@@ -24,7 +35,7 @@ test('dragging a launcher moves the launcher group; Shift+drag reorders it',asyn
     for(let step=1;step<=10;step++)await page.mouse.move(from.x+dx*step/10,from.y+dy*step/10);
     await page.mouse.up();
     if(shift)await page.keyboard.up('Shift');
-    await page.waitForTimeout(40);
+    await settle(page);
   };
 
   const before=await boxes();
@@ -62,13 +73,13 @@ test('a host page that stops pointer events cannot stall a launcher drag',async 
     const theme={id:'shift',name:'shift',swatch:'#8b5cf6',bg:'#101014',panel:'#18181d',line:'#34343b',text:'#efeff1',muted:'#adadb8',accent:'#8b5cf6',accent2:'#a78bfa',skin:'#8b5cf6',skinVertical:'#8b5cf6'};
     window.product=ExtraPotionsCore.createProduct({id:'shift',name:'shift',version:'3.3.2',artwork,theme,sections:[]});
   });
-  await page.waitForTimeout(40);
+  await settle(page);
   const box=await page.evaluate(()=>{const r=document.querySelector('[data-exp-product-launcher="1"]').shadowRoot.querySelector('[data-exp-part="launcher"],.launcher').getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};});
   await page.mouse.move(box.x,box.y);await page.mouse.down();
   await page.mouse.move(box.x,box.y-10);
   await page.mouse.move(box.x-200,box.y-400);
   await page.mouse.up();
-  await page.waitForTimeout(40);
+  await settle(page);
   assert.equal(await page.evaluate(()=>Number(localStorage.getItem('exp:v3:launcher-grid-delta'))),-400);
   await page.evaluate(()=>window.product.destroy());
 });

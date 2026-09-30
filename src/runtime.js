@@ -1118,6 +1118,15 @@ const ExtraPotionsCore = (() => {
     return { top, right: 12+x, anchor, delta };
   }
   // Restores the default launcher order and group position for every product.
+  // Every launcher host is its own top-layer popover, and the top layer stacks in the order popovers were
+  // shown (product load order), not by z-index. Whenever a menu opens, re-show its host so the open menu
+  // sits above every other launcher. Any product that announces exp-core:menu-open gets this for free.
+  function raiseOpenMenuHost() {
+    const id = document.documentElement.getAttribute('data-exp-open-menu');
+    const host = [...document.querySelectorAll('[data-exp-product-launcher="1"]')].find(node => node.dataset.productId === id);
+    if (!host || typeof host.hidePopover !== 'function') return;
+    try { if (host.matches(':popover-open')) host.hidePopover(); host.showPopover(); } catch {}
+  }
   function resetLauncherGrid(productId) { write(GRID_ORDER,[]); write(GRID_DELTA,0); layoutGrid(); emit('launcher-grid-moved', productId); }
   // Shared launcher drag for every product: drag moves the launcher group along the right edge;
   // Shift+drag and Alt+Arrow keys reorder. Listens on window in the capture phase so host pages
@@ -1957,6 +1966,7 @@ const ExtraPotionsCore = (() => {
   const startGrid=()=>{if(!document.documentElement)return;gridObserver.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['data-exp-product-launcher','data-product-id','data-launcher-priority','data-launcher-reserved-rows']});scheduleGrid();};
   if(document.documentElement)startGrid();else addEventListener('DOMContentLoaded',startGrid,{once:true});
   document.addEventListener('exp-core:coordination',scheduleGrid);
+  document.addEventListener('exp-core:menu-open', raiseOpenMenuHost);
   addEventListener('resize',scheduleGrid,{passive:true});
   // Core-owned product bootstrap for downstream consumers.
   function createProductServices(options = {}) {

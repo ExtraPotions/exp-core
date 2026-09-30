@@ -63,6 +63,14 @@ try {
     env: { ...process.env, EXP_SUITE_ROOT: workspace, NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --require ${preload}`.trim() },
   });
   process.exitCode = result.status ?? 1;
+  if (process.exitCode === 0) {
+    // The same browser gate CI runs: all four real products loaded together, with every menu checked.
+    const coexistence = run(process.execPath, [path.join('scripts', 'check-suite-coexistence.cjs')], {
+      cwd: root,
+      env: { ...process.env, EXP_SUITE_ROOT: workspace, NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --require ${preload}`.trim() },
+    });
+    process.exitCode = coexistence.status ?? 1;
+  }
 } finally {
   // Remove the junctions first so the product node_modules folders are never touched.
   for (const name of products) {
