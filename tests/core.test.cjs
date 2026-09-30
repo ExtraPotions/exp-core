@@ -1083,7 +1083,7 @@ test('launcher grid fills three-column rows from the bottom and respects priorit
   assert.deepEqual(result, { shift: '0', ward: '1', shiftX: '0px', wardX: '56px', shiftY: '0px', wardY: '0px' });
 });
 
-test('Dropper progress visibility preserves the compact launcher grid', async (t) => {
+test('Dropper keeps its row to itself and sibling launchers stack above it, clear of its progress card', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage();
   await page.setContent('<!doctype html><html><body><div id="dropper" data-exp-product-launcher="1" data-product-id="dropper" data-launcher-priority="110" data-launcher-reserved-rows="4"></div><div id="shift" data-exp-product-launcher="1" data-product-id="shift" data-launcher-priority="100"></div><div id="ward" data-exp-product-launcher="1" data-product-id="ward" data-launcher-priority="60"></div><div id="prisma" data-exp-product-launcher="1" data-product-id="prisma" data-launcher-priority="40"></div></body></html>');
@@ -1095,20 +1095,20 @@ test('Dropper progress visibility preserves the compact launcher grid', async (t
   })));
   assert.deepEqual(result, {
     dropper: { slot: '0', row: '0', column: '0', span: '1' },
-    shift: { slot: '1', row: '0', column: '1', span: '1' },
-    ward: { slot: '2', row: '0', column: '2', span: '1' },
-    prisma: { slot: '3', row: '1', column: '0', span: '1' },
+    shift: { slot: '3', row: '1', column: '0', span: '1' },
+    ward: { slot: '6', row: '2', column: '0', span: '1' },
+    prisma: { slot: '9', row: '3', column: '0', span: '1' },
   });
   await page.evaluate(() => { document.querySelector('#dropper').dataset.launcherReservedRows = '1'; });
-  await page.waitForFunction(() => document.querySelector('#prisma').dataset.launcherSlot === '3');
+  await page.waitForFunction(() => document.querySelector('#prisma').dataset.launcherSlot === '9');
   const restored = await page.evaluate(() => Object.fromEntries(['shift','ward','prisma'].map((id) => {
     const node = document.querySelector(`#${id}`);
     return [id, { slot: node.dataset.launcherSlot, row: node.dataset.launcherRow, column: node.dataset.launcherColumn }];
   })));
   assert.deepEqual(restored, {
-    shift: { slot: '1', row: '0', column: '1' },
-    ward: { slot: '2', row: '0', column: '2' },
-    prisma: { slot: '3', row: '1', column: '0' },
+    shift: { slot: '3', row: '1', column: '0' },
+    ward: { slot: '6', row: '2', column: '0' },
+    prisma: { slot: '9', row: '3', column: '0' },
   });
 });
 

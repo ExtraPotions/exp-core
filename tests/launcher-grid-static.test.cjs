@@ -59,15 +59,16 @@ test('shared Core preserves launcher cells when progress visibility changes', ()
 
   layoutGrid();
   assert.deepEqual(placement(dropper), { slot: '0', row: '0', column: '0', span: '1' });
-  assert.deepEqual(placement(shift), { slot: '1', row: '0', column: '1', span: '1' });
-  assert.deepEqual(placement(ward), { slot: '2', row: '0', column: '2', span: '1' });
-  assert.deepEqual(placement(prisma), { slot: '3', row: '1', column: '0', span: '1' });
+  assert.deepEqual(placement(shift), { slot: '3', row: '1', column: '0', span: '1' });
+  assert.deepEqual(placement(ward), { slot: '6', row: '2', column: '0', span: '1' });
+  assert.deepEqual(placement(prisma), { slot: '9', row: '3', column: '0', span: '1' });
 
   dropper.dataset.launcherReservedRows = '1';
   layoutGrid();
-  assert.deepEqual(placement(shift), { slot: '1', row: '0', column: '1', span: '1' });
-  assert.deepEqual(placement(ward), { slot: '2', row: '0', column: '2', span: '1' });
-  assert.deepEqual(placement(prisma), { slot: '3', row: '1', column: '0', span: '1' });
+  assert.deepEqual(placement(dropper), { slot: '0', row: '0', column: '0', span: '1' });
+  assert.deepEqual(placement(shift), { slot: '3', row: '1', column: '0', span: '1' });
+  assert.deepEqual(placement(ward), { slot: '6', row: '2', column: '0', span: '1' });
+  assert.deepEqual(placement(prisma), { slot: '9', row: '3', column: '0', span: '1' });
 });
 
 test('shared launcher measurements match the suite contract', () => {
@@ -89,7 +90,7 @@ test('shared launcher measurements match the suite contract', () => {
   assert.match(source, /column \* 56 \+ 'px'/u);
   assert.match(source, /Math\.round\(dy\/56\)\*3/u);
   assert.match(source, /ArrowUp:-3,ArrowDown:3/u);
-  assert.match(source, /sorted\.forEach\(\(node, index\) => assign\(node, index\)\)/u);
+  assert.match(source, /assign\(node, stacked \? index \* 3 : index\)/u);
   assert.equal(chromeContract.artwork.launcherButtonSize + chromeContract.artwork.launcherGapSize, 56);
   assert.match(source, /launcher\.replaceChildren\(mark\)/u);
   assert.doesNotMatch(source, /launcher\.append\(ring/u);
