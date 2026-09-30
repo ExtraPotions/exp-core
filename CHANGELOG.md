@@ -1,3 +1,10 @@
+## 3.4.6 — 2026-09-30
+
+- Opens every product menu beside the launcher grid, lined up with the launcher you clicked, so menus no longer open over or behind launchers.
+- Keeps menus clear of Dropper's progress card, and falls back to opening above or below the grid when the window is too narrow.
+- Keeps the open menu above every other launcher, whatever order the products loaded in.
+- Adds checks that fail if an open menu is covered by or overlaps any launcher, in Core's tests and in the four-product suite check.
+
 ## 3.4.5 — 2026-09-30
 
 - Lets you drag any launcher to move the whole launcher group up or down the right edge again; Shift+drag or Alt+Arrow keys reorder launchers.
