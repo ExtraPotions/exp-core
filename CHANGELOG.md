@@ -1,3 +1,9 @@
+## 3.4.13 - 2026-10-01
+
+- Prevents diagnostic resource summaries from exposing URL-shaped initiator values as object keys; unknown initiators are grouped under `other`.
+- Redacts URL-shaped object keys throughout shared diagnostics so keys cannot bypass the same privacy filtering applied to values.
+- Adds browser regression coverage for URL-shaped keys and resource initiators while preserving safe aggregate performance counts.
+
 ## 3.4.12 - 2026-10-01
 
 - Removes the retired Full, Compact and Narrow sizing branches from the shared runtime and styles. Menus use one canonical preferred size and clamp to available viewport space.
