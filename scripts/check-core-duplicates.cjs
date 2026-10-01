@@ -29,7 +29,7 @@ const RULES = [
   {
     id: 'private-menu-controller',
     test: line => /data-exp-open-menu|['"]exp-core:menu-open['"]/.test(line),
-    fix: 'Open and close the menu through the create() controller from Core, which signals other products.',
+    fix: 'Open and close the menu through Core create() or createMenuController(), which signals other products.',
   },
   {
     id: 'private-support-popover',

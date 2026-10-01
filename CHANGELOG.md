@@ -1,3 +1,9 @@
+## 3.4.10 - 2026-10-01
+
+- Adds a behavior-only menu controller so custom product surfaces use the same outside-press protection, one-open-menu coordination and inactivity timer as Core-native menus.
+- Core-native menus now delegate those interactions to the shared controller. Custom surfaces do not need to replace their markup, styles or progress-card geometry.
+- Exposes timer state for diagnostics and explicit deadline enforcement after background timer throttling; controller disposal releases listeners and only its own menu marker.
+
 ## 3.4.9 — 2026-10-01
 
 - Every product menu now closes when you click outside it. A dropdown you are using keeps it open, and products can hold it open for their own reasons, such as an unfinished import.
