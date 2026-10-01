@@ -73,7 +73,7 @@ test('Core diagnostics redact URL-shaped keys and normalize unknown resource ini
     });
     return ExtraPotionsCore.createDiagnosticsReport('WARD', {
       product:{version:'1.2.3'},
-      ['https://private.example/private-key?token=SECRET']:'kept-value',
+      ['https://private.example/private-key?mode=1']:'kept-value',
     });
   });
   const serialized = JSON.stringify(result);
