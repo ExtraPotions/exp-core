@@ -106,6 +106,14 @@ for (const viewport of [{ width: 360, height: 900 }, { width: 1100, height: 900 
       const host = page.locator(product.host);
       await host.waitFor({ state: 'attached' });
       await host.evaluate((node) => node.shadowRoot.querySelector('.launcher, .ward-launcher, #tdh-settings-launcher').click());
+      const supportStyle = await host.evaluate(node => {
+        const control = node.shadowRoot.querySelector('.support-button');
+        const icon = control?.querySelector('svg');
+        const buttonRect = control?.getBoundingClientRect();
+        const iconRect = icon?.getBoundingClientRect();
+        return { width: buttonRect?.width, height: buttonRect?.height, iconWidth: iconRect?.width, iconHeight: iconRect?.height, display: control && getComputedStyle(control).display };
+      });
+      assert.deepEqual(supportStyle, { width: 30, height: 30, iconWidth: 15, iconHeight: 15, display: 'grid' }, product.name + ': support control has canonical rendered styles');
       const headers = await host.evaluate((node) => [...node.shadowRoot.querySelectorAll('.fl-tool-header, [data-route], [data-view], [data-section]')]
         .filter((item) => item.matches('.fl-tool-header') || !item.closest('.fl-tool-header'))
         .map((item, index) => { item.dataset.layoutProbe = String(index); return { index, label: (item.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 30) }; }));
