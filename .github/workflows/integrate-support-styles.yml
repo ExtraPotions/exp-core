@@ -1,0 +1,92 @@
+name: Integrate self-styled Core support control
+on:
+  push:
+    branches: [release/core-support-3.4.11]
+    paths: [.github/workflows/integrate-support-styles.yml]
+permissions:
+  contents: write
+concurrency:
+  group: integrate-support-styles
+  cancel-in-progress: false
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: exp-core
+          fetch-depth: 4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22
+      - name: Snapshot current consumers and install locked dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          for name in Dropper SHIFT WARD PRISMA; do git clone --quiet --depth=1 "https://github.com/ExtraPotions/$name.git" "$name"; done
+          test "$(git -C Dropper rev-parse HEAD)" = eb4bca417ed162cf8a117b34e67d2e6dd4b78705
+          for name in exp-core Dropper SHIFT WARD PRISMA; do (cd "$name" && npm ci) > "evidence/$name-install.txt" 2>&1; done
+          (cd exp-core && npx playwright install --with-deps chromium)
+      - name: Prove the published Core is missing custom-shell support styles
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd exp-core
+          if node --test tests/support-control-style.test.cjs > ../evidence/regression-before.txt 2>&1; then
+            echo 'Expected custom-shell style regression was not reproduced.' >&2
+            exit 1
+          fi
+          grep -q 'support button owns grid layout' ../evidence/regression-before.txt
+          grep -q '^# fail 4$' ../evidence/regression-before.txt
+      - name: Apply the reviewed Core-only correction and canonical consumer sync
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd exp-core
+          node .release-staging/apply-support-style.cjs | tee ../evidence/source-hashes.txt
+          npm run build
+          echo '6ebd82117ceb025fcf7acb7424dcf4e244aa8033b473f3b151a4a5dc2c628a7b  dist/exp-core.js' | sha256sum --check
+          echo 'd6dfee8237be23aef4308a16df5eb36aeebb216ae4b113376355abff0ef33adf  dist/manifest.json' | sha256sum --check
+          node scripts/sync-products.cjs
+          npm run sync:check
+          node scripts/check-core-duplicates.cjs --enforce | tee ../evidence/ownership-scan.txt
+      - name: Run full regressions and rendered product-style checks
+        env:
+          EXP_SUITE_ROOT: ${{ github.workspace }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=0
+          for name in Dropper SHIFT WARD PRISMA exp-core; do
+            if ! (cd "$name" && npm test) > "evidence/$name-tests.txt" 2>&1; then tail -100 "evidence/$name-tests.txt"; result=1; fi
+            (cd "$name" && git diff --check) || result=1
+          done
+          if ! (cd exp-core && node scripts/check-suite-coexistence.cjs) > evidence/coexistence.txt 2>&1; then cat evidence/coexistence.txt; result=1; fi
+          exit "$result"
+      - name: Commit only the tested Core candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd exp-core
+          sha256sum dist/exp-core.js dist/manifest.json > ../evidence/SHA256SUMS
+          npm run build
+          sha256sum --check ../evidence/SHA256SUMS
+          git rm -r .release-staging .github/workflows/integrate-support-styles.yml
+          git add src tests package.json package-lock.json CHANGELOG.md dist
+          git -c user.name=expDARE -c user.email=5340947+ExtraPotions@users.noreply.github.com commit -m 'Prepare exp-core 3.4.11 self-styled support control'
+          git push origin HEAD:refs/heads/release/core-support-3.4.11
+          git archive --format=zip --output=../evidence/exp-core-candidate.zip HEAD
+          git rev-parse HEAD > ../evidence/commit.txt
+      - name: Retain regression and rendered evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: core-support-style-${{ github.run_id }}
+          path: |
+            evidence/
+            exp-core/test-artifacts/
+            Dropper/test-artifacts/
+          retention-days: 7
+          if-no-files-found: error
