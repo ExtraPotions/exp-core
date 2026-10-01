@@ -1,3 +1,9 @@
+## 3.4.12 - 2026-10-01
+
+- Removes the retired Full, Compact and Narrow sizing branches from the shared runtime and styles. Menus use one canonical preferred size and clamp to available viewport space.
+- Replaces the obsolete width-mode helper with `menuWidth()` for native and custom product surfaces; no width presets or width preference controls are exposed.
+- Reports viewport-clamped sizing in diagnostics and tests actual viewport sizes rather than unsupported product modes.
+
 ## 3.4.11 - 2026-10-01
 
 - Makes the shared support control carry its own canonical stylesheet, including the heart icon and donation panel, into custom product menus.

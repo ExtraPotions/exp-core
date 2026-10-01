@@ -124,12 +124,8 @@ const ExtraPotionsCore = (() => {
     const grid = document.createElement('div'); grid.dataset.expSystemTools = '1';
     grid.append(...contents); return grid;
   }
-  function menuWidthForMode(mode = 'compact', fullWidth = 312) {
-    if (mode === 'narrow') return 220;
-    if (mode === 'compact') return 260;
-    const full = Number(fullWidth);
-    return Number.isFinite(full) ? Math.max(280, Math.min(full, 340)) : 312;
-  }
+  // One suite size. Placement clamps this preferred width to the viewport.
+  function menuWidth() { return 260; }
   const canonicalCss = CoreFoundation.css();
   const compositionCss = `
     [data-exp-part="dock"]{box-sizing:border-box;overflow-x:hidden;overscroll-behavior:contain}
@@ -143,8 +139,6 @@ const ExtraPotionsCore = (() => {
     [data-exp-system-tools]>details>summary{cursor:pointer;font-weight:600}
     .exp-system-card>summary{cursor:pointer}
     .exp-system-card>summary+*{margin-top:6px}
-    [data-exp-part="dock"] .row:has(>select[aria-label="Menu width"]){display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,104px)!important;align-items:center;gap:8px!important}
-    [data-exp-part="dock"] .row>select[aria-label="Menu width"]{box-sizing:border-box;width:100%!important;max-width:104px!important;min-width:0!important;margin:0!important}
     :host{color-scheme:dark}
     [data-exp-part="launcher"]{box-sizing:border-box!important;width:48px!important;min-width:48px!important;max-width:48px!important;height:48px!important;min-height:48px!important;max-height:48px!important}
     [data-exp-part="launcher"] .launcher-icon{width:40px!important;height:40px!important}
@@ -1449,9 +1443,6 @@ const ExtraPotionsCore = (() => {
 
     const themeSource = options.themeSource instanceof Element ? options.themeSource : panel;
     const syncTheme = () => syncNoticeTheme(notice, themeSource);
-    function widthForMode() {
-      return menuWidthForMode(host?.dataset.menuWidth || 'compact');
-    }
     function clearTimer() { clearTimeout(timer); timer = 0; }
     function queueLayout() {
       if (destroyed || frame) return;
@@ -1460,7 +1451,7 @@ const ExtraPotionsCore = (() => {
     function layout() {
       if (destroyed || notice.hidden) return;
       syncTheme();
-      const width = Math.min(widthForMode(), Math.max(0, innerWidth - 24));
+      const width = Math.min(menuWidth(), Math.max(0, innerWidth - 24));
       notice.style.setProperty('width', width + 'px', 'important');
 
       placeNotice(host || shadow.host, notice, menuOpen ? panel : null);
@@ -1690,18 +1681,17 @@ const ExtraPotionsCore = (() => {
     }
     function layout() {
       if (destroyed || !launcher.isConnected) return;
-      const state = getSettings(); const width = 'compact';
-      host.dataset.menuWidth = width; themeRoot.dataset.panelWidth = width;
+      const state = getSettings();
+      themeRoot.style.setProperty('--exp-menu-width', menuWidth() + 'px');
       themeRoot.classList.toggle('reduce-motion', state.reduceMotion === true || state.reduceMotion === 'on' || state.reducedMotion === 'reduce' || (state.reduceMotion === 'system' || state.reducedMotion === 'system') && matchMedia('(prefers-reduced-motion:reduce)').matches);
       const opacityValue = Number(state.opacityPercent);
       const opacity = state.customOpacity ? (Number.isFinite(opacityValue) ? Math.max(40, Math.min(100, Math.round(opacityValue / 5) * 5)) : 85)/100 : 1;
       themeRoot.style.setProperty('--exp-ui-opacity',String(opacity));
       const { top, right } = launcherPlacement(host);
       Object.assign(launcher.style,{top:top+'px',right:right+'px',bottom:'auto',left:'auto',zIndex:open?'2147483647':'2147483600'});
-      panel.dataset.expMenuWidth = width;
       Object.assign(panel.style,{overflowY:'auto',overflowX:'hidden',overscrollBehavior:'contain',zIndex:open?'2147483647':'2147483599'});
       if (!open) return;
-      placeMenu(host, panel, menuWidthForMode(width));
+      placeMenu(host, panel, menuWidth());
       menuNotices.forEach(notice=>notice.layout());
     }
     const arrangement = ExpMenuArrangement.mount({ panel, id, onChange: queueLayout, resetLaunchers() { resetLauncherGrid(id); queueLayout(); } });
@@ -2168,6 +2158,6 @@ const ExtraPotionsCore = (() => {
     return Object.freeze({ lifecycle, diagnostics, updates });
   }
 
-  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createMenuController,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,bindLauncherDrag,launcherPlacement,placeMenu,placeNotice,resetLauncherGrid,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,isOwnedSheet,menuWidthForMode,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,publishMenuPalette,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePresentationState,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,createCompatibilityControls:createSuiteCompatibilityControls,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
+  const api = Object.freeze({...ExtraPotionsTools,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createMenuController,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,bindLauncherDrag,launcherPlacement,placeMenu,placeNotice,resetLauncherGrid,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,isOwnedSheet,menuWidth,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,publishMenuPalette,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePresentationState,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,createCompatibilityControls:createSuiteCompatibilityControls,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
   return api;
 })();

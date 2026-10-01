@@ -83,6 +83,6 @@ test('Core orders sections by category and offers nothing to rearrange or hide',
 test('Core menus use the compact width',async t=>{
   const browser=await chromium.launch({headless:true});t.after(()=>browser.close());
   const page=await browser.newPage({viewport:{width:900,height:700}});await page.setContent('<!doctype html><html><body></body></html>');await page.addScriptTag({content:source});
-  const width=await page.evaluate(()=>ExtraPotionsCore.menuWidthForMode('compact'));
+  const width=await page.evaluate(()=>ExtraPotionsCore.menuWidth());
   assert.equal(width,260);
 });
