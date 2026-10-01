@@ -166,7 +166,7 @@ const ExtraPotionsDiagnostics = (() => {
     };
     const ui = {
       mounted: !!host?.isConnected,
-      menuWidthMode: host?.dataset.menuWidth || null,
+      menuSizing: 'viewport-clamped',
       uiGeometry,
       progressPanelWidth: progressCard ? Math.round(progressCard.getBoundingClientRect().width) : null,
       launcherRowWidth: launcherRow ? Math.round(launcherRow.getBoundingClientRect().width) : null,

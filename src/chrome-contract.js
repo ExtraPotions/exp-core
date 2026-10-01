@@ -3,7 +3,7 @@
 /**
  * exp-core shared V3 chrome contract.
  * Product userscripts remain self-contained; this module defines the suite baseline
- * that product-local Core/MenuChrome implementations should mirror.
+ * that products consume through the canonical Core bundle.
  */
 const VERSION = '3.3.3';
 const UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;
@@ -47,11 +47,8 @@ const chromeContract = Object.freeze({
   }),
   menu: Object.freeze({
     dismissMs: MENU_DISMISS_MS,
-    widths: Object.freeze({
-      full: Object.freeze({ default: 312, min: 280, max: 340 }),
-      compact: 260,
-      narrow: 220,
-    }),
+    widthPx: 260,
+    sizing: 'viewport-clamped',
     dockPaddingInlinePx: 9,
     badgeOnlyProgress: Object.freeze({
       placement: 'menu-content',

@@ -68,7 +68,7 @@ function css() {
         position: fixed; right: 12px; z-index: 2147483600;
         display: flex; flex-direction: column-reverse; align-items: flex-end;
         width: max-content; max-width: calc(100vw - 24px); gap: 8px;
-        --theme-bg:#111114; --theme-panel:#19191e; --theme-raised:#2a2a31; --theme-inset:#0e0e10; --theme-line:#34343b; --theme-text:#efeff1; --theme-muted:#adadb8; --theme-accent:#9147ff; --theme-accent2:#bf94ff; --theme-link:#c6a4ff; --theme-focus:#bf94ff; --theme-onAccent:#111114; --theme-skin:linear-gradient(135deg,#d9b5ff,#9b5af9,#7428e8); --theme-skin-vertical:linear-gradient(180deg,#d9b5ff,#9b5af9,#7428e8); --exp-ui-opacity:1; --exp-menu-width:312px;
+        --theme-bg:#111114; --theme-panel:#19191e; --theme-raised:#2a2a31; --theme-inset:#0e0e10; --theme-line:#34343b; --theme-text:#efeff1; --theme-muted:#adadb8; --theme-accent:#9147ff; --theme-accent2:#bf94ff; --theme-link:#c6a4ff; --theme-focus:#bf94ff; --theme-onAccent:#111114; --theme-skin:linear-gradient(135deg,#d9b5ff,#9b5af9,#7428e8); --theme-skin-vertical:linear-gradient(180deg,#d9b5ff,#9b5af9,#7428e8); --exp-ui-opacity:1; --exp-menu-width:260px;
         font: 13px/1.42 ui-sans-serif, system-ui, "Segoe UI", sans-serif; color: var(--theme-text);
       }
       .exp-core-theme.open-up { flex-direction: column; }
@@ -77,18 +77,11 @@ function css() {
         opacity:var(--exp-ui-opacity,1);
         transition:opacity .15s ease;
       }
-      .exp-core-theme[data-panel-width="compact"] [data-exp-part="dock"],
-      .exp-core-theme[data-panel-width="compact"] > .update-notice[data-placement="menu"] {
-        width:min(260px, calc(100vw - 24px));
+      .exp-core-theme [data-exp-part="dock"],
+      .exp-core-theme > .update-notice[data-placement="menu"] {
+        width:min(var(--exp-menu-width,260px), calc(100vw - 24px));
       }
-      .exp-core-theme[data-panel-width="narrow"] [data-exp-part="dock"],
-      .exp-core-theme[data-panel-width="narrow"] > .update-notice[data-placement="menu"] {
-        width:min(220px, calc(100vw - 24px));
-      }
-      .exp-core-theme[data-panel-width="full"] [data-exp-part="dock"],
-      .exp-core-theme[data-panel-width="full"] > .update-notice[data-placement="menu"] {
-        width:min(var(--exp-menu-width,312px), calc(100vw - 24px));
-      }
+
       .progress-age { color:#a7a7b0; }
       .progress-age.warn { color:#f59e0b; }
       .progress-age.bad { color:#ef4444; font-weight:800; }
@@ -119,8 +112,7 @@ function css() {
       .opacity-row>span{font-size:11px;line-height:1.25;white-space:nowrap}
       [data-exp-part="opacity-range"]{width:100%;min-width:0;accent-color:var(--theme-accent)}
       [data-exp-part="opacity-value"]{min-width:34px;text-align:right;font-size:10px;font-weight:800;color:var(--theme-muted)}
-      .exp-core-theme[data-panel-width="narrow"] .opacity-row{grid-template-columns:1fr auto}
-      .exp-core-theme[data-panel-width="narrow"] [data-exp-part="opacity-range"]{grid-column:1/-1}
+
       [data-exp-part="launcher"]:hover {
         border-color:color-mix(in srgb,var(--theme-accent) 58%,transparent);
         background:color-mix(in srgb,var(--theme-panel,#18181b) 96%,var(--theme-accent) 4%);
@@ -146,7 +138,7 @@ function css() {
       [data-exp-part="launcher"] .icon { position:absolute; top:50%; left:50%; width:40px; height:40px; pointer-events:none; z-index:1; transform:translate(-50%,-50%); }
       [data-exp-part="dock"] {
         position:fixed; right:12px; top:auto; bottom:auto;
-        display:none; width:min(var(--exp-menu-width,312px), calc(100vw - 24px)); max-width:calc(100vw - 24px);
+        display:none; width:min(var(--exp-menu-width,260px), calc(100vw - 24px)); max-width:calc(100vw - 24px);
         height:max-content; min-height:0; max-height:none; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; flex:0 0 auto;
         transition:.15s width;
         padding:9px 9px 4px; background:var(--theme-bg); border:1px solid var(--theme-line); border-radius:14px; box-shadow:0 18px 50px #0008; color-scheme:dark;
@@ -297,10 +289,8 @@ function css() {
       .fl-tool-chevron { background:none; border:0; color:#adadb8; cursor:pointer; }
       .fl-tool-body { padding:0 10px 8px; }
       .fl-tool-body:not(.fl-tool-hidden) { display:grid; height:auto; min-height:0; max-height:none; overflow:visible; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; column-gap:8px; }
-      .exp-core-theme[data-panel-width="compact"] .fl-tool-body:not(.fl-tool-hidden),
-      .exp-core-theme[data-panel-width="narrow"] .fl-tool-body:not(.fl-tool-hidden) { grid-template-columns:minmax(0,1fr); }
-      .exp-core-theme[data-panel-width="compact"] .fl-tool-body:not(.fl-tool-hidden) > *,
-      .exp-core-theme[data-panel-width="narrow"] .fl-tool-body:not(.fl-tool-hidden) > * { grid-column:1/-1; }
+      .exp-core-theme .fl-tool-body:not(.fl-tool-hidden) { grid-template-columns:minmax(0,1fr); }
+      .exp-core-theme .fl-tool-body:not(.fl-tool-hidden) > * { grid-column:1/-1; }
       .fl-tool-body > :is(.fl-switch,.mini-row,.life-btn) { min-width:0; }
       .fl-tool-body > :is(.diag) { grid-column:1/-1; }
       .fl-tool-hidden { display:none !important; }

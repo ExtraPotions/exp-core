@@ -24,26 +24,15 @@ test('core is a private build-time bundle, not an installable userscript', () =>
   assert.doesNotMatch(bundle, /==UserScript==|@match|@downloadURL|@updateURL/);
 });
 
-test('Core identifies its native foundation and canonical menu widths', async (t) => {
+test('Core exposes one canonical menu size without width presets', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
   await page.addScriptTag({ content: source });
   const state = await page.evaluate(() => ({
-    version: ExtraPotionsCore.version,
-    sourceVersion: ExtraPotionsCore.sourceVersion,
-    widths: {
-      full: ExtraPotionsCore.menuWidthForMode('full'),
-      compact: ExtraPotionsCore.menuWidthForMode('compact'),
-      narrow: ExtraPotionsCore.menuWidthForMode('narrow'),
-      fullWide: ExtraPotionsCore.menuWidthForMode('full', 500),
-      fullSmall: ExtraPotionsCore.menuWidthForMode('full', 250),
-    },
+    version: ExtraPotionsCore.version, sourceVersion: ExtraPotionsCore.sourceVersion,
+    width: ExtraPotionsCore.menuWidth(), retiredApi: typeof ExtraPotionsCore.menuWidthForMode,
   }));
-  assert.deepEqual(state, {
-    version: pkg.version,
-    sourceVersion: pkg.version,
-    widths: { full: 312, compact: 260, narrow: 220, fullWide: 340, fullSmall: 280 },
-  });
+  assert.deepEqual(state, { version: pkg.version, sourceVersion: pkg.version, width: 260, retiredApi: 'undefined' });
 });
 
 test('Core products rerender the active section without owning product state', async (t) => {
@@ -54,7 +43,7 @@ test('Core products rerender the active section without owning product state', a
     const artwork='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="%238b5cf6"/></svg>';
     const theme={id:'shift',name:'Shift',swatch:'#8b5cf6',bg:'#101014',panel:'#18181d',line:'#34343b',text:'#efeff1',muted:'#adadb8',accent:'#8b5cf6',accent2:'#a78bfa',skin:'#8b5cf6',skinVertical:'#8b5cf6'};
     let value='one';
-    const product=ExtraPotionsCore.createProduct({id:'shift',name:'SHIFT',version:'3.4.0-dev.1',artwork,theme,getSettings:()=>({menuWidth:'compact'}),sections:[{id:'appearance',label:'Appearance',render(){const node=document.createElement('span');node.textContent=value;return node;}}]});
+    const product=ExtraPotionsCore.createProduct({id:'shift',name:'SHIFT',version:'3.4.0-dev.1',artwork,theme,getSettings:()=>({}),sections:[{id:'appearance',label:'Appearance',render(){const node=document.createElement('span');node.textContent=value;return node;}}]});
     product.open();
     product.shadow.querySelector('button[data-section="appearance"]').click();
     const before=product.panel.querySelector('.route-body').textContent;
@@ -74,7 +63,7 @@ test('Dropper product chrome factories provide support actions and menu notices'
   const result = await page.evaluate(() => {
     const artwork='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="%238b5cf6"/></svg>';
     const theme={id:'shift',name:'Shift',swatch:'#8b5cf6',bg:'#101014',panel:'#18181d',line:'#34343b',text:'#efeff1',muted:'#adadb8',accent:'#8b5cf6',accent2:'#a78bfa',skin:'#8b5cf6',skinVertical:'#8b5cf6'};
-    const product=ExtraPotionsCore.createProduct({id:'shift',name:'SHIFT',version:'3.4.0-dev.1',subtitle:'Adaptive themes and readability',artwork,theme,sections:[],getSettings:()=>({menuWidth:'compact'}),priority:100,supportUrl:'https://ko-fi.com/expdare'});
+    const product=ExtraPotionsCore.createProduct({id:'shift',name:'SHIFT',version:'3.4.0-dev.1',subtitle:'Adaptive themes and readability',artwork,theme,sections:[],getSettings:()=>({}),priority:100,supportUrl:'https://ko-fi.com/expdare'});
     const notice=ExtraPotionsCore.createProductNotice({host:product.host,shadow:product.shadow,panel:product.panel,versionButton:product.versionButton,releaseUrl:'https://github.com/ExtraPotions/SHIFT/releases',installUrl:'https://raw.githubusercontent.com/ExtraPotions/SHIFT/main/shift.user.js'});
     notice.show({kicker:'Current Version',title:'SHIFT Changelog',version:'3.4.0-dev.1',details:['One','Two'],showAction:false});
     const support=product.shadow.querySelector('.support-wrap');
@@ -1002,7 +991,6 @@ test('menus can opt into content-driven heights and width-aware columns', async 
   await page.addScriptTag({ content: source });
   const result = await page.evaluate(() => {
     const host = document.querySelector('#host');
-    host.dataset.menuWidth = 'narrow';
     const shadow = host.attachShadow({ mode: 'open' });
     shadow.innerHTML = '<style>.group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}</style><section class="panel"><div class="group"><div class="row"><span class="label">A setting label that must wrap naturally</span></div></div></section>';
     const applied = ExtraPotionsCore.applyContentDrivenMenuLayout(shadow);

@@ -7,11 +7,12 @@ const { chromium } = require('playwright');
 const root = path.resolve(__dirname, '..');
 const bundle = fs.readFileSync(path.join(root, 'dist/exp-core.js'), 'utf8');
 
-for (const width of [312, 260, 220]) {
-  test(`support control is self-styled in a custom ${width}px shell without Core shell CSS`, async t => {
+for (const viewportWidth of [240, 596, 1361]) {
+  const width = Math.min(260, viewportWidth - 24);
+  test(`support control is self-styled in a custom shell at ${viewportWidth}px viewport without Core shell CSS`, async t => {
     const browser = await chromium.launch({ headless: true });
     t.after(() => browser.close());
-    const page = await browser.newPage({ viewport: { width: 500, height: 600 } });
+    const page = await browser.newPage({ viewport: { width: viewportWidth, height: 600 } });
     await page.setContent('<!doctype html><html><body></body></html>');
     await page.addScriptTag({ content: bundle + '\nwindow.testCore = ExtraPotionsCore;' });
     await page.evaluate(width => {
@@ -19,7 +20,7 @@ for (const width of [312, 260, 220]) {
       document.body.append(host);
       const shadow = host.attachShadow({ mode: 'open' });
       const panel = document.createElement('section');
-      panel.style.cssText = `width:${width}px;--theme-panel:#171025;--theme-line:#3c2850;--theme-text:#e8ddf2;--theme-muted:#aa98bb;--theme-accent:#7a46c8;--theme-accent2:#9864dc`;
+      panel.style.cssText = `width:${window.testCore.menuWidth()}px;max-width:calc(100vw - 24px);--theme-panel:#171025;--theme-line:#3c2850;--theme-text:#e8ddf2;--theme-muted:#aa98bb;--theme-accent:#7a46c8;--theme-accent2:#9864dc`;
       const header = document.createElement('header');
       const control = window.testCore.createSupportControl({ label: 'Support fixture' });
       const unrelated = document.createElement('button');
@@ -44,11 +45,11 @@ for (const width of [312, 260, 220]) {
       return { visible: !popover.hidden, expanded: f.control.button.getAttribute('aria-expanded'), movedAfterHeader: f.header.nextElementSibling === popover, width: box.width, panelWidth: f.panel.getBoundingClientRect().width, padding: style.paddingTop, border: style.borderTopWidth, background: style.backgroundColor };
     });
     assert.deepEqual(opened, { visible: true, expanded: 'true', movedAfterHeader: true, width, panelWidth: width, padding: '8px', border: '1px', background: 'rgb(23, 16, 37)' });
-    if (width === 260) {
+    if (viewportWidth === 596) {
       fs.mkdirSync(path.join(root, 'test-artifacts'), { recursive: true });
       await page.screenshot({ path: path.join(root, 'test-artifacts/support-control-custom-shell.png') });
     }
-    await page.mouse.click(480, 560);
+    await page.mouse.click(viewportWidth - 8, 560);
     assert.equal(await page.evaluate(() => window.supportFixture.control.popover.hidden), true);
     await page.evaluate(() => window.supportFixture.control.destroy());
     assert.deepEqual(await page.evaluate(() => ({ styles: window.supportFixture.shadow.querySelectorAll('style[data-exp-support-control]').length, buttons: window.supportFixture.shadow.querySelectorAll('.support-button').length, popovers: window.supportFixture.shadow.querySelectorAll('.support-popover').length })), { styles: 0, buttons: 0, popovers: 0 });
