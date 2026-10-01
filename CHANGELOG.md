@@ -1,3 +1,8 @@
+## 3.4.8 — 2026-10-01
+
+- Fixes update and changelog notices overlapping an open menu in short windows: when there is no room to stack the notice beyond the menu, it now sits beside the menu, on its left.
+- Extends the menu and notice stacking tests to short windows, with realistic menu and notice sizes, at both launcher anchors.
+
 ## 3.4.7 — 2026-09-30
 
 - While Dropper's progress card is showing, every product menu opens directly above it, sharing its right edge, and below it when the launchers sit in the top half of the window.
