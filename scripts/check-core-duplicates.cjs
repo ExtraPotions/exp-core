@@ -27,6 +27,11 @@ const RULES = [
     fix: 'Core closes product menus on outside presses; use its keepOpen hook for exceptions.',
   },
   {
+    id: 'private-menu-controller',
+    test: line => /data-exp-open-menu|['"]exp-core:menu-open['"]/.test(line),
+    fix: 'Open and close the menu through the create() controller from Core, which signals other products.',
+  },
+  {
     id: 'private-support-popover',
     test: line => /support-popover|createElement\(['"]div['"]\)[^;]*support-wrap|class=["'][^"']*support-wrap/.test(line),
     fix: 'Core adds the support control to every product menu.',

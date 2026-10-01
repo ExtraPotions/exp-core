@@ -1,3 +1,9 @@
+## 3.4.9 — 2026-10-01
+
+- Every product menu now closes when you click outside it. A dropdown you are using keeps it open, and products can hold it open for their own reasons, such as an unfinished import.
+- Install Update links now always point at the latest published release, never at unreleased code on the main branch.
+- Adds a check that finds product code redoing jobs Core already does, so products cannot drift away from Core unnoticed.
+
 ## 3.4.8 — 2026-10-01
 
 - Fixes update and changelog notices overlapping an open menu in short windows: when there is no room to stack the notice beyond the menu, it now sits beside the menu, on its left.

@@ -1834,7 +1834,7 @@ const ExtraPotionsCore = (() => {
     });
   }
 
-  function createSupportControl({ url, label = 'Support' } = {}) {
+  function createSupportControl({ url = SUPPORT_URL, label = 'Support' } = {}) {
     if (!url) return null;
     const wrapper = document.createElement('div');
     wrapper.className = 'support-wrap';
