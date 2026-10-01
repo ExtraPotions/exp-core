@@ -63,8 +63,9 @@ test('an open product menu is never covered by another product launcher',async t
 // A surface a product marks with data-exp-reserved (Dropper's progress card) sits left of the launchers.
 // Menus open directly above it, sharing its right edge, and notices stack beyond the open menu: nothing may
 // cover the card or a launcher. With the launchers anchored at the top, the stack flips below the card.
-for(const marker of ['card','row'])for(const anchor of ['bottom','top'])test(`menus and notices stack ${anchor==='bottom'?'above':'below'} a reserved progress card without covering it (${marker} marked)`,async t=>{
-  const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:1280,height:900}});
+// In a short window there is no room to stack the notice beyond the menu, so it sits beside the menu instead.
+for(const height of [900,500])for(const marker of ['card','row'])for(const anchor of ['bottom','top'])test(`menus and notices stay clear of a reserved progress card and each other, ${anchor} anchor, ${height}px window (${marker} marked)`,async t=>{
+  const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:1280,height}});
   await page.route('**/*',route=>route.request().isNavigationRequest()
     ? route.fulfill({contentType:'text/html',body:'<!doctype html><html><body style="margin:0"><main>Reserved fixture</main></body></html>'})
     : route.abort());
@@ -94,9 +95,11 @@ for(const marker of ['card','row'])for(const anchor of ['bottom','top'])test(`me
   for(const product of ['shift','ward','prisma']){
     const result=await page.evaluate(async id=>{
       const product=window.products.find(item=>item.host.dataset.productId===id);
+      // A realistic menu (about 200px tall) and changelog notice (about 205px tall), as real products have.
+      if(!product.panel.querySelector('[data-test-filler]')){const filler=document.createElement('div');filler.dataset.testFiller='1';filler.style.cssText='height:170px';product.panel.append(filler);}
       product.open();
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-      const notice=document.createElement('div');notice.style.cssText='position:fixed;width:260px;height:90px';product.shadow.append(notice);
+      const notice=document.createElement('div');notice.style.cssText='position:fixed;width:260px;height:205px';product.shadow.append(notice);
       ExtraPotionsCore.placeNotice(product.host,notice,product.panel);
       const box=node=>{const r=node.getBoundingClientRect();return{top:r.top,bottom:r.bottom,left:r.left,right:r.right};};
       const menu=box(product.panel),card=box(window.card),note=box(notice);
@@ -108,8 +111,17 @@ for(const marker of ['card','row'])for(const anchor of ['bottom','top'])test(`me
     const detail=`${product}: ${JSON.stringify(result)}`;
     assert.equal(result.side,'reserved',detail);
     assert.ok(Math.abs(result.menu.right-result.card.right)<=1,`menu shares the card's right edge. ${detail}`);
-    if(anchor==='bottom'){assert.ok(result.menu.bottom<=result.card.top-7,`menu opens above the card. ${detail}`);assert.ok(result.note.bottom<=result.menu.top-7,`notice stacks above the menu. ${detail}`);}
-    else{assert.ok(result.menu.top>=result.card.bottom+7,`menu opens below the card. ${detail}`);assert.ok(result.note.top>=result.menu.bottom+7,`notice stacks below the menu. ${detail}`);}
+    if(anchor==='bottom')assert.ok(result.menu.bottom<=result.card.top-7,`menu opens above the card. ${detail}`);
+    else assert.ok(result.menu.top>=result.card.bottom+7,`menu opens below the card. ${detail}`);
+    const beside=result.note.right<=result.menu.left-7;
+    if(height===900){
+      assert.equal(beside,false,`with room to spare the notice stacks beyond the menu. ${detail}`);
+      if(anchor==='bottom')assert.ok(result.note.bottom<=result.menu.top-7,`notice stacks above the menu. ${detail}`);
+      else assert.ok(result.note.top>=result.menu.bottom+7,`notice stacks below the menu. ${detail}`);
+    }
+    const inside=box=>box.left>=7&&box.right<=1280-7&&box.top>=7&&box.bottom<=height-7;
+    assert.ok(inside(result.menu),`the menu stays inside the window. ${detail}`);
+    assert.ok(inside(result.note),`the notice stays inside the window. ${detail}`);
     for(const key of ['menuHitsCard','noteHitsCard','noteHitsMenu','menuHitsLauncher','noteHitsLauncher'])assert.equal(result[key],false,`${key}. ${detail}`);
   }
   await page.evaluate(()=>window.products.forEach(product=>product.destroy()));
