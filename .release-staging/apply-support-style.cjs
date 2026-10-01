@@ -23,12 +23,14 @@ const closeRule = `      [data-exp-part="close"] {
 let supportCss = foundation.slice(start, end);
 supportCss = replaceOnce(supportCss, '.support-button,\n      [data-exp-part="close"]', '.support-button');
 supportCss = replaceOnce(supportCss, '.support-button { display:grid; place-items:center; }', '.support-button { box-sizing:border-box; display:grid; place-items:center; }');
-foundation = foundation.slice(0, start) + closeRule + foundation.slice(end);
+// Native mounts replace style nodes with CSP-safe canonical sheets. Keep the same
+// support rules there as well as in the standalone control, with one source.
+foundation = foundation.slice(0, start) + closeRule + '      ${supportControlCss()}\n' + foundation.slice(end);
 foundation = replaceOnce(foundation, 'function css() {', '// A support control carries these styles into native and custom Shadow DOM shells.\nfunction supportControlCss() {\n    return `\n' + supportCss + '    `;\n}\n\nfunction css() {');
 foundation = replaceOnce(foundation, 'SHARED_UI_THEMES, css, protectLauncherHost', 'SHARED_UI_THEMES, css, supportControlCss, protectLauncherHost');
 write('src/foundation.js', foundation);
 let runtime = read('src/runtime.js');
-runtime = replaceOnce(runtime, "    wrapper.className = 'support-wrap';", "    wrapper.className = 'support-wrap';\n    const style = document.createElement('style');\n    style.dataset.expSupportControl = '1';\n    style.textContent = CoreFoundation.supportControlCss();");
+runtime = replaceOnce(runtime, "    wrapper.className = 'support-wrap';", "    wrapper.className = 'support-wrap';\n    const style = document.createElement('style');\n    style.dataset.expSupportControl = '1';\n    style.dataset.expOwned = '1';\n    style.textContent = CoreFoundation.supportControlCss();");
 runtime = replaceOnce(runtime, '    wrapper.append(button, popover);', '    wrapper.append(style, button, popover);');
 write('src/runtime.js', runtime);
 let suite = read('tests/suite-menu-layout.test.cjs');

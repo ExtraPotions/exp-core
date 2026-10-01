@@ -31,7 +31,7 @@ for (const width of [312, 260, 220]) {
       const f = window.supportFixture;
       const button = f.control.button, icon = button.querySelector('svg');
       const box = button.getBoundingClientRect(), svg = icon.getBoundingClientRect();
-      return { display: getComputedStyle(button).display, width: box.width, height: box.height, iconWidth: svg.width, iconHeight: svg.height, unrelatedDisplay: getComputedStyle(f.unrelated).display, styles: f.shadow.querySelectorAll('style[data-exp-support-control]').length };
+      return { display: getComputedStyle(button).display, width: box.width, height: box.height, iconWidth: svg.width, iconHeight: svg.height, unrelatedDisplay: getComputedStyle(f.unrelated).display, styles: f.shadow.querySelectorAll('style[data-exp-support-control][data-exp-owned="1"]').length };
     });
     assert.equal(initial.display, 'grid', 'support button owns grid layout');
     assert.deepEqual({ width: initial.width, height: initial.height, iconWidth: initial.iconWidth, iconHeight: initial.iconHeight }, { width: 30, height: 30, iconWidth: 15, iconHeight: 15 });
@@ -62,4 +62,6 @@ test('support styling has one Core source and the control owns its stylesheet li
   assert.equal((foundation.match(/\.support-button svg\s*\{/g) || []).length, 1);
   assert.equal(runtime.includes('style.textContent = CoreFoundation.supportControlCss();'), true);
   assert.equal(runtime.includes('wrapper.append(style, button, popover);'), true);
+  assert.equal(foundation.includes('${supportControlCss()}'), true, 'native canonical sheets consume the same support CSS after clearing prior styles');
+  assert.equal(runtime.includes("style.dataset.expOwned = '1';"), true, 'standalone stylesheet is marked as Core-owned');
 });
