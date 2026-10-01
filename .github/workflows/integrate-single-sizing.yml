@@ -1,0 +1,104 @@
+name: Integrate single shared menu sizing
+on:
+  push:
+    branches: [release/single-sizing-3.4.12]
+    paths: [.github/workflows/integrate-single-sizing.yml]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: integrate-single-sizing
+  cancel-in-progress: false
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: exp-core
+          fetch-depth: 2
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22
+      - name: Verify and apply reviewed Core source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          test "$(git -C exp-core rev-parse HEAD^)" = 22277f839a1ab41ba9690a4e72cf453c9f755b95
+          gh api 'repos/ExtraPotions/exp-core/contents/.maintenance/core-sizing.patch.b64?ref=263f5efa00bb83d1809c5b6bb51a71bef4f8a144' --jq .content | base64 --decode > evidence/core-sizing.b64
+          python3 <<'PY'
+          import base64, gzip, hashlib, pathlib, subprocess
+          encoded = pathlib.Path('evidence/core-sizing.b64').read_text().strip()
+          # Restore a known transport omission, then verify the complete reviewed source.
+          encoded = encoded.replace('OvilsLQt', 'Ovils+LQt')
+          patch = gzip.decompress(base64.b64decode(encoded, validate=True))
+          actual = hashlib.sha256(patch).hexdigest()
+          if actual != 'af3ba9c46b549481fbde40d1b3c43e329867018f02446b6e8421a0d20009aac3': raise RuntimeError('Source checksum mismatch: ' + actual)
+          file = pathlib.Path('evidence/core-sizing.patch').resolve(); file.write_bytes(patch)
+          subprocess.run(['git','apply','--unidiff-zero','--check',str(file)], cwd='exp-core', check=True)
+          subprocess.run(['git','apply','--unidiff-zero',str(file)], cwd='exp-core', check=True)
+          print('Verified reviewed Core patch:', actual)
+          PY
+      - name: Use the compatible consumer candidates
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run watch 36936860773 -R ExtraPotions/PRISMA --exit-status --interval 10
+          for name in Dropper SHIFT WARD; do git clone --quiet --depth=1 "https://github.com/ExtraPotions/$name.git" "$name"; done
+          git clone --quiet --depth=1 --branch release/retire-width-preferences https://github.com/ExtraPotions/PRISMA.git PRISMA
+          test "$(node -p "require('./SHIFT/package.json').version")" = 3.4.29
+          test "$(node -p "require('./WARD/package.json').version")" = 3.3.9
+          test "$(node -p "require('./PRISMA/package.json').version")" = 3.1.25
+          for name in exp-core Dropper SHIFT WARD PRISMA; do git -C "$name" rev-parse HEAD > "evidence/$name-base.txt"; (cd "$name" && npm ci) > "evidence/$name-install.txt" 2>&1; done
+          (cd exp-core && npx playwright install --with-deps chromium)
+      - name: Build and synchronize only through Core
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd exp-core
+          npm run build
+          node scripts/sync-products.cjs
+          npm run sync:check
+          node scripts/check-core-duplicates.cjs --enforce | tee ../evidence/ownership.txt
+      - name: Run complete regressions and coexistence
+        env:
+          EXP_SUITE_ROOT: ${{ github.workspace }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          result=0
+          for name in Dropper SHIFT WARD PRISMA exp-core; do
+            if ! (cd "$name" && npm test) > "evidence/$name-tests.txt" 2>&1; then tail -100 "evidence/$name-tests.txt"; result=1; fi
+            (cd "$name" && git diff --check) || result=1
+          done
+          if ! (cd exp-core && node scripts/check-suite-coexistence.cjs) > evidence/coexistence.txt 2>&1; then cat evidence/coexistence.txt; result=1; fi
+          exit "$result"
+      - name: Commit only the verified Core candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd exp-core
+          sha256sum dist/exp-core.js dist/manifest.json > ../evidence/SHA256SUMS
+          npm run build
+          sha256sum --check ../evidence/SHA256SUMS
+          git rm .github/workflows/integrate-single-sizing.yml
+          git add src tests scripts README.md CHANGELOG.md package.json package-lock.json dist
+          git -c user.name=expDARE -c user.email=5340947+ExtraPotions@users.noreply.github.com commit -m 'Prepare exp-core 3.4.12 single shared menu sizing'
+          git push origin HEAD:refs/heads/release/single-sizing-3.4.12
+          git rev-parse HEAD > ../evidence/commit.txt
+          git archive --format=zip --output=../evidence/candidate.zip HEAD
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: single-sizing-${{ github.run_id }}
+          path: |
+            evidence/
+            exp-core/test-artifacts/
+          retention-days: 7
+          if-no-files-found: error
