@@ -12,6 +12,7 @@ on:
       - "scripts/consumer-matrix.cjs"
       - "scripts/check-suite-coexistence.cjs"
       - "scripts/check-consumer-rollout-contract.cjs"
+      - "scripts/check-core-duplicates.cjs"
       - ".github/workflows/verify-consumers.yml"
   workflow_dispatch:
   # Publish release calls this as a gate: a Core release is published only when every
@@ -81,6 +82,9 @@ jobs:
         working-directory: exp-core
         run: node scripts/sync-products.cjs "${{ needs.discover.outputs.flagship }}"
 
+      - name: Report private copies of Core behavior in ${{ needs.discover.outputs.flagship }}
+        run: node exp-core/scripts/check-core-duplicates.cjs "${{ needs.discover.outputs.flagship }}"
+
       - name: Install ${{ needs.discover.outputs.flagship }} browser runtime
         working-directory: ${{ needs.discover.outputs.flagship }}
         run: |
@@ -130,6 +134,9 @@ jobs:
       - name: Inject candidate Core into ${{ matrix.product }}
         working-directory: exp-core
         run: node scripts/sync-products.cjs "${{ matrix.product }}"
+
+      - name: Report private copies of Core behavior in ${{ matrix.product }}
+        run: node exp-core/scripts/check-core-duplicates.cjs "${{ matrix.product }}"
 
       - name: Install ${{ matrix.product }} browser runtime
         working-directory: ${{ matrix.product }}

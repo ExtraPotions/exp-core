@@ -6,6 +6,7 @@
     "build": "node scripts/build.cjs",
     "build:check": "node scripts/build.cjs --check",
     "sync:check": "node scripts/sync-products.cjs --check",
+    "duplicates:check": "node scripts/check-core-duplicates.cjs",
     "test": "npm run build:check && node --test tests/*.test.cjs",
     "sync": "node scripts/sync-products.cjs",
     "test:installed-browser": "node scripts/test-installed-browser.cjs",

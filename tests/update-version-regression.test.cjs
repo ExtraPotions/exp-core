@@ -95,3 +95,15 @@ test('update opt-out prevents background network access but permits an explicit 
   respond(f.requests[0]);
   assert.equal((await manual).available, true);
 });
+
+test('install and release links come from published releases, never the branch', async () => {
+  const f = fixture();
+  assert.equal(f.checker.INSTALL_URL, 'https://github.com/ExtraPotions/WARD/releases/latest/download/ward.user.js');
+  assert.equal(f.checker.RELEASE_URL, 'https://github.com/ExtraPotions/WARD/releases');
+  const pending = f.checker.check(true);
+  respond(f.requests[0]);
+  const result = await pending;
+  assert.equal(result.installUrl, f.checker.INSTALL_URL);
+  assert.equal(result.releaseUrl, f.checker.RELEASE_URL);
+  assert.doesNotMatch(result.installUrl, /raw\.githubusercontent|\/main\//);
+});
