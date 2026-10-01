@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           path: exp-core
-          fetch-depth: 4
+          fetch-depth: 5
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 22
@@ -32,7 +32,6 @@ jobs:
           specs = [('core-menu', 'exp-core', '50f0235bead2104c54bc4250b928b6225c27cf147f2c26f2a622d4af2b9d61bd'), ('dropper-menu', 'Dropper', 'bd9ce1bb0d8213c040bc4f3c893b2352bd7c87a4ff4f2533b0ffe8e7830b91ee')]
           for name, repo, expected in specs:
               encoded = pathlib.Path('exp-core/.release-staging/' + name + '.b64').read_text().strip()
-              # Correct known transport transcription omissions, then verify the full original patch.
               if name == 'core-menu': encoded = encoded.replace('HskX0vq9/pyj', 'HskX0vq9/08pyj')
               if name == 'dropper-menu': encoded = encoded.replace('VryXWk/IeRZ', 'VryXyWk/IeRZ')
               patch = gzip.decompress(base64.b64decode(encoded, validate=True))
@@ -44,6 +43,8 @@ jobs:
               subprocess.run(['git', 'apply', str(target)], cwd=repo, check=True)
               print('Verified', name, actual, flush=True)
           PY
+          cp exp-core/.release-staging/dropper-menu-coordination.test.cjs Dropper/tests/menu-coordination.test.cjs
+          cp Dropper/tests/menu-coordination.test.cjs evidence/dropper-menu-coordination.test.cjs
       - name: Install locked dependencies and browser runtime
         shell: bash
         run: |
@@ -70,7 +71,7 @@ jobs:
           for name in Dropper SHIFT WARD PRISMA exp-core; do
             if ! (cd "$name" && npm test) > "evidence/$name-tests.txt" 2>&1; then
               echo "::error::$name regression suite failed"
-              tail -100 "evidence/$name-tests.txt"
+              tail -80 "evidence/$name-tests.txt"
               result=1
             fi
             (cd "$name" && git diff --check) || result=1
