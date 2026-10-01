@@ -60,3 +60,27 @@ test('Core diagnostics controls create fresh reports and preserve Show then Copy
   const copied=await page.evaluate(()=>JSON.parse(window.copied));
   assert.equal(copied.revision,2);
 });
+
+test('Core diagnostics redact URL-shaped keys and normalize unknown resource initiators', async t => {
+  const page = await setup(t);
+  const result = await page.evaluate(() => {
+    const original = performance.getEntriesByType.bind(performance);
+    Object.defineProperty(performance, 'getEntriesByType', {
+      configurable: true,
+      value: type => type === 'resource'
+        ? [{ initiatorType:'https://private.example/channel?token=SECRET', duration:12, transferSize:34 }]
+        : original(type),
+    });
+    return ExtraPotionsCore.createDiagnosticsReport('WARD', {
+      product:{version:'1.2.3'},
+      ['https://private.example/private-key?token=SECRET']:'kept-value',
+    });
+  });
+  const serialized = JSON.stringify(result);
+  assert.equal(serialized.includes('private.example'), false);
+  assert.equal(serialized.includes('PRIVATE_PATH'), false);
+  assert.equal(serialized.includes('SECRET'), false);
+  assert.equal(result['[url]'], 'kept-value');
+  assert.deepEqual(Object.keys(result.page.performance.resources.byType), ['other']);
+  assert.deepEqual(result.page.performance.resources.byType.other, { count:1, durationMs:12, transferBytes:34 });
+});
