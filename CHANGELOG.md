@@ -1,3 +1,9 @@
+## 3.4.11 - 2026-10-01
+
+- Makes the shared support control carry its own canonical stylesheet, including the heart icon and donation panel, into custom product menus.
+- Restores support-button presentation in Dropper without reintroducing private product CSS. Native Core menus use the same styling source.
+- Adds computed-style checks for all four product menus and standalone custom shells at full, compact and narrow widths.
+
 ## 3.4.10 - 2026-10-01
 
 - Adds a behavior-only menu controller so custom product surfaces use the same outside-press protection, one-open-menu coordination and inactivity timer as Core-native menus.

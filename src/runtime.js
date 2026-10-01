@@ -1906,6 +1906,10 @@ const ExtraPotionsCore = (() => {
     if (!url) return null;
     const wrapper = document.createElement('div');
     wrapper.className = 'support-wrap';
+    const style = document.createElement('style');
+    style.dataset.expSupportControl = '1';
+    style.dataset.expOwned = '1';
+    style.textContent = CoreFoundation.supportControlCss();
     const button = document.createElement('button');
     button.type = 'button';
     button.id = 'exp-support-button';
@@ -1931,7 +1935,7 @@ const ExtraPotionsCore = (() => {
     anchor.rel = 'noopener noreferrer';
     anchor.textContent = 'Open Ko-fi';
     popover.append(strong, copy, anchor, ExtraPotionsTools.createBitcoinDonation());
-    wrapper.append(button, popover);
+    wrapper.append(style, button, popover);
     const toggle = event => {
       event?.stopPropagation?.();
       ExtraPotionsTools.placeDonationPanel(popover,button);
