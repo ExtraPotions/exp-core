@@ -1,0 +1,210 @@
+name: Verify Core consumers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/build.cjs"
+      - "scripts/sync-products.cjs"
+      - "scripts/consumer-matrix.cjs"
+      - "scripts/check-suite-coexistence.cjs"
+      - "scripts/check-consumer-rollout-contract.cjs"
+      - "scripts/check-core-duplicates.cjs"
+      - ".github/workflows/verify-consumers.yml"
+  workflow_dispatch:
+  # Publish release calls this as a gate: a Core release is published only when every
+  # product's tests and the full-suite coexistence check pass against the candidate Core.
+  workflow_call:
+    inputs:
+      gate:
+        description: Set by Publish release when this run gates a Core release.
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  # Release gates and ordinary push checks use separate groups so neither cancels the other.
+  group: verify-core-consumers-${{ github.ref }}-${{ inputs.gate && 'release' || 'push' }}
+  cancel-in-progress: ${{ !inputs.gate }}
+
+jobs:
+  discover:
+    name: Discover suite consumers
+    # Release commits are verified by the release gate instead of a second, duplicate push run.
+    if: github.actor != 'github-actions[bot]' && (inputs.gate || !startsWith(github.event.head_commit.message, 'Release exp-core '))
+    runs-on: ubuntu-latest
+    outputs:
+      flagship: ${{ steps.matrix.outputs.flagship }}
+      products: ${{ steps.matrix.outputs.products }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build consumer matrix from suite manifest
+        id: matrix
+        run: node scripts/consumer-matrix.cjs >> "$GITHUB_OUTPUT"
+
+  flagship:
+    name: ${{ needs.discover.outputs.flagship }} flagship
+    needs: discover
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out candidate Core
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: exp-core
+
+      - name: Check out ${{ needs.discover.outputs.flagship }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ExtraPotions/${{ needs.discover.outputs.flagship }}
+          path: ${{ needs.discover.outputs.flagship }}
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            exp-core/package-lock.json
+            ${{ needs.discover.outputs.flagship }}/package-lock.json
+
+      - name: Build candidate Core
+        working-directory: exp-core
+        run: |
+          npm ci
+          npm run build
+
+      - name: Inject candidate Core into ${{ needs.discover.outputs.flagship }}
+        working-directory: exp-core
+        run: node scripts/sync-products.cjs "${{ needs.discover.outputs.flagship }}"
+
+      - name: Report private copies of Core behavior in ${{ needs.discover.outputs.flagship }}
+        run: node exp-core/scripts/check-core-duplicates.cjs "${{ needs.discover.outputs.flagship }}"
+
+      - name: Install ${{ needs.discover.outputs.flagship }} browser runtime
+        working-directory: ${{ needs.discover.outputs.flagship }}
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Verify ${{ needs.discover.outputs.flagship }} against candidate Core
+        working-directory: ${{ needs.discover.outputs.flagship }}
+        run: npm test
+
+  products:
+    name: ${{ matrix.product }}
+    needs: [discover, flagship]
+    if: needs.discover.outputs.products != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        product: ${{ fromJSON(needs.discover.outputs.products) }}
+    steps:
+      - name: Check out candidate Core
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: exp-core
+
+      - name: Check out ${{ matrix.product }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ExtraPotions/${{ matrix.product }}
+          path: ${{ matrix.product }}
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            exp-core/package-lock.json
+            ${{ matrix.product }}/package-lock.json
+
+      - name: Build candidate Core
+        working-directory: exp-core
+        run: |
+          npm ci
+          npm run build
+
+      - name: Inject candidate Core into ${{ matrix.product }}
+        working-directory: exp-core
+        run: node scripts/sync-products.cjs "${{ matrix.product }}"
+
+      - name: Report private copies of Core behavior in ${{ matrix.product }}
+        run: node exp-core/scripts/check-core-duplicates.cjs "${{ matrix.product }}"
+
+      - name: Install ${{ matrix.product }} browser runtime
+        working-directory: ${{ matrix.product }}
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Verify ${{ matrix.product }} against candidate Core
+        working-directory: ${{ matrix.product }}
+        run: npm test
+
+  coexistence:
+    name: Suite coexistence
+    needs: [discover, flagship, products]
+    if: always() && needs.discover.result == 'success' && needs.flagship.result == 'success' && (needs.products.result == 'success' || needs.products.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out candidate Core
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: exp-core
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: exp-core/package-lock.json
+
+      - name: Check out suite consumers from manifest
+        working-directory: exp-core
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r repo; do
+            git clone --depth=1 "https://github.com/ExtraPotions/${repo}.git" "../${repo}"
+          done < <(node -e "const {repositories}=require('./scripts/suite-contract.cjs').loadSuiteContract(process.cwd()); process.stdout.write(repositories.join('\\n')+'\\n')")
+
+      - name: Build candidate Core
+        working-directory: exp-core
+        run: |
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+
+      - name: Inject candidate Core into every consumer
+        working-directory: exp-core
+        run: node scripts/sync-products.cjs
+
+      - name: Rebuild every consumer with candidate Core
+        working-directory: exp-core
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r repo; do
+            (
+              cd "../${repo}"
+              npm ci
+              npm run build
+            )
+          done < <(node -e "const {repositories}=require('./scripts/suite-contract.cjs').loadSuiteContract(process.cwd()); process.stdout.write(repositories.join('\\n')+'\\n')")
+
+      - name: Verify rollout trigger contract
+        working-directory: exp-core
+        run: node scripts/check-consumer-rollout-contract.cjs
+
+      - name: Verify all products together
+        working-directory: exp-core
+        run: |
+          node scripts/check-suite-coexistence.cjs
+          node --test tests/typography-consumers.test.cjs

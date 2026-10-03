@@ -1,0 +1,19 @@
+{
+  "name": "@extrapotions/exp-core",
+  "version": "3.5.1",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "build:check": "node scripts/build.cjs --check",
+    "sync:check": "node scripts/sync-products.cjs --check",
+    "duplicates:check": "node scripts/check-core-duplicates.cjs",
+    "test": "npm run build:check && node --test tests/*.test.cjs",
+    "sync": "node scripts/sync-products.cjs",
+    "test:installed-browser": "node scripts/test-installed-browser.cjs",
+    "suite:local": "node scripts/suite-local.cjs"
+  },
+  "devDependencies": {
+    "acorn": "8.18.0",
+    "playwright": "1.55.1"
+  }
+}

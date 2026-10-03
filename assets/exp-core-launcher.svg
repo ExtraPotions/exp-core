@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">exp-core Launcher Gem</title><desc id="desc">A borderless teal and violet hexagonal core crystal.</desc>
+  <polygon points="512,184 758,344 792,642 512,840 232,642 266,344" fill="#17242d"/><polygon points="512,184 512,420 266,344" fill="#b8fff6"/><polygon points="512,184 758,344 512,420" fill="#77f7e9"/><polygon points="758,344 792,642 602,566 512,420" fill="#25d6c6"/><polygon points="792,642 512,840 602,566" fill="#4665db"/><polygon points="512,840 232,642 422,566 602,566" fill="#6244c7"/><polygon points="232,642 266,344 512,420 422,566" fill="#168e91"/><polygon points="512,420 602,566 512,650 422,566" fill="#0c1219"/><polygon points="512,446 574,558 512,616 450,558" fill="#d5fffa"/><polygon points="512,446 574,558 512,538" fill="#58e6d7"/><polygon points="574,558 512,616 512,538" fill="#5b52dc"/>
+</svg>

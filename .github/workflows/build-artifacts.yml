@@ -1,0 +1,60 @@
+name: Build Core artifacts
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/build.cjs"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-core-artifacts
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Generate canonical Core bundle
+        run: npm run build
+      - name: Commit generated artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add dist/exp-core.js dist/manifest.json
+          if git diff --cached --quiet; then
+            echo "Core artifacts already current."
+            exit 0
+          fi
+          git config user.name 'expDARE'
+          git config user.email '5340947+ExtraPotions@users.noreply.github.com'
+          git commit -m "Build generated exp-core artifacts"
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            npm run build
+            git add dist/exp-core.js dist/manifest.json
+            git commit --amend --no-edit
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Could not publish generated Core artifacts after three attempts." >&2
+          exit 1

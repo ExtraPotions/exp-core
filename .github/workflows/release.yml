@@ -1,0 +1,115 @@
+name: Publish release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-release
+  cancel-in-progress: false
+
+jobs:
+  # Nothing is published until every product passes against this Core.
+  verify-consumers:
+    if: startsWith(github.ref, 'refs/tags/') || startsWith(github.event.head_commit.message, 'Release exp-core ')
+    uses: ./.github/workflows/verify-consumers.yml
+    with:
+      gate: true
+    permissions:
+      contents: read
+
+  release:
+    needs: verify-consumers
+    if: startsWith(github.ref, 'refs/tags/') || startsWith(github.event.head_commit.message, 'Release exp-core ')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Resolve release tag
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            tag="$GITHUB_REF_NAME"
+          else
+            version="$(node -p "require('./package.json').version")"
+            tag="v$version"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Build and validate release
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          npm run build
+          npm test
+          node --check dist/exp-core.js
+          test "$(node -p "require('./dist/manifest.json').coreVersion")" = "$version"
+      - name: Commit verified generated artifacts
+        id: generated
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            git diff --exit-code -- dist/exp-core.js dist/manifest.json
+            release_sha="$(git rev-parse HEAD)"
+          else
+            git fetch origin main
+            if git diff --quiet origin/main -- dist/exp-core.js dist/manifest.json; then
+              echo "Concurrent artifact build already published the verified generated files."
+              release_sha="$(git rev-parse origin/main)"
+            else
+              git add dist/exp-core.js dist/manifest.json
+              if ! git diff --cached --quiet; then
+                git config user.name 'expDARE'
+                git config user.email '5340947+ExtraPotions@users.noreply.github.com'
+                git commit -m "Build verified exp-core ${{ steps.release.outputs.tag }} artifacts"
+                git pull --rebase origin main
+                git push origin HEAD:main
+              fi
+              release_sha="$(git rev-parse HEAD)"
+            fi
+          fi
+          echo "release_sha=$release_sha" >> "$GITHUB_OUTPUT"
+      - name: Publish assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_SHA: ${{ steps.generated.outputs.release_sha }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then exit 0; fi
+          awk '
+            /^## / { section += 1; if (section > 1) exit }
+            { print }
+          ' CHANGELOG.md > release-notes.md
+          sha256sum dist/exp-core.js dist/manifest.json > SHA256SUMS
+          gh release create "$TAG" dist/exp-core.js dist/manifest.json SHA256SUMS \
+            --target "$RELEASE_SHA" --title "exp-core $TAG" --notes-file release-notes.md
+
+      - name: Dispatch Core release to consumers
+        env:
+          GH_TOKEN: ${{ secrets.CORE_ROLLOUT_TOKEN }}
+          TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${GH_TOKEN:-}" ]]; then
+            echo "CORE_ROLLOUT_TOKEN is not configured; scheduled consumer sync remains the fallback."
+            exit 0
+          fi
+          for repo in Dropper SHIFT WARD PRISMA; do
+            payload="$(jq -nc --arg tag "$TAG" '{event_type:"exp-core-release",client_payload:{tag:$tag}}')"
+            gh api --method POST "repos/ExtraPotions/$repo/dispatches" --input - <<<"$payload"
+            echo "Dispatched $TAG to $repo."
+          done
