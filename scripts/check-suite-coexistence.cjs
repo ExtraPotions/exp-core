@@ -80,8 +80,13 @@ function productSource(product) {
       const order = JSON.parse(localStorage.getItem('exp:v3:launcher-order') || '[]');
       return order.length === products.length && products.every(product => {
         const host = document.querySelector(product.root);
-        return host?.dataset?.launcherSlot !== undefined
-          && Boolean(host?.shadowRoot?.querySelector('[data-exp-part="launcher"]'));
+        const launcher = host?.shadowRoot?.querySelector('[data-exp-part="launcher"]');
+        if (host?.dataset?.launcherSlot === undefined || !launcher) return false;
+        // Registration precedes the animation-frame layout. Wait for placement
+        // before testing hit targets, while retaining a bounded timeout.
+        const box = launcher.getBoundingClientRect();
+        return box.width > 0 && box.height > 0 && box.left >= 0 && box.top >= 0
+          && box.right <= innerWidth && box.bottom <= innerHeight;
       });
     }, PRODUCTS);
 
