@@ -24,3 +24,11 @@ The updated WARD bytes require a userscript-manager reinstall and a live Amazon 
 SHIFT restored to Original. PRISMA restored to Gradient and Animation off. No transaction or account preferences were changed.
 
 Evidence is local under `local-verification/live-2026-10-03`; public PRISMA preview screenshot and aggregate observations are available there. Account page contents are excluded from this report.
+
+## Installed retest
+
+After the manual update, fresh live Amazon search contains 14 recognized sponsored units, all treated with Dim at opacity 0.58. Selecting Hide hides all 14, with organic search results untouched. Dim was restored and all 14 were visible with their Dim treatment again.
+
+The managing Twitch tab now displays Needs attention with the actual recovery-suspension reason and Resume recovery action. The generic fallback is no longer observed. Recovery was left suspended to respect the current viewing state. This clears the installed WARD retest and health-fallback blockers; it does not prove credited progress or chat-bonus collection. Those remain unverified until a live earning session is exercised. Nothing was published.
+
+Evidence: `ward-live-retest-dim.jpg` and `dropper-live-retest.jpg` in the local evidence directory. Amazon evidence excludes the account header, recent searches and cart sidebar.
