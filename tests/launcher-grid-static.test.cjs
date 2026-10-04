@@ -102,7 +102,7 @@ test('shared launcher measurements match the suite contract', () => {
     outerBleed: false,
   });
   assert.equal(chromeContract.menu.dockPaddingInlinePx, 9);
-  assert.match(source, /function menuWidth\(\) \{ return 260; \}/u);
+  assert.match(source, /function menuWidth\(\) \{ return ExpMenuPreferences\.menuSizeTokens\(\)\.width; \}/u);
   assert.doesNotMatch(source, /menuWidthForMode|data-panel-width|data-menu-width/u);
 });
 

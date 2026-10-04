@@ -30,6 +30,7 @@ function productSource(product) {
 (async () => {
   const browser = await chromium.launch({ headless: true });
   try {
+    for (const injectionOrder of [['prisma','ward','dropper','shift'], ['shift','dropper','ward','prisma']]) {
     const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
     page.setDefaultTimeout(8000);
     const errors = [];
@@ -68,7 +69,7 @@ function productSource(product) {
 
     // Deliberately use a non-priority load order. Core must converge on the
     // canonical suite contract rather than relying on injection order.
-    for (const id of ['prisma', 'ward', 'dropper', 'shift']) {
+    for (const id of injectionOrder) {
       const product = PRODUCTS.find(item => item.id === id);
       await page.addScriptTag({ content: productSource(product) });
     }
@@ -135,6 +136,9 @@ function productSource(product) {
 
     // Opening each product in turn must leave at most one shared menu surface
     // visibly open. This catches competing menu coordinators across products.
+    for (const [size,width,height] of [['standard',1280,1000],['large',1280,600],['extra-large',640,500]]) {
+    await page.setViewportSize({width,height});
+    await page.evaluate(size=>{localStorage.setItem('exp:suite:menu-size',size);document.dispatchEvent(new CustomEvent('exp-core:menu-size',{detail:size}));},size);
     for (const product of PRODUCTS) {
       // Worst case for stacking: every other product was shown after this one, so
       // load order alone would place their launchers above this product's menu.
@@ -145,10 +149,7 @@ function productSource(product) {
           other.showPopover();
         }
       }, product.id);
-      await page.locator(product.root).evaluate(host => {
-        const launcher = host.shadowRoot.querySelector('[data-exp-part="launcher"]');
-        launcher.click();
-      });
+      await page.locator(product.root).locator('[data-exp-part="launcher"]').click();
       await page.waitForTimeout(80);
       const visible = await page.evaluate(products => products.filter(product => {
         const host = document.querySelector(product.root);
@@ -184,6 +185,12 @@ function productSource(product) {
         return [...covering];
       }, product.id);
       assert.deepEqual(covered, [], product.id + ' menu is covered by ' + JSON.stringify(covered));
+      const dimensions=await page.locator(product.root).evaluate(host=>{const dock=host.shadowRoot.querySelector('[data-exp-part="dock"]'),b=dock.getBoundingClientRect();return {left:b.left,top:b.top,right:b.right,bottom:b.bottom,size:host.dataset.expMenuSize,body:host.style.getPropertyValue('--exp-font-size-body'),label:getComputedStyle(host.shadowRoot.querySelector('.fl-tool-title')).fontSize};});
+      const topMenus=await page.locator(product.root).evaluate(host=>[...host.shadowRoot.querySelectorAll('.fl-tool-header')].filter(n=>!n.closest('.fl-tool-body')).map(n=>n.querySelector('.fl-tool-title')?.textContent?.trim()).filter(Boolean));
+      assert.equal(topMenus.at(-1),'System',product.id+' System must be last');
+      assert.equal(dimensions.size,size);assert.equal(dimensions.body,({standard:'13px',large:'15px','extra-large':'17px'})[size]);assert.equal(dimensions.label,dimensions.body,product.id+' rendered menu label size');
+      assert.ok(dimensions.left>=0&&dimensions.top>=0&&dimensions.right<=width+.5&&dimensions.bottom<=height+.5,product.id+' '+size+' viewport: '+JSON.stringify(dimensions));
+    }
     }
 
     // Shared launcher slot order must converge to Core's manifest priority,
@@ -199,7 +206,9 @@ function productSource(product) {
     assert.deepEqual(savedOrder, expectedOrder);
 
     assert.deepEqual(errors, [], 'suite coexistence browser errors');
-    console.log('PASS suite coexistence:', ordered.join(' > '));
+    console.log('PASS suite coexistence:', injectionOrder.join(' > '), 'all menu sizes and compact viewport');
+    await page.close();
+    }
   } finally {
     await browser.close();
   }

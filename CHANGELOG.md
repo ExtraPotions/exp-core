@@ -1,3 +1,9 @@
+## 3.6.0 - 2026-10-03
+
+- Choose Standard, Large, or Extra Large menus for ExtraPotions on a site.
+- See a clear status, reason, and safe recovery action in System.
+- Pause repeatedly failing page features until a deliberate retry.
+
 ## 3.5.1 - 2026-10-02
 
 - Make small menu text easier to read, including notices, version badges, and diagnostic details.

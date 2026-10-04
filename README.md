@@ -11,16 +11,17 @@ The shared menu experience included with ExtraPotions products. No separate inst
 
 ## What you can do
 
-- **Readable menus:** labels and controls use 13px text, with an 11px minimum for small captions, notices, and supporting details.
+- **Readable menus:** choose Standard (13px text), Large (15px), or Extra Large (17px) from System > Menu preferences. Small captions scale with your choice.
 
+- Check Working, Waiting, Paused, or Needs attention in System, with a reason and a safe recovery action when available.
 - Pause active ExtraPotions page features together for a site from System > Site control. Choose a temporary pause or resume when you are ready.
-- Keep every product menu focused on the product: one menu width, the product's own colors, and sections grouped as Main, Appearance, Advanced, and System with submenus collapsed.
+- Keep every product menu focused on the product: a shared menu size, the product's own colors, and sections grouped as Main, Appearance, Advanced, and System with submenus collapsed.
 - Drag the launchers up or down the right edge, and Shift+drag or use Alt+Arrow keys to rearrange them; opening a product menu coordinates with the other installed menus.
 - Keep controls readable in narrow or short windows with menus that scroll inside the available space.
 
 ## The menus built on Core
 
-Every ExtraPotions product menu shares the same shell: one width, the product's own colors, and sections grouped as Main, Appearance, Advanced, and System.
+Every ExtraPotions product menu shares the same shell: a shared size, the product's own colors, and sections grouped as Main, Appearance, Advanced, and System.
 
 <table>
   <tr>

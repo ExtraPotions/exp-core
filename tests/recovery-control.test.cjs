@@ -16,3 +16,4 @@ test('retry is single-flight and a cleared context rejects late completion',asyn
  g.clearContext('a');g.failed('scan','a');finish();assert.equal(await pending,false);assert.equal(g.snapshot('scan','a').consecutiveFailures,1);
  g.dispose();assert.equal(await g.retry('scan','a',()=>calls++),false);
 });
+test('a cancelled retry preserves the suspended feature',async()=>{const g=api().createRecoveryGuard();for(let i=0;i<3;i++)g.failed('scan','a');assert.equal(await g.retry('scan','a',()=>false),false);assert.equal(g.snapshot('scan','a').suspended,true);});

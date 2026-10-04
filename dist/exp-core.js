@@ -1540,6 +1540,7 @@ const ExpHealthSummary = (() => {
       try {await run();}catch {if(!disposed)notify('The recovery action did not complete. Open diagnostics for details.');}
       finally {pending=false;if(!disposed){action.disabled=false;await refresh();}}
     };
+    element.refreshHealth=refresh;state.setAttribute('role','status');
     action.addEventListener('click',click);render(null);refresh();
     return {element,refresh,dispose(){disposed=true;++generation;action.removeEventListener('click',click);}};
   }
@@ -1552,12 +1553,12 @@ const ExpRecoveryControl = (() => {
     const contexts=new Map();let disposed=false;
     const record=(feature,context)=>{let features=contexts.get(context);if(!features){features=new Map();contexts.set(context,features);}let value=features.get(feature);if(!value){value={times:[],suspended:false,retryPending:false,lastFailureAt:null};features.set(feature,value);}return value;};
     const view=value=>({suspended:value.suspended,consecutiveFailures:value.times.length,retryPending:value.retryPending,lastFailureAt:value.lastFailureAt});
-    function failed(feature,context){const value=record(feature,context),time=now();value.times=value.times.filter(at=>time-at<=windowMs);value.times.push(time);value.lastFailureAt=time;if(value.times.length>=limit)value.suspended=true;return view(value);}
+    function failed(feature,context){const value=record(feature,context),time=now();value.times=value.times.filter(at=>time-at<=windowMs);value.times.push(time);value.times=value.times.slice(-limit);value.lastFailureAt=time;if(value.times.length>=limit)value.suspended=true;return view(value);}
     function succeeded(feature,context){const value=record(feature,context);value.times=[];value.suspended=false;return view(value);}
     async function retry(feature,context,run){
       if(disposed||typeof run!=='function')return false;const value=record(feature,context);if(value.retryPending)return false;value.retryPending=true;
       const isCurrent=()=>!disposed&&contexts.get(context)?.get(feature)===value;
-      try {await run();if(!isCurrent())return false;succeeded(feature,context);return true;}
+      try {const result=await run();if(!isCurrent()||result===false)return false;succeeded(feature,context);return true;}
       catch(error){if(isCurrent())failed(feature,context);throw error;}
       finally {value.retryPending=false;}
     }
@@ -1599,7 +1600,7 @@ const ExpMenuPreferences = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.5.1';
+  const version = '3.6.0';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -3246,6 +3247,7 @@ const ExtraPotionsCore = (() => {
         menuControllers.delete(host);
       },
     });
+    removers.push(ExpMenuPreferences.bindMenuSize({host,shadow,panel,onLayout:options.onLayout}));
     menuControllers.set(host, controller);
     return controller;
   }
@@ -3320,7 +3322,7 @@ const ExtraPotionsCore = (() => {
     const arrangement = ExpMenuArrangement.mount({ panel, id, onChange: queueLayout, resetLaunchers() { resetLauncherGrid(id); queueLayout(); } });
     function queueLayout() { if (!frame && !destroyed) frame = requestAnimationFrame(() => { frame = 0; normalizeControls(panel); arrangement.update(); layout(); }); }
     removers.push(bindLauncherDrag(launcher, id, { layout }));
-    const menuController = createMenuController({ ...options, id, host, shadow, panel, getSettings, setOpen });
+    const menuController = createMenuController({ ...options, id, host, shadow, panel, getSettings, setOpen, onLayout:queueLayout });
     on(window,'keydown',e=>{if(shortcutKey&&e.altKey&&e.shiftKey&&e.key.toLowerCase()===shortcutKey.toLowerCase()&&!e.repeat){e.preventDefault();setOpen(!open,true);} });
     on(window,'resize',queueLayout);on(document,'exp-core:coordination',queueLayout);
     on(document,'exp-core:coordination',syncThemeOwner);
@@ -3328,12 +3330,11 @@ const ExtraPotionsCore = (() => {
     const mutation = new MutationObserver(records=>{if(records.some(r=>r.type==='childList'||r.attributeName==='hidden'))queueLayout();}); mutation.observe(panel,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
     const controller = {
       layout, setTheme,
-      state(value) {open=Boolean(value);menuController.state(open);menuNotices.forEach(notice=>notice.setMenuOpen(open));queueLayout();},
-      update(){normalizeControls(panel);queueLayout();},
+      state(value) {open=Boolean(value);menuController.state(open);menuNotices.forEach(notice=>notice.setMenuOpen(open));if(open)panel.querySelectorAll('[data-exp-health]').forEach(node=>node.refreshHealth?.());queueLayout();},
+      update(){normalizeControls(panel);if(open)panel.querySelectorAll('[data-exp-health]').forEach(node=>node.refreshHealth?.());queueLayout();},
       get dismissAt(){return menuController.dismissAt;},
       destroy(){destroyed=true;arrangement.destroy();defaultSupport?.destroy();menuController.destroy();cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();menuNotices.forEach(notice=>notice.destroy());removers.forEach(f=>f());styles.dispose();controllers.delete(host);}
     };
-    removers.push(ExpMenuPreferences.bindMenuSize({host,shadow,panel,onLayout:queueLayout}));
     controllers.set(host,controller);setTheme(id);
     queueLayout();return controller;
   }

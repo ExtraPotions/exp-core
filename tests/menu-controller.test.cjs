@@ -23,7 +23,7 @@ function fixture() {
   let now = 1000, serial = 0;
   const timers = new Map();
   const document = new Target(); document.documentElement = new Target();
-  const context = vm.createContext({ document, HTMLSelectElement: Select, Event: class { constructor(type) { this.type = type; } }, Date: { now: () => now }, setTimeout(fn) { const id = ++serial; timers.set(id, fn); return id; }, clearTimeout(id) { timers.delete(id); } });
+  const context = vm.createContext({ ExpMenuPreferences:{bindMenuSize:()=>()=>{}}, document, HTMLSelectElement: Select, Event: class { constructor(type) { this.type = type; } }, Date: { now: () => now }, setTimeout(fn) { const id = ++serial; timers.set(id, fn); return id; }, clearTimeout(id) { timers.delete(id); } });
   vm.runInContext('const menuControllers = new WeakMap();\n' + runtime.slice(begin, end) + '\nthis.create = createMenuController;', context);
   const create = (id, settings = {}, extra = {}) => {
     const host = new Target(), panel = new Target(), shadow = { activeElement: null };

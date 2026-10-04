@@ -1649,6 +1649,7 @@ const ExtraPotionsCore = (() => {
         menuControllers.delete(host);
       },
     });
+    removers.push(ExpMenuPreferences.bindMenuSize({host,shadow,panel,onLayout:options.onLayout}));
     menuControllers.set(host, controller);
     return controller;
   }
@@ -1723,7 +1724,7 @@ const ExtraPotionsCore = (() => {
     const arrangement = ExpMenuArrangement.mount({ panel, id, onChange: queueLayout, resetLaunchers() { resetLauncherGrid(id); queueLayout(); } });
     function queueLayout() { if (!frame && !destroyed) frame = requestAnimationFrame(() => { frame = 0; normalizeControls(panel); arrangement.update(); layout(); }); }
     removers.push(bindLauncherDrag(launcher, id, { layout }));
-    const menuController = createMenuController({ ...options, id, host, shadow, panel, getSettings, setOpen });
+    const menuController = createMenuController({ ...options, id, host, shadow, panel, getSettings, setOpen, onLayout:queueLayout });
     on(window,'keydown',e=>{if(shortcutKey&&e.altKey&&e.shiftKey&&e.key.toLowerCase()===shortcutKey.toLowerCase()&&!e.repeat){e.preventDefault();setOpen(!open,true);} });
     on(window,'resize',queueLayout);on(document,'exp-core:coordination',queueLayout);
     on(document,'exp-core:coordination',syncThemeOwner);
@@ -1731,12 +1732,11 @@ const ExtraPotionsCore = (() => {
     const mutation = new MutationObserver(records=>{if(records.some(r=>r.type==='childList'||r.attributeName==='hidden'))queueLayout();}); mutation.observe(panel,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
     const controller = {
       layout, setTheme,
-      state(value) {open=Boolean(value);menuController.state(open);menuNotices.forEach(notice=>notice.setMenuOpen(open));queueLayout();},
-      update(){normalizeControls(panel);queueLayout();},
+      state(value) {open=Boolean(value);menuController.state(open);menuNotices.forEach(notice=>notice.setMenuOpen(open));if(open)panel.querySelectorAll('[data-exp-health]').forEach(node=>node.refreshHealth?.());queueLayout();},
+      update(){normalizeControls(panel);if(open)panel.querySelectorAll('[data-exp-health]').forEach(node=>node.refreshHealth?.());queueLayout();},
       get dismissAt(){return menuController.dismissAt;},
       destroy(){destroyed=true;arrangement.destroy();defaultSupport?.destroy();menuController.destroy();cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();menuNotices.forEach(notice=>notice.destroy());removers.forEach(f=>f());styles.dispose();controllers.delete(host);}
     };
-    removers.push(ExpMenuPreferences.bindMenuSize({host,shadow,panel,onLayout:queueLayout}));
     controllers.set(host,controller);setTheme(id);
     queueLayout();return controller;
   }

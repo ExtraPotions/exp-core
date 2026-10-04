@@ -6,7 +6,7 @@ test('three sizes persist locally, update peers and keep controls focused',async
  await page.route('**/*',r=>r.fulfill({body:'<html><body></body></html>',contentType:'text/html'}));await page.goto('https://example.test/');
  await page.addScriptTag({content:source+`;window.sizing=ExpMenuPreferences;for(let i=0;i<2;i++){const host=document.createElement('div');host.id='host'+i;document.body.append(host);const shadow=host.attachShadow({mode:'open'}),panel=document.createElement('aside');shadow.append(panel);panel.append(sizing.createMenuSizeControls());sizing.bindMenuSize({host,shadow,panel,onLayout(){}});}`});
  for(const [size,body,small,width] of [['standard','13px','11px','260px'],['large','15px','13px','300px'],['extra-large','17px','15px','340px']]){
-  await page.locator('#host0 select').selectOption(size);
+  await page.locator('#host0 select').focus();await page.locator('#host0 select').selectOption(size);assert.equal(await page.locator('#host0 select').evaluate(n=>n.getRootNode().activeElement===n),true);
   const result=await page.evaluate(()=>[...document.querySelectorAll('body>div')].map(host=>({size:host.dataset.expMenuSize,body:host.style.getPropertyValue('--exp-font-size-body'),small:host.style.getPropertyValue('--exp-font-size-small'),width:host.style.getPropertyValue('--exp-menu-width')})));
   assert.deepEqual(result,[{size,body,small,width},{size,body,small,width}]);assert.equal(await page.evaluate(()=>localStorage.getItem('exp:suite:menu-size')),size);
  }

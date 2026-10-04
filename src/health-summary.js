@@ -29,6 +29,7 @@ const ExpHealthSummary = (() => {
       try {await run();}catch {if(!disposed)notify('The recovery action did not complete. Open diagnostics for details.');}
       finally {pending=false;if(!disposed){action.disabled=false;await refresh();}}
     };
+    element.refreshHealth=refresh;state.setAttribute('role','status');
     action.addEventListener('click',click);render(null);refresh();
     return {element,refresh,dispose(){disposed=true;++generation;action.removeEventListener('click',click);}};
   }
