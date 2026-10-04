@@ -48,7 +48,7 @@ function productSource(product) {
       Element.prototype.attachShadow = function forceOpen(options) {
         return attachShadow.call(this, { ...options, mode: 'open' });
       };
-      const storage = new Map();
+      const storage = new Map([['exp:v3:shift:settings',{theme:'ember',accent:'site-default'}]]);
       window.GM_getValue = (key, fallback) => storage.has(key) ? storage.get(key) : fallback;
       window.GM_setValue = (key, value) => storage.set(key, value);
       window.GM_deleteValue = key => storage.delete(key);
@@ -136,7 +136,7 @@ function productSource(product) {
 
     // Opening each product in turn must leave at most one shared menu surface
     // visibly open. This catches competing menu coordinators across products.
-    for (const [size,width,height] of [['standard',1280,1000],['large',1280,600],['extra-large',640,500]]) {
+    for (const [size,width,height] of [['standard',1280,1000],['large',1280,600],['extra-large',640,500],['extra-large',360,500]]) {
     await page.setViewportSize({width,height});
     await page.evaluate(size=>{localStorage.setItem('exp:suite:menu-size',size);document.dispatchEvent(new CustomEvent('exp-core:menu-size',{detail:size}));},size);
     for (const product of PRODUCTS) {
@@ -150,7 +150,8 @@ function productSource(product) {
         }
       }, product.id);
       await page.locator(product.root).locator('[data-exp-part="launcher"]').click();
-      await page.waitForTimeout(80);
+      await page.waitForFunction(root=>{const host=document.querySelector(root),dock=host?.shadowRoot?.querySelector('[data-exp-part="dock"]'),b=dock?.getBoundingClientRect();return dock&&!dock.hidden&&b.width>0&&b.height>0&&b.left>=0&&b.top>=0&&b.right<=innerWidth+.5&&b.bottom<=innerHeight+.5;},product.root);
+      await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
       const visible = await page.evaluate(products => products.filter(product => {
         const host = document.querySelector(product.root);
         const dock = host?.shadowRoot?.querySelector('[data-exp-part="dock"]');
@@ -170,7 +171,7 @@ function productSource(product) {
         for (let column = 0; column < 5; column += 1) {
           for (let row = 0; row < 5; row += 1) {
             const top = document.elementFromPoint(box.left + box.width * (0.1 + 0.2 * column), box.top + box.height * (0.05 + 0.225 * row));
-            if (top !== host) covering.add(top?.dataset?.productId || top?.tagName || 'nothing');
+            if (top !== host) covering.add(top?.dataset?.productId || top?.tagName || 'nothing ' + JSON.stringify({x:box.x,y:box.y,w:box.width,h:box.height,vw:innerWidth,vh:innerHeight}));
           }
         }
         // Menus open beside the launcher grid: no launcher or reserved surface (Dropper's progress row) may
@@ -205,8 +206,11 @@ function productSource(product) {
     const savedOrder = await page.evaluate(() => JSON.parse(localStorage.getItem('exp:v3:launcher-order') || '[]'));
     assert.deepEqual(savedOrder, expectedOrder);
 
+    await page.waitForFunction(()=>document.querySelector('main .exp-prisma-hit'));
+    const highlights=await page.locator('main .exp-prisma-hit').evaluateAll(nodes=>nodes.map(n=>({gradient:getComputedStyle(n).backgroundImage,fill:getComputedStyle(n).webkitTextFillColor,palette:n.style.getPropertyValue('--prisma-colors')})));
+    assert.ok(highlights.length>=2&&highlights.every(n=>n.gradient.includes('linear-gradient')&&n.fill==='rgba(0, 0, 0, 0)'&&n.palette.includes('#')), 'active SHIFT preserves PRISMA annotation colors: '+JSON.stringify(highlights));
     assert.deepEqual(errors, [], 'suite coexistence browser errors');
-    console.log('PASS suite coexistence:', injectionOrder.join(' > '), 'all menu sizes and compact viewport');
+    console.log('PASS suite coexistence:', injectionOrder.join(' > '), 'all menu sizes, 360px viewport and active-theme annotation preservation');
     await page.close();
     }
   } finally {

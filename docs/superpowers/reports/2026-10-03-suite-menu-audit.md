@@ -178,3 +178,17 @@ Combined-product gate covers two injection orders and all three sizes. A 640 by 
 ## Limits
 
 Amazon fixtures are explicitly synthetic and contain no account data. Passing them does not prove every live Amazon widget. Twitch credited progress must still be confirmed against a real session after installation. Conservative retailer patterns remain conservative; coverage disclosure does not add undocumented detection promises.
+
+## Final review corrections
+
+- Blocked Dropper recovery creates no navigation flight, mute request, switch notification, viewing intent, or general-guard update.
+- SHIFT site adapter failures are bounded separately from generic theme repair; retry observes effective Safe Mode, exclusion, and suite pause.
+- Health mappings reflect coupon confirmation failure, deliberate disablement, effective Original appearance, excluded pages, and adapter degradation.
+- Open System cards refresh through existing product state-change paths without polling.
+- Shared menu placement clears every horizontally intersecting launcher row, including Extra Large menus at 360px.
+
+Two minor follow-ups remain: include ordinary stream verification success/rejection events in Dropper's timeline, and expand Amazon fixture assertions beyond the selected text/button contrast and image-filter checks. No claim is made that the fixture verifies every purchasing control or every owned surface.
+
+Remote release checks stop at the unpublished Core 3.6.0 tag. Local canonical bytes and builds are checked independently. Remote pin verification is required during the separately approved publication step.
+
+Final candidate verification: 813 tests pass across all five repositories (Core 184, Dropper 303, WARD 121, SHIFT 122, PRISMA 83). Build reproducibility, canonical Core synchronization and duplicate checks pass. The enhanced coexistence gate also checks active SHIFT theme preservation of PRISMA page annotations in both injection orders, all three menu sizes and a 360px viewport. These are local candidates; remote Core v3.6.0 pin validation remains pending publication.
