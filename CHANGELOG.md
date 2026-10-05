@@ -1,5 +1,6 @@
 ## 3.6.0 - 2026-10-03
 
+- Preserve every product menu's signature colors when several products are installed.
 - Choose Standard, Large, or Extra Large menus for ExtraPotions on a site.
 - See a clear status, reason, and safe recovery action in System.
 - Pause repeatedly failing page features until a deliberate retry.
