@@ -1778,6 +1778,7 @@ const ExtraPotionsCore = (() => {
       return { ...memory };
     }
     function writeState(value) {
+      if(ExtraPotionsTools.productDataResetting(productId))return;
       memory = { ...(value || {}) };
       try { if (typeof GM_setValue === 'function') GM_setValue(CACHE_KEY, memory); } catch {}
       try { localStorage.setItem(CACHE_KEY, JSON.stringify(memory)); } catch {}

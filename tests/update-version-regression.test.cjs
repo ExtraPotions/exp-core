@@ -20,6 +20,7 @@ function fixture(cached = {}, version = '3.2.13', enabled = true) {
   const storage = new Map([[key, JSON.stringify(cached)]]);
   const requests = [];
   const context = {
+    ExtraPotionsTools:{productDataResetting:()=>false},
     options: { productId: 'ward', repository: 'ExtraPotions/WARD', currentVersion: version, enabled: () => enabled },
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
     GM_xmlhttpRequest: options => requests.push(options),

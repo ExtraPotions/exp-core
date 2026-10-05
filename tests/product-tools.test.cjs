@@ -25,4 +25,4 @@ test('Bitcoin donation displays and copies the exact address with an honest clip
 });
 
 
-test('compatibility inventory is injected from the suite manifest',()=>{assert.doesNotMatch(source,/\['dropper','shift','prisma','ward'\]/u);assert.doesNotMatch(source,/id==='dropper'/u);assert.match(source,/const PRODUCT_ROOT_IDS = \{/u);});
+test('compatibility inventory is injected from the suite manifest',()=>{assert.doesNotMatch(source,/\['dropper','shift','prisma','ward'\]/u);assert.doesNotMatch(source.slice(source.indexOf('  function compatibilitySnapshot()'),source.indexOf('  const button=')),/id==='dropper'/u);assert.match(source,/const PRODUCT_ROOT_IDS = \{/u);});

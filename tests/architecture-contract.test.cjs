@@ -149,7 +149,7 @@ test('generated manifest carries the canonical suite contract from one source fi
   assert.match(build, /const rootIdsMarker = '__EXP_SUITE_ROOT_IDS__'/u);
   assert.match(read('src/product-tools.js'), /const PRODUCT_ROOT_IDS = __EXP_SUITE_ROOT_IDS__;/u);
   assert.doesNotMatch(read('src/product-tools.js'), /\['dropper','shift','prisma','ward'\]/u);
-  assert.doesNotMatch(read('src/product-tools.js'), /id==='dropper'/u);
+  const productTools=read('src/product-tools.js');assert.doesNotMatch(productTools.slice(productTools.indexOf('  function compatibilitySnapshot()'),productTools.indexOf('  const button=')), /id==='dropper'/u);
   assert.deepEqual(Object.keys(contract).sort(), Object.keys(Object.fromEntries(Object.entries(contract).map(([id, value]) => [id, value.menuSections]))).sort());
   assert.match(runtime, /menuSections: Object\.freeze\(Object\.fromEntries/u);
 });

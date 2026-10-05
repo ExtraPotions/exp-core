@@ -100,10 +100,11 @@ test('compact System groups keep diagnostics visible and expand without horizont
   const host=page.locator(name==='Dropper'?'#tdh-root':'#exp-'+name.toLowerCase()+'-root');await host.waitFor({state:'attached'});
   await host.evaluate(h=>{const s=h.shadowRoot;s.querySelector('.launcher,.ward-launcher,#tdh-settings-launcher').click();s.querySelector('[data-panel="tdh-diagnostics-body"],[data-view="system"],[data-route="system"],[data-section="system"]').click();});
   assert.equal(await host.getByRole('button',{name:'Show Diagnostics',exact:true}).isVisible(),true);
-  const grid=host.locator('[data-exp-system-tools]');assert.equal(await grid.count(),1);
-  assert.doesNotMatch(await grid.textContent(),/Settings backups|Back up settings|Restore selected backup/);
+  const grid=host.locator('[data-exp-product-system]');assert.equal(await grid.count(),1);
+  assert.doesNotMatch(await grid.textContent(),/Settings backups|Back up settings|Restore selected backup|Maintenance|Site control|Product compatibility|Why am I waiting|Activity history/);
+  assert.deepEqual(await grid.locator(':scope > [data-exp-system-item]').evaluateAll(nodes=>nodes.map(n=>n.dataset.expSystemItem)),['timeline','diagnostics','issue','preferences','reset']);
   assert.equal(await grid.locator(':scope>details[open]').count(),0);
-  const cards=grid.locator(':scope>details');assert.ok(await cards.count()>=3);
+  const cards=grid.locator(':scope>details');assert.equal(await cards.count(),2);
   for(let i=0;i<await cards.count();i++){
    const card=cards.nth(i);await card.locator(':scope>summary').focus();await page.keyboard.press('Enter');
    assert.equal(await card.evaluate(n=>n.open),true);

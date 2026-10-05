@@ -1,3 +1,9 @@
+## 3.6.1 - 2026-10-04
+
+- Keep System focused on status, diagnostics, reporting issues, menu preferences, and resetting the current product.
+- Open a GitHub issue with a prefilled product and version template.
+- Require two confirmations before clearing product data.
+
 ## 3.6.0 - 2026-10-03
 
 - Preserve every product menu's signature colors when several products are installed.
