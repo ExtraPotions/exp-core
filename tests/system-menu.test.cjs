@@ -47,3 +47,45 @@ for(const product of ['SHIFT','WARD','PRISMA'])test(product+' delayed settings i
  const id=product.toLowerCase(),local=storage({}),session=storage({}),gm=new Map(),c=vm.createContext({EXP:{},localStorage:local,sessionStorage:session,GM_getValue:(k,v)=>gm.has(k)?gm.get(k):v,GM_setValue:(k,v)=>gm.set(k,v),GM_listValues:()=>[...gm.keys()],GM_deleteValue:k=>gm.delete(k),location:{hostname:'example.test'}});vm.runInContext(source+';globalThis.ExtraPotionsCore={...ExtraPotionsTools,cloneSettings:v=>JSON.parse(JSON.stringify(v))};',c);vm.runInContext(fs.readFileSync(__dirname+'/../../'+product+'/src/settings.js','utf8'),c);const settings=c.EXP.Settings;settings.load();const payload={product:id,generation:3,schema:1,settings:{...settings.snapshot(),safeMode:true}};let finishText;const file={text:()=>new Promise(resolve=>finishText=resolve)};const pending=(async()=>{const imported=JSON.parse(await file.text());if(settings.importData)settings.importData(imported);else settings.replace(settings.prepareImport(imported),'import');})();settings.resetAll();finishText(JSON.stringify(payload));await pending;assert.equal(settings.snapshot().safeMode,false);assert.equal(local.getItem('exp:v3:'+id+':settings'),null);assert.equal(gm.has('exp:v3:'+id+':settings'),false);
 });
 test('storage deletion failure cancels reset flag so reset can be retried',()=>{const local=storage({'exp:v3:shift:settings':'keep'});local.removeItem=()=>{throw Error('blocked')};const api=vm.runInNewContext(source+';ExtraPotionsTools',{localStorage:local,sessionStorage:storage({})});assert.throws(()=>api.clearProductData('shift'),/Could not clear/);assert.equal(api.productDataResetting('shift'),false);});
+
+test('grouped System opens Status, puts Copy first, reports status without secrets, and resets on a second tap',async t=>{
+ const {chromium}=require('playwright'),browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:320,height:900}});
+ await page.route('**/*',r=>r.fulfill({contentType:'text/html',body:'<main style="width:260px"></main>'}));await page.goto('https://example.test/');
+ const healthSource=fs.readFileSync(__dirname+'/../src/health-summary.js','utf8');
+ await page.addScriptTag({content:source+healthSource+`;window.resets=0;window.opened=[];window.confirm=()=>{throw new Error('no browser dialogs');};
+  HTMLAnchorElement.prototype.click=function(){opened.push(this.href);};
+  window.ExtraPotionsCore={...ExpHealthSummary,createDisclosure(label,...children){const d=document.createElement('details'),s=document.createElement('summary');s.textContent=label;d.append(s,...children);return d;}};
+  window.control=ExtraPotionsTools.createProductTimeline('shift',()=>({state:'attention',reason:'Stopped at https://site.test/?token=SECRET for me@example.test'}),()=>{},{layout:'grouped'});
+  const diagnostics=document.createElement('div'),pair=document.createElement('div');pair.className='action-pair';for(const name of ['Show Diagnostics','Copy Diagnostics']){const b=document.createElement('button');b.textContent=name;pair.append(b);}diagnostics.append(pair,document.createElement('pre'));
+  window.system=ExtraPotionsTools.createProductSystem({id:'shift',version:'3.5.4',timeline:control.element,diagnostics,onReset:()=>{resets++;},layout:'grouped'});document.querySelector('main').append(system);`});
+ await page.waitForFunction(()=>document.querySelector('[data-exp-health-reason]')?.textContent.includes('Stopped'));
+ const layout=await page.evaluate(()=>({items:[...system.children].map(n=>n.dataset.expSystemItem),statusOpen:system.querySelector('[data-exp-system-item="status"]').open,activity:Boolean(control.activity&&system.querySelector('[data-exp-system-activity]')),buttons:[...system.querySelectorAll('.action-pair button')].map(b=>b.textContent)}));
+ assert.deepEqual(layout,{items:['status','support','reset'],statusOpen:true,activity:true,buttons:['Copy Diagnostics','Show Diagnostics']});
+ await page.evaluate(()=>system.querySelector('[data-exp-system-report]').click());
+ const body=await page.evaluate(()=>new URL(opened[0]).searchParams.get('body'));
+ assert.match(body,/Status: Needs attention - Stopped at \[link\] for \[address\]/);assert.doesNotMatch(body,/SECRET|example\.test/);
+ const reset=page.getByRole('button',{name:'Reset All Settings'});await page.evaluate(()=>system.querySelector('[data-exp-system-item="reset"]').open=true);
+ await reset.click();assert.equal(await page.evaluate(()=>resets),0,'the first tap only arms reset');
+ await page.getByRole('button',{name:'Tap Again to Reset'}).click();assert.equal(await page.evaluate(()=>resets),1);
+ await page.getByRole('button',{name:'Reset All Settings'}).click();await page.waitForTimeout(4200);
+ await page.getByRole('button',{name:'Reset All Settings'}).click();assert.equal(await page.evaluate(()=>resets),1,'an armed reset expires');
+ await page.evaluate(()=>system.querySelector('[data-exp-system-item="reset"]').open=false);await page.waitForTimeout(50);
+ assert.equal(await page.evaluate(()=>system.querySelector('[data-exp-system-item="reset"] button').textContent),'Reset All Settings','closing Reset disarms it');
+});
+
+test('grouped System keeps Menu Preferences only while a product still passes it, and classic stays the default',async t=>{
+ const {chromium}=require('playwright'),browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage();await page.setContent('<main></main>');
+ const items=await page.evaluate(src=>{eval(src);window.ExtraPotionsCore={createDisclosure(label,...c){const d=document.createElement('details'),s=document.createElement('summary');s.textContent=label;d.append(s,...c);return d;}};
+  const parts=()=>{const t=document.createElement('details'),d=document.createElement('div'),p=document.createElement('details');d.innerHTML='<div class="action-pair"><button>Show Diagnostics</button><button>Copy Diagnostics</button></div>';return {timeline:t,diagnostics:d,preferences:p};};
+  const pick=s=>[...s.children].map(n=>n.dataset.expSystemItem);
+  return {transition:pick(ExtraPotionsTools.createProductSystem({id:'ward',version:'1.0.0',...parts(),onReset(){},layout:'grouped'})),
+   moved:pick(ExtraPotionsTools.createProductSystem({id:'ward',version:'1.0.0',...parts(),preferences:null,onReset(){},layout:'grouped'})),
+   classic:pick(ExtraPotionsTools.createProductSystem({id:'ward',version:'1.0.0',...parts(),onReset(){}}))};},source+';window.ExtraPotionsTools=ExtraPotionsTools;');
+ assert.deepEqual(items,{transition:['status','support','preferences','reset'],moved:['status','support','reset'],classic:['timeline','diagnostics','issue','preferences','reset']});
+});
+
+test('timeline grouping counts consecutive repeats and keeps the newest time',()=>{
+ const api=vm.runInNewContext(source+';ExtraPotionsTools',{});
+ const groups=api.groupTimelineEntries([{at:1,reason:'pending'},{at:2,reason:'pending'},{at:3,reason:'found'},{at:4,reason:'pending'}]);
+ assert.deepEqual(JSON.parse(JSON.stringify(groups.map(g=>[g.reason,g.count,g.at]))),[['pending',2,2],['found',1,3],['pending',1,4]]);
+});

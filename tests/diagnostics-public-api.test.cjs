@@ -34,7 +34,12 @@ test('Core diagnostics bound console capture and redact private page evidence', 
     return { report, serialized:JSON.stringify(report) };
   });
   assert.equal(result.report.plugin.version,'1.2.3');
-  assert.equal(result.report.plugin.state.engine.active,true);
+  assert.equal(result.report.engine.active,true);
+  assert.equal(result.report.plugin.state,undefined,'product state is reported once, at the top level');
+  assert.equal(result.report.plugin.stateLocation,'top-level');
+  assert.equal(result.report.technical.environment,undefined);
+  assert.equal(result.report.technical.ui,undefined);
+  assert.ok(result.report.environment&&result.report.ui);
   assert.ok(result.report.console.entries.length <= 100);
   assert.ok(result.report.console.omitted >= 30);
   for (const secret of ['PRIVATE_BODY_TEXT','PRIVATE_FIELD_VALUE','PRIVATE_PATH','PRIVATE_QUERY','PRIVATE_PASSWORD','member@example.test','token=SECRET']) {
