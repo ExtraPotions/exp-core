@@ -29,6 +29,8 @@ assert.deepEqual(products.map(product=>product.name).sort(),[...repositories].so
       await page.addScriptTag({content:fs.readFileSync(p.file,'utf8')});
       const root=page.locator(p.host);await root.waitFor({state:'attached'});await root.locator(p.launcher).click();
       await root.locator(p.advanced).click();
+      // Grouped System keeps diagnostics inside Support.
+      await root.locator('[data-exp-system-item="support"]').evaluateAll(nodes=>nodes.forEach(n=>{n.open=true;}));
       await root.getByRole('button',{name:'Show Diagnostics',exact:true}).click();
       const reportNode=root.locator(p.name==='Dropper'?'#tdh-diagnostics':'.diagnostics-controls pre');
       await reportNode.waitFor({state:'visible'});

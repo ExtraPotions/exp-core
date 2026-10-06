@@ -99,14 +99,18 @@ test('compact System groups keep diagnostics visible and expand without horizont
   await page.addScriptTag({content:fs.readFileSync(path.join(repos,name,name.toLowerCase()+'.user.js'),'utf8')});
   const host=page.locator(name==='Dropper'?'#tdh-root':'#exp-'+name.toLowerCase()+'-root');await host.waitFor({state:'attached'});
   await host.evaluate(h=>{const s=h.shadowRoot;s.querySelector('.launcher,.ward-launcher,#tdh-settings-launcher').click();s.querySelector('[data-panel="tdh-diagnostics-body"],[data-view="system"],[data-route="system"],[data-section="system"]').click();});
-  assert.equal(await host.getByRole('button',{name:'Show Diagnostics',exact:true}).isVisible(),true);
   const grid=host.locator('[data-exp-product-system]');assert.equal(await grid.count(),1);
+  const layout=await grid.evaluate(n=>n.dataset.expSystemLayout||'classic');
+  if(layout==='grouped')await grid.locator('[data-exp-system-item="support"]').evaluate(n=>n.open=true);
+  assert.equal(await host.getByRole('button',{name:'Show Diagnostics',exact:true}).isVisible(),true);
+  if(layout==='grouped')await grid.locator('[data-exp-system-item="support"]').evaluate(n=>n.open=false);
   assert.doesNotMatch(await grid.textContent(),/Settings backups|Back up settings|Restore selected backup|Maintenance|Site control|Product compatibility|Why am I waiting|Activity history/);
-  assert.deepEqual(await grid.locator(':scope > [data-exp-system-item]').evaluateAll(nodes=>nodes.map(n=>n.dataset.expSystemItem)),['timeline','diagnostics','issue','preferences','reset']);
-  assert.equal(await grid.locator(':scope>details[open]').count(),0);
-  const cards=grid.locator(':scope>details');assert.equal(await cards.count(),2);
+  assert.deepEqual(await grid.locator(':scope > [data-exp-system-item]').evaluateAll(nodes=>nodes.map(n=>n.dataset.expSystemItem)),layout==='grouped'?['status','support','reset']:['timeline','diagnostics','issue','preferences','reset']);
+  // Grouped System keeps Status open so its recovery action is visible.
+  assert.equal(await grid.locator(':scope>details[open]').count(),layout==='grouped'?1:0);
+  const cards=grid.locator(':scope>details');assert.equal(await cards.count(),layout==='grouped'?3:2);
   for(let i=0;i<await cards.count();i++){
-   const card=cards.nth(i);await card.locator(':scope>summary').focus();await page.keyboard.press('Enter');
+   const card=cards.nth(i);if(await card.evaluate(n=>n.open))await card.evaluate(n=>n.open=false);await card.locator(':scope>summary').focus();await page.keyboard.press('Enter');
    assert.equal(await card.evaluate(n=>n.open),true);
    const dimensions=await card.evaluate(n=>({width:n.getBoundingClientRect().width,parent:n.parentElement.getBoundingClientRect().width,overflow:n.scrollWidth-n.clientWidth}));
    assert.ok(Math.abs(dimensions.width-dimensions.parent)<2,JSON.stringify({name,dimensions}));assert.ok(dimensions.overflow<=1,JSON.stringify({name,dimensions}));
