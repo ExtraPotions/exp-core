@@ -1,3 +1,10 @@
+## 3.7.0 - 2026-10-06
+
+- Adds an opt-in grouped System layout: an always-open Status card with its recovery action, Recent activity, a Support group with Copy Diagnostics first and Report a Problem, and a Reset group confirmed by a second tap inside the menu instead of browser dialogs.
+- Report a Problem includes the product's current status line, with links and addresses removed.
+- Diagnostics reports include product state, environment, and UI details once instead of repeating them.
+- Products keep the current System layout until they opt in.
+
 ## 3.6.1 - 2026-10-04
 
 - Keep System focused on status, diagnostics, reporting issues, menu preferences, and resetting the current product.
