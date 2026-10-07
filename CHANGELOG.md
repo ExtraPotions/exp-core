@@ -1,3 +1,8 @@
+## 3.7.2 - 2026-10-07
+
+- Verifies all four ExtraPotions products together before publishing shared updates.
+- Strengthens checks for menus, settings resets, and product compatibility.
+
 ## 3.7.1 - 2026-10-06
 
 - Makes menu labels and captions easier to read at every size.

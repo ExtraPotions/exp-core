@@ -2,6 +2,8 @@
 
 # exp-core
 
+Current release: **3.7.2**.
+
 **A familiar menu across ExtraPotions**
 
 The shared menu experience included with ExtraPotions products. No separate installation is needed.
