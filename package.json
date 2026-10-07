@@ -14,6 +14,9 @@
   },
   "devDependencies": {
     "acorn": "8.18.0",
-    "playwright": "1.55.1"
+    "playwright": "1.63.0"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

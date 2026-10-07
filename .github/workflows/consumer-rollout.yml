@@ -16,7 +16,7 @@ on:
         description: Node.js version used by the consumer.
         required: false
         type: string
-        default: "22"
+        default: "24"
       script-asset:
         description: Built userscript asset path.
         required: true
