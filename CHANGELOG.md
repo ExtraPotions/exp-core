@@ -1,3 +1,8 @@
+## Unreleased
+
+- Replaces nested menu sections with compact tabs while keeping each product's colors and System last.
+- Remembers the selected tab during menu refreshes and supports arrow-key navigation.
+
 ## 3.7.2 - 2026-10-07
 
 - Verifies all four ExtraPotions products together before publishing shared updates.

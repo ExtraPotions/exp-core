@@ -101,20 +101,17 @@ test('compact System groups keep diagnostics visible and expand without horizont
   await host.evaluate(h=>{const s=h.shadowRoot;s.querySelector('.launcher,.ward-launcher,#tdh-settings-launcher').click();s.querySelector('[data-panel="tdh-diagnostics-body"],[data-view="system"],[data-route="system"],[data-section="system"]').click();});
   const grid=host.locator('[data-exp-product-system]');assert.equal(await grid.count(),1);
   const layout=await grid.evaluate(n=>n.dataset.expSystemLayout||'classic');
-  if(layout==='grouped')await grid.locator('[data-exp-system-item="support"]').evaluate(n=>n.open=true);
+  if(layout==='grouped')await grid.getByRole('tab',{name:'Support',exact:true}).click();
   assert.equal(await host.getByRole('button',{name:'Show Diagnostics',exact:true}).isVisible(),true);
-  if(layout==='grouped')await grid.locator('[data-exp-system-item="support"]').evaluate(n=>n.open=false);
+  if(layout==='grouped')await grid.getByRole('tab',{name:'Status',exact:true}).click();
   assert.doesNotMatch(await grid.textContent(),/Settings backups|Back up settings|Restore selected backup|Maintenance|Site control|Product compatibility|Why am I waiting|Activity history/);
-  assert.deepEqual(await grid.locator(':scope > [data-exp-system-item]').evaluateAll(nodes=>nodes.map(n=>n.dataset.expSystemItem)),layout==='grouped'?['status','support','reset']:['timeline','diagnostics','issue','preferences','reset']);
-  // Grouped System keeps Status open so its recovery action is visible.
-  assert.equal(await grid.locator(':scope>details[open]').count(),layout==='grouped'?1:0);
-  const cards=grid.locator(':scope>details');assert.equal(await cards.count(),layout==='grouped'?3:2);
-  for(let i=0;i<await cards.count();i++){
-   const card=cards.nth(i);if(await card.evaluate(n=>n.open))await card.evaluate(n=>n.open=false);await card.locator(':scope>summary').focus();await page.keyboard.press('Enter');
-   assert.equal(await card.evaluate(n=>n.open),true);
-   const dimensions=await card.evaluate(n=>({width:n.getBoundingClientRect().width,parent:n.parentElement.getBoundingClientRect().width,overflow:n.scrollWidth-n.clientWidth}));
+  assert.deepEqual(await grid.locator('[data-exp-system-item]').evaluateAll(nodes=>nodes.map(n=>n.dataset.expSystemItem)),layout==='grouped'?['status','support','reset']:['timeline','diagnostics','issue','preferences','reset']);
+  const tabs=grid.getByRole('tab');assert.equal(await tabs.count(),3);
+  for(let i=0;i<await tabs.count();i++){
+   await tabs.nth(i).focus();await page.keyboard.press('Enter');
+   assert.equal(await tabs.nth(i).getAttribute('aria-selected'),'true');
+   const dimensions=await grid.getByRole('tabpanel').evaluate(n=>({width:n.getBoundingClientRect().width,parent:n.parentElement.getBoundingClientRect().width,overflow:n.scrollWidth-n.clientWidth}));
    assert.ok(Math.abs(dimensions.width-dimensions.parent)<2,JSON.stringify({name,dimensions}));assert.ok(dimensions.overflow<=1,JSON.stringify({name,dimensions}));
-   await card.locator(':scope>summary').press('Enter');
   }
   await page.close();
  }

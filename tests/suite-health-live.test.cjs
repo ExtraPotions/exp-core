@@ -49,7 +49,7 @@ for (const [repo, url, root, system] of [
     await page.locator(root).locator(system).click();
     const layout = await page.locator(root).locator('[data-exp-product-system]').evaluate(n => n.dataset.expSystemLayout || 'classic');
     if (layout !== 'grouped') await page.locator(root).locator('[data-exp-system-item="timeline"] > summary').click();
-    assert.deepEqual(await page.locator(root).locator('[data-exp-product-system] > [data-exp-system-item]').evaluateAll(
+    assert.deepEqual(await page.locator(root).locator('[data-exp-product-system] [data-exp-system-item]').evaluateAll(
       nodes => nodes.map(n => n.dataset.expSystemItem),
     ), layout === 'grouped' ? ['status', 'support', 'reset'] : ['timeline', 'diagnostics', 'issue', 'preferences', 'reset']);
     await page.locator(root).locator('[data-exp-health-state]').waitFor();

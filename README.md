@@ -13,12 +13,14 @@ The shared menu experience included with ExtraPotions products. No separate inst
 
 ## What you can do
 
-- **Simple System menu:** open Product Timeline or Dropper Status, show or copy diagnostics, create a GitHub issue, adjust menu preferences, or reset this product after two confirmations.
+- **Compact submenu tabs:** switch between related settings without opening a stack of nested menus. Each product keeps its own colors, and System stays last.
 
-- **Readable menus:** choose Standard (14px text), Large (16px), or Extra Large (18px) from Appearance > Menu preferences. Captions start at 12px and scale with your choice. Labels, controls, and section headings share consistent spacing and alignment.
+- **Simple System menu:** use Status for the product's timeline, Support to show or copy diagnostics and report a problem, and Reset to clear this product after a second confirmation. Menu preferences are in Appearance > Menu.
+
+- **Readable menus:** choose Standard (14px text), Large (16px), or Extra Large (18px) from Appearance > Menu. Captions start at 12px and scale with your choice. Labels, controls, and section headings share consistent spacing and alignment.
 
 - Check Working, Waiting, Paused, or Needs attention in System, with a reason and a safe recovery action when available.
-- Keep every product menu focused on the product: a shared menu size, the product's own colors, and sections grouped as Main, Appearance, Advanced, and System with submenus collapsed.
+- Keep every product menu focused on the product: a shared menu size, the product's own colors, and sections grouped as Main, Appearance, Advanced, and System with compact tabs for related settings.
 - Drag the launchers up or down the right edge, and Shift+drag or use Alt+Arrow keys to rearrange them; opening a product menu coordinates with the other installed menus.
 - Keep controls readable in narrow or short windows with menus that scroll inside the available space.
 
