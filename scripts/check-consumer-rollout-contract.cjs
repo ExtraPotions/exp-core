@@ -6,7 +6,7 @@ const assert = require('node:assert/strict');
 const { loadSuiteContract } = require('./suite-contract.cjs');
 
 const coreRoot = path.resolve(__dirname, '..');
-const workspace = path.resolve(coreRoot, '..');
+const consumers = require('./consumer-roots.cjs').resolveConsumerRoots();
 const { repositories } = loadSuiteContract(coreRoot);
 
 const release = fs.readFileSync(path.join(coreRoot, '.github/workflows/release.yml'), 'utf8');
@@ -16,7 +16,7 @@ assert.match(release, /event_type:"exp-core-release"/u);
 assert.match(release, /repos\/ExtraPotions\/\$repo\/dispatches/u);
 
 for (const repository of repositories) {
-  const workflowPath = path.join(workspace, repository, '.github/workflows/sync-exp-core.yml');
+  const workflowPath = consumers.file(repository, '.github/workflows/sync-exp-core.yml');
   const workflow = fs.readFileSync(workflowPath, 'utf8');
   assert.match(workflow, /repository_dispatch:\s*\n\s*types: \[exp-core-release\]/u, repository + ' dispatch trigger');
   assert.match(workflow, /schedule:\s*\n\s*- cron:/u, repository + ' scheduled fallback');

@@ -69,11 +69,11 @@ if (require.main === module) {
   const args = process.argv.slice(2);
   const enforce = args.includes('--enforce');
   const coreRoot = path.resolve(__dirname, '..');
-  const workspace = path.resolve(coreRoot, '..');
+  const consumers = require('./consumer-roots.cjs').resolveConsumerRoots();
   const dirs = args.filter(arg => !arg.startsWith('--'));
   const products = dirs.length
     ? dirs.map(dir => path.resolve(dir))
-    : loadSuiteContract(coreRoot).repositories.map(repo => path.join(workspace, repo)).filter(dir => fs.existsSync(dir));
+    : loadSuiteContract(coreRoot).repositories.map(repo => consumers.root(repo)).filter(dir => fs.existsSync(dir));
   let total = 0;
   for (const dir of products) {
     const findings = scanProduct(dir);
