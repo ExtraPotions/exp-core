@@ -1,7 +1,7 @@
-## Unreleased
+## 3.7.3 — 2026-10-07
 
-- Replaces nested menu sections with compact tabs while keeping each product's colors and System last.
-- Remembers the selected tab during menu refreshes and supports arrow-key navigation.
+- Organizes related menu settings into compact tabs, with System last.
+- Keeps your selected tab during menu refreshes and supports keyboard navigation.
 
 ## 3.7.2 - 2026-10-07
 

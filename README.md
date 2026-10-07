@@ -2,7 +2,7 @@
 
 # exp-core
 
-Current release: **3.7.2**.
+Current release: **3.7.3**.
 
 **A familiar menu across ExtraPotions**
 
