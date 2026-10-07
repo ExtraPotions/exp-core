@@ -13,7 +13,7 @@ The shared menu experience included with ExtraPotions products. No separate inst
 
 - **Simple System menu:** open Product Timeline or Dropper Status, show or copy diagnostics, create a GitHub issue, adjust menu preferences, or reset this product after two confirmations.
 
-- **Readable menus:** choose Standard (13px text), Large (15px), or Extra Large (17px) from System > Menu preferences. Small captions scale with your choice.
+- **Readable menus:** choose Standard (14px text), Large (16px), or Extra Large (18px) from Appearance > Menu preferences. Captions start at 12px and scale with your choice. Labels, controls, and section headings share consistent spacing and alignment.
 
 - Check Working, Waiting, Paused, or Needs attention in System, with a reason and a safe recovery action when available.
 - Keep every product menu focused on the product: a shared menu size, the product's own colors, and sections grouped as Main, Appearance, Advanced, and System with submenus collapsed.

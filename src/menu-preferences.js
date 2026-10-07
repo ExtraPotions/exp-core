@@ -1,12 +1,13 @@
 /* Same-origin preferences for product-owned menu surfaces only. */
 const ExpMenuPreferences = (() => {
   const key='exp:suite:menu-size',eventName='exp-core:menu-size';
-  const sizes=Object.freeze({standard:{body:13,small:11,width:260},large:{body:15,small:13,width:300},'extra-large':{body:17,small:15,width:340}});
+  const sizes=Object.freeze({standard:{body:14,small:12,width:288},large:{body:16,small:14,width:320},'extra-large':{body:18,small:16,width:352}});
   let memory='standard';
   const valid=value=>Object.hasOwn(sizes,value)?value:'standard';
   function menuSizePreference(){try {const stored=localStorage.getItem(key);memory=valid(stored);}catch {}return memory;}
   function setMenuSizePreference(size){memory=valid(size);try{localStorage.setItem(key,memory);}catch{}document.dispatchEvent(new CustomEvent(eventName,{detail:memory}));return memory;}
   function bindMenuSize({host,shadow,panel,onLayout=()=>{}}){
+    const disposeTypography=ExpMenuTypography.mount({shadow,panel});
     function apply(size){
       memory=valid(size);const value=sizes[memory];host.dataset.expMenuSize=memory;
       host.style.setProperty('--exp-font-size-body',value.body+'px');host.style.setProperty('--exp-font-size-small',value.small+'px');host.style.setProperty('--exp-menu-width',value.width+'px');
@@ -15,7 +16,7 @@ const ExpMenuPreferences = (() => {
     }
     const changed=event=>apply(event.detail),storage=event=>{if(event.key===key||event.key===null)apply(menuSizePreference());};
     document.addEventListener(eventName,changed);addEventListener('storage',storage);apply(menuSizePreference());
-    return ()=>{document.removeEventListener(eventName,changed);removeEventListener('storage',storage);};
+    return ()=>{document.removeEventListener(eventName,changed);removeEventListener('storage',storage);disposeTypography();};
   }
   function createMenuSizeControls(){
     const row=document.createElement('label');row.className='row exp-menu-size';const copy=document.createElement('span');copy.className='copy';

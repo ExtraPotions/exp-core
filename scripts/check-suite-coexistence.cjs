@@ -189,7 +189,7 @@ function productSource(product) {
       const dimensions=await page.locator(product.root).evaluate(host=>{const dock=host.shadowRoot.querySelector('[data-exp-part="dock"]'),b=dock.getBoundingClientRect();return {left:b.left,top:b.top,right:b.right,bottom:b.bottom,size:host.dataset.expMenuSize,body:host.style.getPropertyValue('--exp-font-size-body'),label:getComputedStyle(host.shadowRoot.querySelector('.fl-tool-title')).fontSize};});
       const topMenus=await page.locator(product.root).evaluate(host=>[...host.shadowRoot.querySelectorAll('.fl-tool-header')].filter(n=>!n.closest('.fl-tool-body')).map(n=>n.querySelector('.fl-tool-title')?.textContent?.trim()).filter(Boolean));
       assert.equal(topMenus.at(-1),'System',product.id+' System must be last');
-      assert.equal(dimensions.size,size);assert.equal(dimensions.body,({standard:'13px',large:'15px','extra-large':'17px'})[size]);assert.equal(dimensions.label,dimensions.body,product.id+' rendered menu label size');
+      assert.equal(dimensions.size,size);assert.equal(dimensions.body,({standard:'14px',large:'16px','extra-large':'18px'})[size]);assert.equal(dimensions.label,dimensions.body,product.id+' rendered menu label size');
       assert.ok(dimensions.left>=0&&dimensions.top>=0&&dimensions.right<=width+.5&&dimensions.bottom<=height+.5,product.id+' '+size+' viewport: '+JSON.stringify(dimensions));
     }
     }

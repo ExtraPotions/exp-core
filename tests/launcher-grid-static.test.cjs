@@ -94,7 +94,7 @@ test('shared launcher measurements match the suite contract', () => {
   assert.equal(chromeContract.artwork.launcherButtonSize + chromeContract.artwork.launcherGapSize, 56);
   assert.match(source, /launcher\.replaceChildren\(mark\)/u);
   assert.doesNotMatch(source, /launcher\.append\(ring/u);
-  assert.equal(chromeContract.menu.widthPx, 260);
+  assert.equal(chromeContract.menu.widthPx, 288);
   assert.equal(chromeContract.menu.sizing, 'viewport-clamped');
   assert.deepEqual(chromeContract.menu.badgeOnlyProgress, {
     placement: 'menu-content',

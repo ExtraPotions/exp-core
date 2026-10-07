@@ -47,7 +47,7 @@ const chromeContract = Object.freeze({
   }),
   menu: Object.freeze({
     dismissMs: MENU_DISMISS_MS,
-    widthPx: 260,
+    widthPx: 288,
     sizing: 'viewport-clamped',
     dockPaddingInlinePx: 9,
     badgeOnlyProgress: Object.freeze({

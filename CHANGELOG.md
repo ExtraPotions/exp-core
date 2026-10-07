@@ -1,3 +1,9 @@
+## 3.7.1 - 2026-10-06
+
+- Makes menu labels and captions easier to read at every size.
+- Aligns dropdowns, toggles, buttons, and section headings with consistent spacing.
+- Gives menus more room while keeping each product's signature colors.
+
 ## 3.7.0 - 2026-10-06
 
 - Adds an opt-in grouped System layout: an always-open Status card with its recovery action, Recent activity, a Support group with Copy Diagnostics first and Report a Problem, and a Reset group confirmed by a second tap inside the menu instead of browser dialogs.
