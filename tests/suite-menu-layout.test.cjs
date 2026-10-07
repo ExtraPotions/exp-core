@@ -8,14 +8,14 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('playwright');
 
-const repos = process.env.EXP_SUITE_ROOT || path.resolve(__dirname, '../..');
+const consumers=require('../scripts/consumer-roots.cjs').resolveConsumerRoots();
 const products = [
   { name: 'Dropper', host: '#tdh-root' },
   { name: 'WARD', host: '#exp-ward-root' },
   { name: 'PRISMA', host: '#exp-prisma-root' },
   { name: 'SHIFT', host: '#exp-shift-root' },
 ];
-const suiteAvailable = products.every(({ name }) => fs.existsSync(path.join(repos, name, `${name.toLowerCase()}.user.js`)));
+const suiteOptions = consumers.options();
 
 // Live status text can be much longer than the placeholder text in a fixture,
 // so give every summary/status/health slot a long value before measuring.
@@ -79,7 +79,7 @@ function inspectSection(hostSelector) {
 
 for (const viewport of [{ width: 360, height: 900 }, { width: 1100, height: 900 }]) {
   for (const product of products) {
-    test(`${product.name} menu sections have no squeezed text or repeated buttons at ${viewport.width}px`, { skip: !suiteAvailable && 'Requires four sibling product builds' }, async (t) => {
+    test(`${product.name} menu sections have no squeezed text or repeated buttons at ${viewport.width}px`, suiteOptions, async (t) => {
       const browser = await chromium.launch();
       t.after(() => browser.close());
       const page = await browser.newPage({ viewport });
@@ -102,7 +102,7 @@ for (const viewport of [{ width: 360, height: 900 }, { width: 1100, height: 900 
         window.GM_info = { script: { version: '3.0.0' }, scriptHandler: 'Fixture' };
         window.GM_xmlhttpRequest = () => {};
       });
-      await page.addScriptTag({ content: fs.readFileSync(path.join(repos, product.name, `${product.name.toLowerCase()}.user.js`), 'utf8') });
+      await page.addScriptTag({ content: fs.readFileSync(consumers.file(product.name, `${product.name.toLowerCase()}.user.js`), 'utf8') });
       const host = page.locator(product.host);
       await host.waitFor({ state: 'attached' });
       await host.evaluate((node) => node.shadowRoot.querySelector('.launcher, .ward-launcher, #tdh-settings-launcher').click());

@@ -2,11 +2,12 @@
 const fs=require('node:fs');const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const {loadSuiteContract}=require('./suite-contract.cjs');
+const consumers=require('./consumer-roots.cjs').resolveConsumerRoots();
 const names=process.argv.filter(x=>!x.startsWith('--')).slice(2);
 const {repositories:discoveredProducts}=loadSuiteContract(root);
 const products=names.length?names:discoveredProducts;
 for(const name of products){
-  const destination=path.resolve(root,'..',name);
+  const destination=consumers.root(name);
   if(!fs.existsSync(path.join(destination,'package.json')))throw new Error('Product source not found: '+destination);
   const version=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version;
   const pin='v'+version+'\n';

@@ -16,7 +16,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '..');
-const parent = path.resolve(root, '..');
+const consumers = require('./consumer-roots.cjs').resolveConsumerRoots();
 const products = ['Dropper', 'SHIFT', 'WARD', 'PRISMA'];
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const shell = process.platform === 'win32';
@@ -24,8 +24,8 @@ const run = (command, args, options = {}) => spawnSync(command, args, { stdio: '
 const fail = message => { console.error(message); process.exit(1); };
 
 for (const name of products) {
-  if (!fs.existsSync(path.join(parent, name, 'package.json'))) fail(`Missing product folder: ${path.join(parent, name)}`);
-  if (!fs.existsSync(path.join(parent, name, 'node_modules'))) fail(`Run npm ci in ${name} first.`);
+  if (!fs.existsSync(consumers.file(name, 'package.json'))) fail(`Missing product folder: ${consumers.root(name)}`);
+  if (!fs.existsSync(consumers.file(name, 'node_modules'))) fail(`Run npm ci in ${name} first.`);
 }
 
 if (run(process.execPath, [path.join(root, 'scripts', 'build.cjs')]).status !== 0) fail('Core build failed.');
@@ -35,7 +35,7 @@ console.log(`Workspace: ${workspace}`);
 
 try {
   for (const name of products) {
-    const source = path.join(parent, name);
+    const source = consumers.root(name);
     const target = path.join(workspace, name);
     // Copy the files git tracks, as they are on disk now (including unsaved-to-git edits).
     const listed = spawnSync('git', ['ls-files', '-z'], { cwd: source, encoding: 'utf8' });
@@ -60,14 +60,14 @@ try {
   const preload = path.join(__dirname, 'use-installed-browser.cjs').replace(/\\/g, '/');
   const result = run(process.execPath, ['--test', ...testFiles], {
     cwd: root,
-    env: { ...process.env, EXP_SUITE_ROOT: workspace, NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --require ${preload}`.trim() },
+    env: { ...process.env, EXP_SUITE_ROOT: workspace, EXP_PRODUCT_ROOTS: '', EXP_REQUIRE_CONSUMERS: '1', NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --require ${preload}`.trim() },
   });
   process.exitCode = result.status ?? 1;
   if (process.exitCode === 0) {
     // The same browser gate CI runs: all four real products loaded together, with every menu checked.
     const coexistence = run(process.execPath, [path.join('scripts', 'check-suite-coexistence.cjs')], {
       cwd: root,
-      env: { ...process.env, EXP_SUITE_ROOT: workspace, NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --require ${preload}`.trim() },
+      env: { ...process.env, EXP_SUITE_ROOT: workspace, EXP_PRODUCT_ROOTS: '', EXP_REQUIRE_CONSUMERS: '1', NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --require ${preload}`.trim() },
     });
     process.exitCode = coexistence.status ?? 1;
   }

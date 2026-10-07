@@ -5,10 +5,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('playwright');
 
-const repos = process.env.EXP_SUITE_ROOT || path.resolve(__dirname, '../..');
+const consumers=require('../scripts/consumer-roots.cjs').resolveConsumerRoots();
 const bundle = fs.readFileSync(path.join(__dirname, '..', 'dist', 'exp-core.js'), 'utf8');
 const coreSource = `(()=>{\n${bundle}\nglobalThis.ExtraPotionsCore=ExtraPotionsCore;\n})();\n`;
-const shiftFile = path.join(repos, 'SHIFT', 'shift.user.js');
+const shiftFile = consumers.file('SHIFT', 'shift.user.js');
 
 test('every stylesheet Core injects is marked as owned, including constructed sheets', async (t) => {
   const browser = await chromium.launch();
@@ -53,7 +53,7 @@ test('every stylesheet Core injects is marked as owned, including constructed sh
   assert.equal(facts.foreignOwned, false);
 });
 
-test('SHIFT themes leave stylesheets injected by Core alone but still theme ordinary page styles', { skip: !fs.existsSync(shiftFile) && 'Requires the SHIFT build' }, async (t) => {
+test('SHIFT themes leave stylesheets injected by Core alone but still theme ordinary page styles', consumers.options(['SHIFT']), async (t) => {
   const browser = await chromium.launch();
   t.after(() => browser.close());
   const page = await browser.newPage({ viewport: { width: 900, height: 700 } });

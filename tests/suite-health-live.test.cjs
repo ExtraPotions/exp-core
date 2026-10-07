@@ -4,10 +4,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('playwright');
-const workspace = process.env.EXP_SUITE_ROOT || path.resolve(__dirname, '../..');
+const consumers=require('../scripts/consumer-roots.cjs').resolveConsumerRoots();
 
 function instrumentReadableSource(repo) {
-  const productRoot = path.join(workspace, repo);
+  const productRoot = consumers.file(repo);
   const testDirectory = repo === 'WARD' ? 'tests-v3' : 'tests';
   const loader = require(path.join(productRoot, testDirectory, 'load-source.cjs'));
   const source = repo === 'Dropper' ? loader.loadDropperSource(productRoot) : loader.loadSource();
@@ -25,9 +25,7 @@ for (const [repo, url, root, system] of [
   ['SHIFT', 'https://www.steamgifts.com/', '#exp-shift-root', '[data-section="system"]'],
   ['Dropper', 'https://www.twitch.tv/fixture', '#tdh-root', '[data-panel="tdh-diagnostics-body"]'],
 ]) {
-  test(repo + ' readable internal fixture updates an open System health card when a feature is suspended', {
-    skip: !fs.existsSync(path.join(workspace, repo, repo.toLowerCase() + '.user.js')),
-  }, async t => {
+  test(repo + ' readable internal fixture updates an open System health card when a feature is suspended', consumers.options([repo]), async t => {
     const browser = await chromium.launch();
     t.after(() => browser.close());
     const page = await browser.newPage();

@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const repos=process.env.EXP_SUITE_ROOT||path.resolve(__dirname,'../..');
-const suiteAvailable=['Dropper','WARD','PRISMA','SHIFT'].every(name=>fs.existsSync(path.join(repos,name,`${name.toLowerCase()}.user.js`)));
+const consumers=require('../scripts/consumer-roots.cjs').resolveConsumerRoots();
+const suiteOptions=consumers.options();
 const {chromium}=require('playwright');
 const bundle=fs.readFileSync(path.join(__dirname,'..','dist','exp-core.js'),'utf8');
 const source=`(()=>{\n${bundle}\nglobalThis.ExtraPotionsCore=ExtraPotionsCore;\n})();\n`;
@@ -51,12 +51,12 @@ test('Core product fixtures share diagnostics and detect active peers',async t=>
   assert.deepEqual(errors,[]);
 });
 
-test('all four built menus have no menu arrangement, width, or theme controls',{skip:!suiteAvailable&&'Requires four sibling product builds'},async t=>{
+test('all four built menus have no menu arrangement, width, or theme controls',suiteOptions,async t=>{
  const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/*',r=>r.request().isNavigationRequest()?r.fulfill({contentType:'text/html',body:'<main>Sample community.</main>'}):r.abort());
  await page.goto('https://fixture.test/');
  await page.evaluate(()=>{window.GM_getValue=(_key,fallback)=>fallback;window.GM_setValue=()=>{};window.GM_xmlhttpRequest=()=>{};});
- for(const name of ['Dropper','WARD','PRISMA','SHIFT'])await page.addScriptTag({content:fs.readFileSync(path.join(repos,name,`${name.toLowerCase()}.user.js`),'utf8')});
+ for(const name of ['Dropper','WARD','PRISMA','SHIFT'])await page.addScriptTag({content:fs.readFileSync(consumers.file(name,`${name.toLowerCase()}.user.js`),'utf8')});
  for(const id of ['tdh-root','exp-ward-root','exp-prisma-root','exp-shift-root']){
   const host=page.locator('#'+id);await host.waitFor({state:'attached'});
   await host.evaluate(host=>{const s=host.shadowRoot;s.querySelector('.launcher,.ward-launcher,#tdh-settings-launcher').click();s.querySelector('[data-panel="tdh-diagnostics-body"],[data-view="system"],[data-route="system"],[data-section="system"]').click();});
@@ -68,13 +68,13 @@ test('all four built menus have no menu arrangement, width, or theme controls',{
  assert.deepEqual(errors,[]);
 });
 
-test('all product menus contain long content and keep the end reachable in short narrow windows',{skip:!suiteAvailable&&'Requires four sibling product builds'},async t=>{
+test('all product menus contain long content and keep the end reachable in short narrow windows',suiteOptions,async t=>{
  const browser=await chromium.launch();t.after(()=>browser.close());
  for(const viewport of [{width:1280,height:720},{width:360,height:480},{width:320,height:320}]){
   const page=await browser.newPage({viewport});
   await page.route('**/*',r=>r.request().isNavigationRequest()?r.fulfill({contentType:'text/html',body:'<main>Fixture</main>'}):r.abort());await page.goto('https://fixture.test/');
   await page.evaluate(()=>{window.GM_getValue=(_key,fallback)=>fallback;window.GM_setValue=()=>{};window.GM_xmlhttpRequest=()=>{};});
-  for(const name of ['Dropper','WARD','PRISMA','SHIFT'])await page.addScriptTag({content:fs.readFileSync(path.join(repos,name,`${name.toLowerCase()}.user.js`),'utf8')});
+  for(const name of ['Dropper','WARD','PRISMA','SHIFT'])await page.addScriptTag({content:fs.readFileSync(consumers.file(name,`${name.toLowerCase()}.user.js`),'utf8')});
   for(const id of ['tdh-root','exp-ward-root','exp-prisma-root','exp-shift-root']){
    const host=page.locator('#'+id);await host.waitFor({state:'attached'});
    await host.evaluate(h=>{const s=h.shadowRoot;s.querySelector('.launcher,.ward-launcher,#tdh-settings-launcher').click();s.querySelector('[data-panel="tdh-diagnostics-body"],[data-view="system"],[data-route="system"],[data-section="system"]').click();const body=[...s.querySelectorAll('.fl-tool-body')].find(n=>!n.hidden&&!n.classList.contains('fl-tool-hidden'));for(let i=0;i<30;i++){const p=document.createElement('p');p.textContent='LongContent'.repeat(25);body.append(p);}const last=document.createElement('button');last.textContent='End marker';last.id='containment-end';body.append(last);window.dispatchEvent(new Event('resize'));});
@@ -90,13 +90,13 @@ test('all product menus contain long content and keep the end reachable in short
  }
 });
 
-test('compact System groups keep diagnostics visible and expand without horizontal overflow',{skip:!suiteAvailable&&'Requires sibling product builds'},async t=>{
+test('compact System groups keep diagnostics visible and expand without horizontal overflow',suiteOptions,async t=>{
  const browser=await chromium.launch();t.after(()=>browser.close());
  for(const name of ['Dropper','WARD','PRISMA','SHIFT']){
   const page=await browser.newPage({viewport:{width:360,height:900}});
   await page.route('**/*',r=>r.request().isNavigationRequest()?r.fulfill({contentType:'text/html',body:'<main>Fixture</main>'}):r.abort());
   await page.goto('https://fixture.test/');await page.evaluate(()=>{window.GM_getValue=(_k,f)=>f;window.GM_setValue=()=>{};window.GM_xmlhttpRequest=()=>{};});
-  await page.addScriptTag({content:fs.readFileSync(path.join(repos,name,name.toLowerCase()+'.user.js'),'utf8')});
+  await page.addScriptTag({content:fs.readFileSync(consumers.file(name,name.toLowerCase()+'.user.js'),'utf8')});
   const host=page.locator(name==='Dropper'?'#tdh-root':'#exp-'+name.toLowerCase()+'-root');await host.waitFor({state:'attached'});
   await host.evaluate(h=>{const s=h.shadowRoot;s.querySelector('.launcher,.ward-launcher,#tdh-settings-launcher').click();s.querySelector('[data-panel="tdh-diagnostics-body"],[data-view="system"],[data-route="system"],[data-section="system"]').click();});
   const grid=host.locator('[data-exp-product-system]');assert.equal(await grid.count(),1);

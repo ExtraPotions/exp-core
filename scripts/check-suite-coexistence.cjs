@@ -5,9 +5,10 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 const { loadSuiteContract } = require('./suite-contract.cjs');
+const consumers = require('./consumer-roots.cjs').resolveConsumerRoots();
 
 const coreRoot = path.resolve(__dirname, '..');
-const workspace = process.env.EXP_SUITE_ROOT || path.resolve(coreRoot, '..');
+consumers.options();
 const { repositories } = loadSuiteContract(coreRoot);
 
 const PRODUCTS = [
@@ -24,7 +25,7 @@ assert.deepEqual(
 );
 
 function productSource(product) {
-  return fs.readFileSync(path.join(workspace, product.repo, product.file), 'utf8');
+  return fs.readFileSync(consumers.file(product.repo, product.file), 'utf8');
 }
 
 (async () => {

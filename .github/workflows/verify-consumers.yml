@@ -9,6 +9,8 @@ on:
       - "package-lock.json"
       - "scripts/build.cjs"
       - "scripts/sync-products.cjs"
+      - "scripts/consumer-roots.cjs"
+      - "tests/**"
       - "scripts/consumer-matrix.cjs"
       - "scripts/check-suite-coexistence.cjs"
       - "scripts/check-consumer-rollout-contract.cjs"
@@ -209,4 +211,4 @@ jobs:
           EXP_REQUIRE_CONSUMERS: "1"
         run: |
           node scripts/check-suite-coexistence.cjs
-          node --test tests/typography-consumers.test.cjs tests/system-menu.test.cjs
+          node --test tests/*.test.cjs
