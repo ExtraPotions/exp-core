@@ -5,7 +5,7 @@
  * Product userscripts remain self-contained; this module defines the suite baseline
  * that products consume through the canonical Core bundle.
  */
-const VERSION = '3.7.5';
+const VERSION = '3.7.6';
 const UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 const UPDATE_NOTICE_DURATION_MS = 30 * 1000;
 const MENU_DISMISS_MS = 15 * 1000;
@@ -47,9 +47,9 @@ const chromeContract = Object.freeze({
   }),
   menu: Object.freeze({
     dismissMs: MENU_DISMISS_MS,
-    widthPx: 364,
+    widthPx: 320,
     sizing: 'viewport-clamped',
-    dockPaddingInlinePx: 12,
+    dockPaddingInlinePx: 10,
     badgeOnlyProgress: Object.freeze({
       placement: 'menu-content',
       width: '100%',

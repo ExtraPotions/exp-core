@@ -32,7 +32,7 @@ test('Core exposes one canonical menu size without width presets', async (t) => 
     version: ExtraPotionsCore.version, sourceVersion: ExtraPotionsCore.sourceVersion,
     width: ExtraPotionsCore.menuWidth(), retiredApi: typeof ExtraPotionsCore.menuWidthForMode,
   }));
-  assert.deepEqual(state, { version: pkg.version, sourceVersion: pkg.version, width: 364, retiredApi: 'undefined' });
+  assert.deepEqual(state, { version: pkg.version, sourceVersion: pkg.version, width: 320, retiredApi: 'undefined' });
 });
 
 test('Core products rerender the active section without owning product state', async (t) => {

@@ -94,14 +94,14 @@ test('shared launcher measurements match the suite contract', () => {
   assert.equal(chromeContract.artwork.launcherButtonSize + chromeContract.artwork.launcherGapSize, 56);
   assert.match(source, /launcher\.replaceChildren\(mark\)/u);
   assert.doesNotMatch(source, /launcher\.append\(ring/u);
-  assert.equal(chromeContract.menu.widthPx, 364);
+  assert.equal(chromeContract.menu.widthPx, 320);
   assert.equal(chromeContract.menu.sizing, 'viewport-clamped');
   assert.deepEqual(chromeContract.menu.badgeOnlyProgress, {
     placement: 'menu-content',
     width: '100%',
     outerBleed: false,
   });
-  assert.equal(chromeContract.menu.dockPaddingInlinePx, 12);
+  assert.equal(chromeContract.menu.dockPaddingInlinePx, 10);
   assert.match(source, /function menuWidth\(\) \{ return ExpMenuPreferences\.menuSizeTokens\(\)\.width; \}/u);
   assert.doesNotMatch(source, /menuWidthForMode|data-panel-width|data-menu-width/u);
 });
