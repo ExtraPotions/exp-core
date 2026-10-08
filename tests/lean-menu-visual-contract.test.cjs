@@ -11,6 +11,7 @@ for(const[repo,id,hostId,background]of products)test(repo+' installed menu match
  await page.evaluate(()=>{window.GM_getValue=(_,v)=>v;window.GM_setValue=()=>{};window.GM_xmlhttpRequest=o=>{queueMicrotask(()=>o.onerror?.({status:503}));return{abort(){}}};});
  await page.addScriptTag({content:fs.readFileSync(consumers.file(repo,id+'.user.js'),'utf8')});
  const host=page.locator('#'+hostId);await host.locator('[data-exp-part="launcher"]').click();
+ if(id==='dropper')await host.evaluate(n=>{const legacy=n.ownerDocument.createElement('style');legacy.textContent='.cluster[data-theme-skin="gradient"] #tdh-tools-dock{background-image:linear-gradient(#000,#fff)!important}';n.shadowRoot.append(legacy);});
  const facts=await host.evaluate(n=>{
   const dock=n.shadowRoot.querySelector('[data-exp-part="dock"]'),header=dock.querySelector('.menu-head'),badge=header.querySelector('.header-icon'),title=header.querySelector('[data-exp-part="title"],#tdh-rail-title'),style=getComputedStyle(dock);
   return{width:dock.getBoundingClientRect().width,radius:style.borderRadius,background:style.backgroundColor,gradient:style.backgroundImage,padding:getComputedStyle(header).padding,badge:badge.getBoundingClientRect().width,title:getComputedStyle(title).fontSize,footer:dock.lastElementChild.className,brand:dock.lastElementChild.firstElementChild.textContent,icons:dock.querySelectorAll('.exp-section-icon').length,sections:dock.querySelectorAll('.fl-tool-header').length,overflow:dock.scrollWidth-dock.clientWidth};

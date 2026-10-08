@@ -1898,11 +1898,12 @@ const ExpLeanMenu = (() => {
     const id=host?.dataset.productId||host?.id.replace(/^(exp-)|(\-root)$/g,'').replace(/^tdh$/,'dropper');
     const palette=palettes[id],saved=new Map();panel.dataset.expMenuLayout='lean';
     const themeRoot=shadow.querySelector('.exp-core-theme,.cluster');
-    const properties=['bg','panel','line','text','muted','accent','accent2','link','focus'].map(key=>'--theme-'+key).concat('--exp-menu-hover');
+    const properties=['bg','panel','line','text','muted','accent','accent2','link','focus'].map(key=>'--theme-'+key).concat('--exp-menu-hover','background-image');
     for(const property of properties)saved.set(property,[panel.style.getPropertyValue(property),panel.style.getPropertyPriority(property)]);
     function applyPalette(){
       const selected=themeRoot?.dataset.uiTheme;
       for(const[key,[value,priority]]of saved){if(value)panel.style.setProperty(key,value,priority);else panel.style.removeProperty(key);}
+      panel.style.setProperty('background-image','none','important');
       panel.style.setProperty('--exp-menu-hover','color-mix(in srgb,var(--theme-accent) 12%,var(--theme-panel))');
       if(palette&&(!selected||selected===id)){
         for(const[key,value]of Object.entries(palette))panel.style.setProperty(key==='hover'?'--exp-menu-hover':'--theme-'+key,value);
