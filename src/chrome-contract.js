@@ -5,7 +5,7 @@
  * Product userscripts remain self-contained; this module defines the suite baseline
  * that products consume through the canonical Core bundle.
  */
-const VERSION = '3.3.3';
+const VERSION = '3.7.5';
 const UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 const UPDATE_NOTICE_DURATION_MS = 30 * 1000;
 const MENU_DISMISS_MS = 15 * 1000;
@@ -13,7 +13,7 @@ const MENU_DISMISS_MS = 15 * 1000;
 const chromeContract = Object.freeze({
   artwork: Object.freeze({
     menuBadge: 'borderless',
-    menuBadgeSize: 38,
+    menuBadgeSize: 40,
     launcherButtonSize: 48,
     launcherArtworkSize: 40,
     launcherGapSize: 8,
@@ -23,8 +23,8 @@ const chromeContract = Object.freeze({
     launcherOwnsChrome: true,
   }),
   header: Object.freeze({
-    divider: 'soft-edge-fade',
-    prideDivider: 'full-gradient',
+    divider: 'border',
+    prideDivider: 'border',
     versionAction: 'changelog',
   }),
   notices: Object.freeze({
@@ -47,9 +47,9 @@ const chromeContract = Object.freeze({
   }),
   menu: Object.freeze({
     dismissMs: MENU_DISMISS_MS,
-    widthPx: 288,
+    widthPx: 364,
     sizing: 'viewport-clamped',
-    dockPaddingInlinePx: 9,
+    dockPaddingInlinePx: 12,
     badgeOnlyProgress: Object.freeze({
       placement: 'menu-content',
       width: '100%',

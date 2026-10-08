@@ -82,7 +82,7 @@ test('shared launcher measurements match the suite contract', () => {
       dropperRing: chromeContract.artwork.dropperProgressRingSize,
       siblingRings: chromeContract.artwork.siblingProgressRings,
     },
-    { button: 48, artwork: 40, gap: 8, menuBadge: 38, sourceBadge: 128, dropperRing: 44, siblingRings: false },
+    { button: 48, artwork: 40, gap: 8, menuBadge: 40, sourceBadge: 128, dropperRing: 44, siblingRings: false },
   );
   assert.match(source, /\[data-exp-part="launcher"\]\{[^}]*width:48px!important;[^}]*height:48px!important/u);
   assert.match(source, /\[data-exp-part="launcher"\] \.launcher-icon\{width:40px!important;height:40px!important\}/u);
@@ -94,14 +94,14 @@ test('shared launcher measurements match the suite contract', () => {
   assert.equal(chromeContract.artwork.launcherButtonSize + chromeContract.artwork.launcherGapSize, 56);
   assert.match(source, /launcher\.replaceChildren\(mark\)/u);
   assert.doesNotMatch(source, /launcher\.append\(ring/u);
-  assert.equal(chromeContract.menu.widthPx, 288);
+  assert.equal(chromeContract.menu.widthPx, 364);
   assert.equal(chromeContract.menu.sizing, 'viewport-clamped');
   assert.deepEqual(chromeContract.menu.badgeOnlyProgress, {
     placement: 'menu-content',
     width: '100%',
     outerBleed: false,
   });
-  assert.equal(chromeContract.menu.dockPaddingInlinePx, 9);
+  assert.equal(chromeContract.menu.dockPaddingInlinePx, 12);
   assert.match(source, /function menuWidth\(\) \{ return ExpMenuPreferences\.menuSizeTokens\(\)\.width; \}/u);
   assert.doesNotMatch(source, /menuWidthForMode|data-panel-width|data-menu-width/u);
 });

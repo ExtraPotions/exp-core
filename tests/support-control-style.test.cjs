@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, '..');
 const bundle = fs.readFileSync(path.join(root, 'dist/exp-core.js'), 'utf8');
 
 for (const viewportWidth of [240, 596, 1361]) {
-  const width = Math.min(288, viewportWidth - 24);
+  const width = Math.min(364, viewportWidth - 24);
   test(`support control is self-styled in a custom shell at ${viewportWidth}px viewport without Core shell CSS`, async t => {
     const browser = await chromium.launch({ headless: true });
     t.after(() => browser.close());

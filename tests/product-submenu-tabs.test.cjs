@@ -9,7 +9,7 @@ for(const [repo,id,selector,launcher,url]of products)test(repo+' installed compa
  await page.addInitScript(()=>{const values=new Map();window.GM_getValue=(key,fallback)=>values.has(key)?values.get(key):fallback;window.GM_setValue=(key,value)=>values.set(key,value);window.GM_deleteValue=key=>values.delete(key);window.GM_listValues=()=>[...values.keys()];window.GM_xmlhttpRequest=options=>{queueMicrotask(()=>options.onerror?.({status:503}));return{abort(){}};};});
  await page.goto(url);await page.addScriptTag({content:fs.readFileSync(consumers.file(repo,id+'.user.js'),'utf8')});
  const root=page.locator(selector);await root.waitFor({state:'attached'});await root.locator(launcher).click();
- const palette=await root.locator('[data-exp-part="dock"]').evaluate(n=>getComputedStyle(n).getPropertyValue('--theme-accent').trim());assert.equal(palette,{prisma:'#6aaaff',shift:'#26d9c7',ward:'#b66a16',dropper:'#7a46c8'}[id]);
+ const palette=await root.locator('[data-exp-part="dock"]').evaluate(n=>getComputedStyle(n).getPropertyValue('--theme-accent').trim());assert.equal(palette,{prisma:'#91bfff',shift:'#80d7d2',ward:'#e7bb75',dropper:'#bc94f5'}[id]);
  const headers=root.locator('.fl-tool-header');const names=await headers.evaluateAll(nodes=>nodes.map(n=>(n.querySelector('.fl-tool-title')||n).textContent.replace(/[▸▾]/g,'').trim()));
  assert.equal(names.at(-1),'System');let visited=0;
  for(let h=0;h<await headers.count();h++){

@@ -388,7 +388,7 @@ function css() {
         .toggleSwitch[aria-checked="true"] { border-color:Highlight; background:Highlight; }
         .toggleSwitch[aria-checked="true"]::after { border-color:HighlightText; background:HighlightText; }
       }
-            .exp-core-theme[data-theme-skin="gradient"] [data-exp-part="dock"] {
+            .exp-core-theme[data-theme-skin="gradient"] [data-exp-part="dock"]:not([data-exp-menu-layout="lean"]) {
         border:1px solid transparent !important;
         background-origin:border-box !important;
         background-clip:padding-box, border-box !important;
@@ -465,7 +465,7 @@ function css() {
         background-clip:padding-box,border-box !important;
         background-image:linear-gradient(var(--theme-bg),var(--theme-bg)),var(--theme-skin) !important;
       }
-      .exp-core-theme[data-ui-theme="warm"] [data-exp-part="dock"] {
+      .exp-core-theme[data-ui-theme="warm"] [data-exp-part="dock"]:not([data-exp-menu-layout="lean"]) {
         border:1px solid color-mix(in srgb,var(--theme-line) 84%,var(--theme-accent) 16%) !important;
         background-image:
           radial-gradient(120% 65% at 50% -18%,color-mix(in srgb,var(--theme-accent) 9%,transparent),transparent 72%),
