@@ -122,7 +122,7 @@ const ExpMenuArrangement = (() => {
       const drops=id==='dropper'&&container.id==='tdh-drops-body';
       const retailer=id==='ward'&&container.id==='exp-ward-view-tools';
       for(const node of [...container.children]) {
-        if(node.matches('style,script,[data-exp-submenu-tabs]'))continue;
+        if(node.matches('style,script,[data-exp-submenu-tabs],.badge-only-progress-slot'))continue;
         let label=tabLabel(node);
         if(stream){
           const key=slug(node.querySelector(':scope>summary')?.textContent);
@@ -167,7 +167,8 @@ const ExpMenuArrangement = (() => {
         event.preventDefault();choose(index,true);
       }
       list.addEventListener('click',click);list.addEventListener('keydown',keydown);
-      container.replaceChildren(root);
+      const progressSlot=container.querySelector(':scope>.badge-only-progress-slot');
+      container.replaceChildren(...(progressSlot?[progressSlot,root]:[root]));
       const saved=groups.findIndex(group=>group.label===selection.get(key));
       choose(saved<0?0:saved);
       mounted.set(container,{root,syncOpen,destroy(restore){list.removeEventListener('click',click);list.removeEventListener('keydown',keydown);for(const group of groups)for(const node of group.nodes)delete node.dataset.expTabItem;if(restore){for(const [node,open]of detailsState)node.open=open;container.replaceChildren(...original);}}});

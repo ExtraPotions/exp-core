@@ -4,6 +4,21 @@ const {chromium}=require('playwright');
 const bundle=fs.readFileSync(path.join(__dirname,'../dist/exp-core.js'),'utf8');
 const source=`(()=>{${bundle}\nglobalThis.ExtraPotionsCore=ExtraPotionsCore;})();`;
 async function setup(t){const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:320,height:800}});await page.setContent('<div id="menu" style="width:260px;--theme-text:#eee;--theme-accent:#9864dc;--theme-line:#3c2850;--theme-inset:#110b1b;--theme-panel:#171025"></div>');await page.addScriptTag({content:source});return page;}
+
+test('Dropper progress stays above every tab and restores its position on teardown',async t=>{
+ const page=await setup(t);
+ await page.evaluate(()=>{const panel=document.querySelector('#menu');panel.innerHTML='<div class="fl-tool-body" id="tdh-drops-body"><div class="badge-only-progress-slot"><button id="pause">Pause</button></div><button id="claim">Claim</button><button id="tdh-open-campaigns">Campaigns</button><details id="tdh-claim-history-panel"><summary>History</summary><p>Recent claims</p></details></div>';window.pauses=0;panel.querySelector('#pause').onclick=()=>pauses++;window.tabs=ExtraPotionsCore.mountSubmenuTabs({panel,id:'dropper'});});
+ for(const label of ['Progress','Campaigns','History']){
+  await page.getByRole('tab',{name:label,exact:true}).click();
+  assert.equal(await page.locator('#pause').isVisible(),true);
+  assert.equal(await page.locator('.badge-only-progress-slot').evaluate(n=>n.nextElementSibling?.hasAttribute('data-exp-submenu-tabs')),true);
+ }
+ await page.getByRole('button',{name:'Pause',exact:true}).click();assert.equal(await page.evaluate(()=>pauses),1);
+ await page.evaluate(()=>{tabs.update();tabs.destroy();});
+ assert.equal(await page.locator('#tdh-drops-body').evaluate(n=>n.firstElementChild.className),'badge-only-progress-slot');
+ assert.equal(await page.getByRole('tab').count(),0);
+ assert.equal(await page.locator('#claim').count(),1);
+});
 test('compact tabs preserve controls, lazily populate disclosures, and support keyboard navigation',async t=>{
  const page=await setup(t);
  await page.evaluate(()=>{const panel=document.querySelector('#menu');panel.innerHTML='<div class="fl-tool-body" id="advanced"><details><summary>Language</summary></details><details><summary>Sites</summary><button id="save">Save site</button></details></div>';const language=panel.querySelector('details');language.addEventListener('toggle',()=>{if(language.open&&!language.querySelector('input')){const input=document.createElement('input');input.setAttribute('aria-label','Search catalog');language.append(input);}});window.clicks=0;panel.querySelector('#save').addEventListener('click',()=>clicks++);window.tabs=ExtraPotionsCore.mountSubmenuTabs({panel,id:'prisma'});});

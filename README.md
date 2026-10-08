@@ -2,7 +2,7 @@
 
 # exp-core
 
-Current release: **3.7.3**.
+Current release: **3.7.4**.
 
 **A familiar menu across ExtraPotions**
 
@@ -13,7 +13,7 @@ The shared menu experience included with ExtraPotions products. No separate inst
 
 ## What you can do
 
-- **Compact submenu tabs:** switch between related settings without opening a stack of nested menus. Each product keeps its own colors, and System stays last.
+- **Lean menus:** subtle dividers and compact tabs keep related settings easy to reach. Every control and setting remains available, each product keeps its own colors, and System stays last.
 
 - **Simple System menu:** use Status for the product's timeline, Support to show or copy diagnostics and report a problem, and Reset to clear this product after a second confirmation. Menu preferences are in Appearance > Menu.
 

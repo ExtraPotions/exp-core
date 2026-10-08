@@ -1,3 +1,8 @@
+## 3.7.4 — 2026-10-08
+
+- Gives menus a lighter layout with subtle section dividers and softly filled tabs.
+- Keeps every existing control, setting, and product color, with consistent spacing and readable text.
+
 ## 3.7.3 — 2026-10-07
 
 - Organizes related menu settings into compact tabs, with System last.
