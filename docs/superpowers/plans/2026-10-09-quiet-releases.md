@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let a product ship a real build whose only visible sign is the launcher's update badge, and turn update checks on by default for new installs.
+**Goal:** Let a product ship a real build whose only visible sign is the launcher's update badge, turn update checks on by default for new installs, and check at most every 12 hours.
 
 **Architecture:** A `(quiet)` suffix on the newest changelog heading travels into the GitHub release body; exp-core's update checker reads it and adds `quiet` to its result. Each product keeps a `QUIET_RELEASES` list beside its release notes and asks a new pure Core helper, `isQuietUpgrade`, whether every version the user skipped was quiet before showing Update Complete. Products show the badge for any available update and the Update Available card only for non-quiet ones.
 
@@ -18,18 +18,19 @@
 - Quiet releases still need 2–4 notes.
 - Missing, mismatched, or unparseable quiet data means "not quiet" (show the card).
 - Update check default `true` for new installs in PRISMA, SHIFT, WARD; a stored `false` is never changed.
+- Automatic update checks: at most once every 12 hours per product (`12 * 60 * 60 * 1000`); forced checks stay immediate.
 - Help text for the setting: `Checks GitHub for new releases. Never installs automatically.`
 - Launcher label with an update: `Open <Product> · Update v<x> Available`; without: Core's default (`Open PRISMA`, `Open SHIFT`, `Open WARD`; Dropper `Open Dropper Settings`).
 - Do not rewrite these exp-core lines (product tests regex-match them): `function releaseDetails(body)`, `checkedForCurrentVersion = state.checkedForVersion === currentVersion`, `state.lastCheckAt = 0`, `state.lastRemoteVersion = ''`, `state.checkedForVersion = currentVersion`.
-- No push, tag, or release happens before Task 10, and Task 10 needs the user's explicit go-ahead at the moment it runs.
+- No push, tag, or release happens before Task 11, and Task 11 needs the user's explicit go-ahead at the moment it runs.
 
 ## Review Focus
 
-- A user who skipped a normal release and landed on a quiet one must still see Update Complete (pinned in Task 6 and Task 8 tests).
+- A user who skipped a normal release and landed on a quiet one must still see Update Complete (pinned in Task 7 and Task 9 tests).
 - A WARD-style hyphen heading and CRLF release body must still be read as quiet (pinned in Task 1).
 - A cached quiet result must not stay quiet once a newer normal release appears (pinned in Task 1).
-- The hourly Core-sync bot's `prepare-core-release.cjs` output (heading without `(quiet)`, no list change) must pass the new consistency tests (pinned in Tasks 3 and 4).
-- Default-on update checks must not break browser tests that stub `GM_xmlhttpRequest` with a no-op or capture requests by index (SHIFT `tests/dynamic-boundaries.test.cjs`; checked in Task 7).
+- The Core-sync bot's `prepare-core-release.cjs` output (heading without `(quiet)`, no list change) must pass the new consistency tests (pinned in Tasks 4 and 5).
+- Default-on update checks must not break browser tests that stub `GM_xmlhttpRequest` with a no-op or capture requests by index (SHIFT `tests/dynamic-boundaries.test.cjs`; checked in Task 8).
 
 ---
 
@@ -236,13 +237,71 @@ cd exp-core && git add src/runtime.js dist tests/quiet-releases.test.cjs && git 
 
 ---
 
-### Task 2: exp-core 3.7.7 version bump (local only)
+### Task 2: Check for updates every 12 hours
+
+**Files:**
+- Modify: `exp-core/src/runtime.js:1763`, `exp-core/src/chrome-contract.js:9`
+- Test: `exp-core/tests/quiet-releases.test.cjs` (append)
+
+**Interfaces:**
+- Produces: `CHECK_INTERVAL` and `UPDATE_CHECK_INTERVAL_MS` equal `12 * 60 * 60 * 1000`. Forced checks (`check(true)`) stay immediate.
+
+- [ ] **Step 1: Append the failing tests**
+
+```js
+test('automatic update checks are throttled to once every 12 hours', async () => {
+  const hour = 60 * 60 * 1000;
+  const recent = fixture({ checkedForVersion: '3.2.13', lastCheckAt: Date.now() - 11 * hour, lastRemoteVersion: '3.2.13', state: 'checked' });
+  assert.equal((await recent.checker.check()).state, 'cached');
+  assert.equal(recent.requests.length, 0);
+  const stale = fixture({ checkedForVersion: '3.2.13', lastCheckAt: Date.now() - 13 * hour, lastRemoteVersion: '3.2.13', state: 'checked' });
+  stale.checker.check();
+  assert.equal(stale.requests.length, 1);
+  assert.equal(recent.checker.CHECK_INTERVAL, 12 * hour);
+});
+
+test('a forced check ignores the 12-hour throttle', () => {
+  const f = fixture({ checkedForVersion: '3.2.13', lastCheckAt: Date.now(), lastRemoteVersion: '3.2.13', state: 'checked' });
+  f.checker.check(true);
+  assert.equal(f.requests.length, 1);
+});
+
+test('the shared chrome contract advertises the 12-hour interval', () => {
+  assert.match(fs.readFileSync(path.join(root, 'src/chrome-contract.js'), 'utf8'), /const UPDATE_CHECK_INTERVAL_MS = 12 \* 60 \* 60 \* 1000;/);
+});
+```
+
+- [ ] **Step 2: Run to see them fail**
+
+Run: `cd exp-core && npm run build && node --test tests/quiet-releases.test.cjs`
+Expected: FAIL — the 11-hour-old check makes a request (`requests.length` is 1), and the contract regex does not match.
+
+- [ ] **Step 3: Implement**
+
+`exp-core/src/runtime.js:1763`: `const CHECK_INTERVAL = 12 * 60 * 60 * 1000;`
+`exp-core/src/chrome-contract.js:9`: `const UPDATE_CHECK_INTERVAL_MS = 12 * 60 * 60 * 1000;`
+Rename the existing test title in `exp-core/tests/update-version-regression.test.cjs:72` from `fifteen-minute` to `12-hour` (its body still passes unchanged).
+
+- [ ] **Step 4: Run the full suite**
+
+Run: `cd exp-core && npm run build && npm test`
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+cd exp-core && git add src tests dist && git commit -m "feat: check for updates every 12 hours"
+```
+
+---
+
+### Task 3: exp-core 3.7.7 version bump (local only)
 
 **Files:**
 - Modify: `exp-core/package.json`, `exp-core/package-lock.json`, `exp-core/CHANGELOG.md`, `exp-core/dist/*` (rebuilt)
 
 **Interfaces:**
-- Produces: a local commit `Release exp-core 3.7.7: quiet release markers` whose `dist/manifest.json` reports `coreVersion: "3.7.7"`. Tasks 5–9 sync this build into products.
+- Produces: a local commit `Release exp-core 3.7.7: quiet release markers` whose `dist/manifest.json` reports `coreVersion: "3.7.7"`. Tasks 6–10 sync this build into products.
 
 - [ ] **Step 1: Bump the version**
 
@@ -260,6 +319,7 @@ const l=JSON.parse(fs.readFileSync('package-lock.json','utf8'));l.version='3.7.7
 
 - Recognizes quiet releases, so products can show only the update badge for them.
 - Adds a shared check for whether every skipped release was quiet.
+- Checks for updates every 12 hours instead of every 15 minutes.
 
 ```
 
@@ -276,7 +336,7 @@ cd exp-core && git add -A && git commit -m "Release exp-core 3.7.7: quiet releas
 
 ---
 
-### Task 3: Quiet release tooling in PRISMA, SHIFT, WARD
+### Task 4: Quiet release tooling in PRISMA, SHIFT, WARD
 
 The three repos share an identical `scripts/prepare-feature-release.cjs`. Apply the identical edit to all three. Repeat Steps 1–7 once per repo, with `<P>` = `PRISMA`, `SHIFT`, `WARD`; `<tests>` = `tests` (PRISMA, SHIFT) or `tests-v3` (WARD); `<NOTES>` = `notes` (PRISMA, WARD) or `NOTES` (SHIFT).
 
@@ -456,14 +516,14 @@ cd WARD && git add src/release-notes.js scripts/prepare-feature-release.cjs test
 
 ---
 
-### Task 4: Quiet release tooling in Dropper
+### Task 5: Quiet release tooling in Dropper
 
 **Files:**
 - Modify: `Dropper/src/parts/00-setup-and-state.js:213` (beside `RELEASE_NOTES`), `Dropper/scripts/prepare-feature-release.cjs`
 - Test: `Dropper/tests/quiet-releases.test.cjs` (create)
 
 **Interfaces:**
-- Produces: `const QUIET_RELEASES = Object.freeze([...])` in Dropper's first source part, readable by Task 6. `RELEASE_QUIET=1` support.
+- Produces: `const QUIET_RELEASES = Object.freeze([...])` in Dropper's first source part, readable by Task 7. `RELEASE_QUIET=1` support.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -580,14 +640,14 @@ cd Dropper && git add src/parts/00-setup-and-state.js src/dropper.user.js droppe
 
 ---
 
-### Task 5: Sync the local Core 3.7.7 build into the products
+### Task 6: Sync the local Core 3.7.7 build into the products
 
 **Files:**
 - Modify: `<P>/vendor/exp-core/{exp-core.js,manifest.json,PIN}` for Dropper, PRISMA, SHIFT, WARD
 
 **Interfaces:**
-- Consumes: Task 2's `dist`.
-- Produces: products whose `ExtraPotionsCore` has `isQuietUpgrade` and quiet-aware update results, for Tasks 6–9.
+- Consumes: Task 3's `dist`.
+- Produces: products whose `ExtraPotionsCore` has `isQuietUpgrade` and quiet-aware update results, for Tasks 7–9.
 
 - [ ] **Step 1: Sync**
 
@@ -597,7 +657,7 @@ Expected: four lines `<Product>: Core matches canonical bundle`.
 - [ ] **Step 2: Rebuild and test every product**
 
 Run (each repo): `cd Dropper && npm test`, `cd PRISMA && npm test`, `cd SHIFT && npm test`, `cd WARD && npm test`
-Expected: PASS everywhere. Do not run `release:check` yet; its pin check fetches `v3.7.7` from GitHub, which is not published until Task 10.
+Expected: PASS everywhere. Do not run `release:check` yet; its pin check fetches `v3.7.7` from GitHub, which is not published until Task 11.
 
 - [ ] **Step 3: Commit in each product**
 
@@ -610,14 +670,14 @@ cd WARD && git add vendor/exp-core ward.user.js && git commit -m "chore: vendor 
 
 ---
 
-### Task 6: Dropper — badge-only for quiet updates, quiet-aware Update Complete
+### Task 7: Dropper — badge-only for quiet updates, quiet-aware Update Complete
 
 **Files:**
 - Modify: `Dropper/src/parts/08-notices-updates-and-layout.js` (`markUpdateAvailable` at 446, `checkCachedUpdateNotice` at 490, `checkVersionNotice` at 500, `scheduleUpdateCheck` at 521)
 - Test: `Dropper/tests/quiet-releases.test.cjs` (append)
 
 **Interfaces:**
-- Consumes: `QUIET_RELEASES` (Task 4), `ExtraPotionsCore.isQuietUpgrade` and `result.quiet` (Tasks 1, 5).
+- Consumes: `QUIET_RELEASES` (Task 5), `ExtraPotionsCore.isQuietUpgrade` and `result.quiet` (Tasks 1, 6).
 
 - [ ] **Step 1: Append failing browser tests to `Dropper/tests/quiet-releases.test.cjs`**
 
@@ -729,14 +789,14 @@ cd Dropper && git add src dropper.user.js tests/quiet-releases.test.cjs && git c
 
 ---
 
-### Task 7: SHIFT — quiet handling, launcher label, default-on update checks
+### Task 8: SHIFT — quiet handling, launcher label, default-on update checks
 
 **Files:**
 - Modify: `SHIFT/src/ui.js` (`checkUpdateNotice` at 75–87, Update Complete at 474–484, help text at 358), `SHIFT/src/settings.js:31`
 - Test: `SHIFT/tests/quiet-releases.test.cjs` (append)
 
 **Interfaces:**
-- Consumes: `EXP.ReleaseNotes.isQuietUpgrade` (Task 3), `result.quiet` (Tasks 1, 5).
+- Consumes: `EXP.ReleaseNotes.isQuietUpgrade` (Task 4), `result.quiet` (Tasks 1, 6).
 
 - [ ] **Step 1: Append failing tests to `SHIFT/tests/quiet-releases.test.cjs`**
 
@@ -785,14 +845,14 @@ cd SHIFT && git add src shift.user.js tests && git commit -m "feat: quiet update
 
 ---
 
-### Task 8: PRISMA — badge, quiet handling, default-on update checks
+### Task 9: PRISMA — badge, quiet handling, default-on update checks
 
 **Files:**
 - Modify: `PRISMA/src/ui.js` (update flow at 285–287, help text at 203), `PRISMA/src/settings.js:28`
 - Test: `PRISMA/tests/quiet-releases.test.cjs` (append)
 
 **Interfaces:**
-- Consumes: `EXP.ReleaseNotes.isQuietUpgrade` (Task 3), `result.quiet` (Tasks 1, 5).
+- Consumes: `EXP.ReleaseNotes.isQuietUpgrade` (Task 4), `result.quiet` (Tasks 1, 6).
 
 - [ ] **Step 1: Append failing tests to `PRISMA/tests/quiet-releases.test.cjs`**
 
@@ -848,14 +908,14 @@ cd PRISMA && git add src prisma.user.js tests && git commit -m "feat: update bad
 
 ---
 
-### Task 9: WARD — badge, quiet handling, default-on update checks
+### Task 10: WARD — badge, quiet handling, default-on update checks
 
 **Files:**
 - Modify: `WARD/src/ui.js` (toggle handler at 566, mount flow at 773–775), `WARD/src/settings.js:25`
 - Test: `WARD/tests-v3/quiet-releases.test.cjs` (append)
 
 **Interfaces:**
-- Consumes: `EXP.ReleaseNotes.isQuietUpgrade` (Task 3), `result.quiet` (Tasks 1, 5).
+- Consumes: `EXP.ReleaseNotes.isQuietUpgrade` (Task 4), `result.quiet` (Tasks 1, 6).
 
 - [ ] **Step 1: Append failing tests to `WARD/tests-v3/quiet-releases.test.cjs`**
 
@@ -911,58 +971,61 @@ cd WARD && git add src ward.user.js tests-v3 && git commit -m "feat: update badg
 
 ---
 
-### Task 10: Rollout (requires the user's explicit go-ahead before Step 1)
+### Task 11: Rollout (requires the user's explicit go-ahead before Step 4)
 
-Ask the user: "Ready to publish exp-core 3.7.7 and normal releases of all four products?" Proceed only on a clear yes. Start Step 1 just after a `:17` past the hour, so the hourly Core-sync bot has the longest window before its next run.
+Publishing exp-core immediately dispatches `exp-core-release` to every product, whose `Sync exp-core` job then prepares and publishes its own Core-driven release unless `main` moves while it runs (npm ci, Playwright install, tests: several minutes). So every product release is fully prepared and committed **before** exp-core is pushed, and after Core publishes each product only needs the pin check and a push.
 
-**Files:** none new; publishes the commits from Tasks 1–9.
+**Files:** none new; publishes the commits from Tasks 1–10.
 
-- [ ] **Step 1: Publish exp-core**
+- [ ] **Step 1: Prepare normal releases locally** (each product, no `RELEASE_QUIET`)
+
+```bash
+RELEASE_NOTES_JSON='["Shows a badge on the launcher when an update is ready.","Checks for updates by default on new installs, at most every 12 hours."]' npm run prepare:release:feature
+```
+
+In PRISMA, SHIFT, and WARD, follow with `npm test` (their prepare script does not rebuild).
+
+- [ ] **Step 2: Recapture README screenshots** (menus show the version)
+
+Run: `cd Dropper && node scripts/capture-screenshots.cjs`, `cd PRISMA && node scripts/capture-screenshots.cjs`, `cd SHIFT && node scripts/capture-screenshots.cjs`, `cd WARD && node scripts/capture-visuals.cjs`
+
+- [ ] **Step 3: Commit each product locally (no push)**
+
+```bash
+git add -A && git commit -m "Release <Product> <version>: update badge and quiet release support"
+```
+
+Run `npm test` once more in each product; all PASS.
+
+- [ ] **Step 4: Ask the user for the go-ahead, then publish exp-core**
+
+Ask: "Ready to publish exp-core 3.7.7 and releases of all four products?" On a clear yes:
 
 ```bash
 cd exp-core && git fetch origin && git rebase origin/main && git push origin HEAD:main
 ```
 
-Wait for the run: `../.release-tools/github-cli/bin/gh.exe run watch -R ExtraPotions/exp-core $(../.release-tools/github-cli/bin/gh.exe run list -R ExtraPotions/exp-core -L 1 --json databaseId --jq '.[0].databaseId') --exit-status`
-Expected: success, and `gh release view v3.7.7 -R ExtraPotions/exp-core` exists.
+Watch until the release exists: `../.release-tools/github-cli/bin/gh.exe run watch -R ExtraPotions/exp-core $(../.release-tools/github-cli/bin/gh.exe run list -R ExtraPotions/exp-core -L 1 --json databaseId --jq '.[0].databaseId') --exit-status`, then `gh.exe release view v3.7.7 -R ExtraPotions/exp-core`.
 
-- [ ] **Step 2: Re-sync each product from the published tag**
+- [ ] **Step 5: Immediately verify the pin and push each product**
 
-Run (each product): `node scripts/sync-exp-core.cjs v3.7.7 && git status --short vendor`
-Expected: no diff (bytes equal the local sync from Task 5). If there is a diff, commit it as `chore: vendor exp-core 3.7.7`.
-
-- [ ] **Step 3: Prepare normal releases** (each product, no `RELEASE_QUIET`)
+For each product, in order Dropper, PRISMA, SHIFT, WARD:
 
 ```bash
-RELEASE_NOTES_JSON='["Shows a badge on the launcher when an update is ready.","Checks for updates by default on new installs."]' npm run prepare:release:feature
+node scripts/verify-exp-core-pin.cjs && git fetch origin && git rebase origin/main && git push origin HEAD:main
 ```
 
-- [ ] **Step 4: Verify**
+Expected: `Vendored exp-core matches v3.7.7 byte-for-byte.`, then a fast-forward push. If the pin check fails, run `node scripts/sync-exp-core.cjs v3.7.7`, `npm test`, amend the release commit, and push. If `git rebase` shows a `Release <Product> <x>` commit from the sync bot already on `origin/main`, stop for that product and tell the user; its version needs redoing.
 
-Run: `cd Dropper && npm test`; then in PRISMA, SHIFT, and WARD: `npm test && npm run release:check` (the prepare script there does not rebuild).
-Expected: all PASS, pin checks report `Vendored exp-core matches v3.7.7 byte-for-byte.`
+- [ ] **Step 6: Confirm publication**
 
-- [ ] **Step 5: Recapture README screenshots** (menus show the version)
-
-Run: `cd Dropper && node scripts/capture-screenshots.cjs`, `cd PRISMA && node scripts/capture-screenshots.cjs`, `cd SHIFT && node scripts/capture-screenshots.cjs`, `cd WARD && node scripts/capture-visuals.cjs`
-
-- [ ] **Step 6: Commit and push each product**
-
-```bash
-git add -A && git commit -m "Release <Product> <version>: update badge and quiet release support" && git fetch origin && git rebase origin/main && git push origin HEAD:main
-```
-
-If `git rebase` shows the Core-sync bot already published a release (`Release <Product> <x>` on origin/main), stop for that product and tell the user; its version numbers need redoing.
-
-- [ ] **Step 7: Confirm publication**
-
-For each product: watch its `Publish release` run to success, then `curl -sL https://github.com/ExtraPotions/<Product>/releases/latest/download/<product>.user.js | grep -m1 @version` shows the new version.
+For each product: watch its `Publish release` run to success (the sync bot's run for that product should end with "main moved … Nothing published"), then `curl -sL https://github.com/ExtraPotions/<Product>/releases/latest/download/<product>.user.js | grep -m1 @version` shows the new version.
 
 ---
 
-## Appendix A: Product UI test block (Tasks 7, 8, 9)
+## Appendix A: Product UI test block (Tasks 8, 9, 10)
 
-Appended to each product's `quiet-releases.test.cjs` after that task's constants line (`ID`, `HOST`, `NAME`, `PAGE`, `SEP`). It reuses `read` and `QUIET_LINE` from the Task 3 part of the same file.
+Appended to each product's `quiet-releases.test.cjs` after that task's constants line (`ID`, `HOST`, `NAME`, `PAGE`, `SEP`). It reuses `read` and `QUIET_LINE` from the Task 4 part of the same file.
 
 ```js
 const vm = require('node:vm');
