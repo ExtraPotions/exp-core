@@ -9,6 +9,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const os = require('node:os');
+const { spawnSync } = require('node:child_process');
+const { findInstalledBrowser } = require('./installed-browser.cjs');
 
 const MIN_BYTES = 3000;
 const REQUIRED = ['build', 'userscript', 'host', 'url', 'page', 'viewport', 'shots'];
@@ -65,4 +68,141 @@ function checkImages(dir, files) {
   }
 }
 
-module.exports = { MIN_BYTES, validateConfig, classifyRequest, checkImages };
+// Runs in the page before the userscript: in-memory userscript storage and no update requests.
+function gmInit(storage) {
+  const values = new Map(Object.entries(storage || {}));
+  window.GM_getValue = (key, fallback) => (values.has(key) ? values.get(key) : fallback);
+  window.GM_setValue = (key, value) => values.set(key, value);
+  window.GM_deleteValue = key => values.delete(key);
+  window.GM_listValues = () => [...values.keys()];
+  window.GM_addValueChangeListener = () => 1;
+  window.GM_registerMenuCommand = () => {};
+  window.GM_xmlhttpRequest = options => { queueMicrotask(() => options.onerror?.({ status: 0 })); return { abort() {} }; };
+}
+
+// Playwright's own Chromium when installed, otherwise an installed Chrome or Edge.
+async function launchBrowser(chromium) {
+  try {
+    return await chromium.launch();
+  } catch (error) {
+    const executablePath = findInstalledBrowser();
+    if (!executablePath) throw error;
+    return chromium.launch({ executablePath });
+  }
+}
+
+function runBuild(root, scripts) {
+  for (const script of scripts) {
+    const result = spawnSync(process.execPath, [path.join(root, script)], { cwd: root, encoding: 'utf8' });
+    if (result.status !== 0) {
+      const lines = `${result.stderr || ''}\n${result.stdout || ''}`.trim().split(/\r?\n/).filter(Boolean);
+      throw new Error(`build step ${script} failed: ${lines[0] || `exit ${result.status}`}`);
+    }
+  }
+}
+
+async function openView(host, shot) {
+  const header = host.locator('.fl-tool-header').filter({ hasText: shot.section });
+  if (!(await header.count())) throw new Error(`section "${shot.section}" not found`);
+  if ((await header.first().getAttribute('aria-expanded')) !== 'true') await header.first().click();
+  if (!shot.tab) return;
+  const tab = host.getByRole('tab', { name: shot.tab, exact: true });
+  try {
+    await tab.click({ timeout: 5000 });
+  } catch {
+    throw new Error(`tab "${shot.tab}" not found in section "${shot.section}"`);
+  }
+}
+
+async function captureProduct({ name, root, browser, build = true }) {
+  const configPath = path.join(root, 'docs', 'screenshots.config.cjs');
+  if (!fs.existsSync(configPath)) throw new Error('docs/screenshots.config.cjs not found');
+  delete require.cache[require.resolve(configPath)];
+  const config = validateConfig(require(configPath));
+  if (build) runBuild(root, config.build);
+  const userscript = path.join(root, config.userscript);
+  if (!fs.existsSync(userscript)) throw new Error(`userscript ${config.userscript} not found`);
+
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), `${name.toLowerCase()}-shots-`));
+  const context = await browser.newContext({ viewport: config.viewport, deviceScaleFactor: 2 });
+  try {
+    if (config.cookies) await context.addCookies(config.cookies);
+    const page = await context.newPage();
+    await page.addInitScript(gmInit, config.storage || {});
+    await page.route('**/*', route => {
+      const request = route.request();
+      const decision = classifyRequest(request.url(), request.isNavigationRequest(), name);
+      if (decision.type === 'asset') return route.fulfill({ path: path.join(root, decision.path) });
+      if (decision.type === 'page') return route.fulfill({ status: 200, contentType: 'text/html', body: config.page });
+      return route.abort();
+    });
+    await page.goto(config.url);
+    await page.addScriptTag({ content: fs.readFileSync(userscript, 'utf8') });
+    const host = page.locator(config.host);
+    await host.waitFor({ state: 'attached' });
+    await host.locator('[data-exp-part="launcher"]').click();
+    await page.waitForTimeout(400);
+    if (config.setup) await config.setup(page, host);
+
+    for (const shot of config.shots) {
+      if (shot.viewport) await page.setViewportSize(shot.viewport);
+      await openView(host, shot);
+      await page.mouse.move(0, 0);
+      await page.waitForTimeout(300);
+      if (shot.before) await shot.before(page, host);
+      await host.evaluate(node => { for (const toast of node.shadowRoot?.querySelectorAll('.toast') || []) toast.hidden = true; });
+      const file = path.join(work, shot.file);
+      if (shot.include === 'page') await page.screenshot({ path: file });
+      else await host.locator('[data-exp-part="dock"]').screenshot({ path: file });
+    }
+
+    const files = config.shots.map(shot => shot.file);
+    checkImages(work, files);
+    const output = path.join(root, 'docs', 'screenshots');
+    fs.mkdirSync(output, { recursive: true });
+    for (const file of files) fs.copyFileSync(path.join(work, file), path.join(output, file));
+    const listed = new Set(files);
+    return { count: files.length, unlisted: fs.readdirSync(output).filter(file => file.endsWith('.png') && !listed.has(file)).sort() };
+  } finally {
+    await context.close();
+    fs.rmSync(work, { recursive: true, force: true });
+  }
+}
+
+async function main(argv = process.argv.slice(2)) {
+  const { loadSuiteContract } = require('./suite-contract.cjs');
+  const { resolveConsumerRoots } = require('./consumer-roots.cjs');
+  const known = loadSuiteContract(path.resolve(__dirname, '..')).repositories;
+  const requested = argv.filter(arg => !arg.startsWith('--'));
+  const unknown = requested.filter(name => !known.includes(name));
+  if (unknown.length) {
+    console.error(`Unknown product: ${unknown.join(', ')}. Choose from ${known.join(', ')}.`);
+    return 1;
+  }
+  const names = requested.length ? requested : known;
+  const consumers = resolveConsumerRoots();
+  const { chromium } = require('playwright');
+  const browser = await launchBrowser(chromium);
+  let failed = 0;
+  try {
+    for (const name of names) {
+      try {
+        const result = await captureProduct({ name, root: consumers.root(name), browser, build: !argv.includes('--no-build') });
+        console.log(`${name}: ${result.count} screenshots`);
+        if (result.unlisted.length) console.warn(`${name}: not in the shot list (left in place): ${result.unlisted.join(', ')}`);
+      } catch (error) {
+        failed += 1;
+        console.error(`${name}: failed — ${error.message}`);
+      }
+    }
+  } finally {
+    await browser.close();
+  }
+  return failed ? 1 : 0;
+}
+
+module.exports = { MIN_BYTES, validateConfig, classifyRequest, checkImages, launchBrowser, captureProduct, main };
+
+if (require.main === module) {
+  main().then(code => { process.exitCode = code; }, error => { console.error(error); process.exitCode = 1; });
+}
