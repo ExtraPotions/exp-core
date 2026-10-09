@@ -71,6 +71,16 @@ test('a failing build step stops that product before capturing', async t => {
   assert.deepEqual(fs.readdirSync(path.join(root, 'docs', 'screenshots')), []);
 });
 
+test('a shot list naming a missing userscript fails before capturing', async t => {
+  const browser = await launchBrowser(chromium); t.after(() => browser.close());
+  const root = product([{ file: 'alpha.png', section: 'Alpha' }]);
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const config = path.join(root, 'docs', 'screenshots.config.cjs');
+  fs.writeFileSync(config, fs.readFileSync(config, 'utf8').replace("userscript: 'fixture.user.js'", "userscript: 'nope.user.js'"));
+  await assert.rejects(captureProduct({ name: 'Fixture', root, browser, build: false }), /userscript nope\.user\.js not found/);
+  assert.deepEqual(fs.readdirSync(path.join(root, 'docs', 'screenshots')), []);
+});
+
 test('a product folder without a shot list fails with a clear message', async t => {
   const browser = await launchBrowser(chromium); t.after(() => browser.close());
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'shots-empty-'));
