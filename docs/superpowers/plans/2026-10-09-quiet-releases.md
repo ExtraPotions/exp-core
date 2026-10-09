@@ -970,7 +970,7 @@ const { chromium } = require('playwright');
 const { loadSource } = require('./load-source.cjs');
 
 const releasedVersions = () => [...read('src/release-notes.js').matchAll(/^\s*'(\d+\.\d+\.\d+)': \[/gm)].map(m => m[1]);
-const body = (version, quiet) => `## ${version} — 2026-10-12${quiet ? ' (quiet)' : ''}\n\n- First.\n- Second.`;
+const body = (version, quiet) => `## ${version} ${SEP} 2026-10-12${quiet ? ' (quiet)' : ''}\n\n- First.\n- Second.`;
 
 async function boot(t, { release = null, previous = null, quiet = null } = {}) {
   const browser = await chromium.launch(); t.after(() => browser.close());
