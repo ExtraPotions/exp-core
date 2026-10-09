@@ -31,6 +31,7 @@ Docs-only changes (README, screenshots) need no release at all: they are served 
 - The update checker reads the first `##` heading of the GitHub release body. If it ends in `(quiet)` and its version equals the release tag's version, the check result and the cached state carry `quiet: true`.
 - Any missing, mismatched, or unparseable heading means not quiet. The fallback is always the louder behavior.
 - `available`, `latest`, and `details` keep their meaning; `quiet` is additive. `consumeVersionChange` is unchanged. The badge style already exists in `foundation.js`.
+- One new pure helper, `ExtraPotionsCore.isQuietUpgrade(previous, current, releasedVersions, quietVersions)`, returns `true` only when at least one released version lies in `(previous, current]` and every such version is quiet. Unparseable input returns `false`.
 - Ships as an exp-core release, synced into each product's `vendor/exp-core` with `npm run sync`, gated by `verify-consumers`.
 
 ## 3. Products
@@ -40,7 +41,8 @@ Update Available:
 - The card shows only when the result is not quiet. A quiet result does not claim the shared `available:` notice slot.
 
 Update Complete:
-- Skipped when the installed version is in the product's quiet list. The installed version is still recorded so the card does not appear later. Dropper changes `checkVersionNotice`; PRISMA, SHIFT, and WARD change the code at their `consumeVersionChange` call.
+- Skipped only when every released version after the previously installed one, up to the current one, is quiet (`isQuietUpgrade` over the product's release-notes versions). If any skipped-over release was normal, the card shows the current version's notes as it does today. The installed version is still recorded so the card does not appear later.
+- Known limit: before installing, Update Available only sees the newest GitHub release, so a quiet newest release hides the card for an unseen normal release just before it. The badge still shows, and the rule above restores the card after install. Dropper changes `checkVersionNotice`; PRISMA, SHIFT, and WARD change the code at their `consumeVersionChange` call.
 
 Unchanged:
 - The version pill still opens the changelog with the quiet release's notes.
