@@ -6,22 +6,10 @@
 //
 // Set EXP_BROWSER_PATH to choose a specific browser executable.
 
-const fs = require('node:fs');
 const path = require('node:path');
+const { findInstalledBrowser } = require('./installed-browser.cjs');
 
-const candidates = [
-  process.env.EXP_BROWSER_PATH,
-  'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
-  'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
-  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
-  '/usr/bin/google-chrome',
-  '/usr/bin/chromium',
-  '/usr/bin/chromium-browser',
-].filter(Boolean);
-const executablePath = candidates.find(candidate => fs.existsSync(candidate));
+const executablePath = findInstalledBrowser();
 
 if (!executablePath) {
   console.error('No installed Chrome or Edge was found. Set EXP_BROWSER_PATH to a browser executable.');
