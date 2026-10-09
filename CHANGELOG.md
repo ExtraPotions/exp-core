@@ -1,3 +1,9 @@
+## 3.7.7 — 2026-10-09
+
+- Recognizes quiet releases, so products can show only the update badge for them.
+- Adds a shared check for whether every skipped release was quiet.
+- Checks for updates every 12 hours instead of every 15 minutes.
+
 ## 3.7.6 — 2026-10-08
 
 - Gives each menu category a distinct, meaningful icon.
