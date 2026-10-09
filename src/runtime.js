@@ -1308,6 +1308,18 @@ const ExtraPotionsCore = (() => {
     storageWrite(key, String(currentVersion || ''));
     return previous && previous !== currentVersion && claimNotice(productId, `updated:${currentVersion}`) ? previous : '';
   }
+  // True only when at least one released version lies in (previous, current], current among them,
+  // and every one of them is quiet. Anything unparseable is not quiet.
+  function isQuietUpgrade(previous, current, releasedVersions, quietVersions) {
+    const pattern = /^\d+\.\d+\.\d+$/;
+    previous = String(previous || '');
+    current = String(current || '');
+    if (!pattern.test(previous) || !pattern.test(current) || CoreFoundation.compareVersions(current, previous) <= 0) return false;
+    const quiet = new Set(Array.from(quietVersions || [], String));
+    const skipped = Array.from(releasedVersions || [], String).filter(version => pattern.test(version)
+      && CoreFoundation.compareVersions(version, previous) > 0 && CoreFoundation.compareVersions(version, current) <= 0);
+    return skipped.includes(current) && skipped.every(version => quiet.has(version));
+  }
   function visibleFloatingNotices() {
     return [...document.querySelectorAll('[data-exp-product-launcher="1"][data-product-id]')]
       .flatMap(host => [...(host.shadowRoot?.querySelectorAll('[data-exp-floating-notice="1"]') || [])].map(notice => ({ host, notice })))
@@ -1797,6 +1809,15 @@ const ExtraPotionsCore = (() => {
       }
       return details;
     }
+    // A release is quiet when the newest heading of its notes is that release, marked "(quiet)".
+    function releaseQuiet(body, latest) {
+      for (const line of String(body || '').split(/\r?\n/)) {
+        if (!/^##\s+/.test(line)) continue;
+        const heading = line.match(/^##\s+v?(\d+\.\d+\.\d+)\b(.*)$/);
+        return Boolean(heading && heading[1] === latest && /\(quiet\)\s*$/.test(heading[2]));
+      }
+      return false;
+    }
     function normalize(state) {
       const next = { ...(state || {}) };
       if (!Object.hasOwn(next, 'lastCheckAt') && next.checkedAt) next.lastCheckAt = Number(next.checkedAt) || 0;
@@ -1815,6 +1836,7 @@ const ExtraPotionsCore = (() => {
         current: currentVersion,
         available: Boolean(latest && CoreFoundation.compareVersions(latest, currentVersion) > 0),
         details: next.details.slice(0, 4),
+        quiet: Boolean(next.quiet && latest && CoreFoundation.compareVersions(latest, currentVersion) > 0),
         checkedForVersion: next.checkedForVersion || null,
         lastRemoteVersion: latest || null,
         lastHttpStatus: Number(next.lastHttpStatus || 0),
@@ -1855,6 +1877,7 @@ const ExtraPotionsCore = (() => {
         state.lastHttpStatus = 0;
         state.lastError = '';
         state.details = [];
+        state.quiet = false;
         state.availableVersion = '';
         state.availableAt = 0;
       }
@@ -1884,6 +1907,7 @@ const ExtraPotionsCore = (() => {
         state.lastHttpStatus = Number(response.status || 0);
         state.lastError = '';
         state.details = releaseDetails(payload.body);
+        state.quiet = releaseQuiet(payload.body, latest);
         state.state = 'checked';
         if (CoreFoundation.compareVersions(latest, currentVersion) > 0) {
           state.availableVersion = latest;
@@ -2187,6 +2211,6 @@ const ExtraPotionsCore = (() => {
     return Object.freeze({ lifecycle, diagnostics, updates });
   }
 
-  const api = Object.freeze({...ExtraPotionsTools,...ExpMenuPreferences,normalizeHealth,createHealthControls,createRecoveryGuard,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createMenuController,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,bindLauncherDrag,launcherPlacement,placeMenu,placeNotice,resetLauncherGrid,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,isOwnedSheet,menuWidth,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,publishMenuPalette,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,suiteSitePaused,setSuiteSitePaused,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePresentationState,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,createCompatibilityControls:createSuiteCompatibilityControls,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,mountSubmenuTabs:ExpMenuArrangement.mountTabs,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
+  const api = Object.freeze({...ExtraPotionsTools,...ExpMenuPreferences,normalizeHealth,createHealthControls,createRecoveryGuard,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createMenuController,createProduct,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,bindLauncherDrag,launcherPlacement,placeMenu,placeNotice,resetLauncherGrid,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,isOwnedSheet,menuWidth,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,publishMenuPalette,createFloatingNotice,createMenuNotice,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,isQuietUpgrade,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,suiteSitePaused,setSuiteSitePaused,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePresentationState,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,createCompatibilityControls:createSuiteCompatibilityControls,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,mountSubmenuTabs:ExpMenuArrangement.mountTabs,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
   return api;
 })();
