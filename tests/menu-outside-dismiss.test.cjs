@@ -15,6 +15,8 @@ async function mount(t, productOptions = '') {
       ...(extra==='keep'?{keepOpen:()=>window.keep}:{})});
     window.product.open();window.select=select;
   },productOptions);
+  // Core places the opened menu on the next animation frame; measure only after it lands.
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   return page;
 }
 const isOpen=page=>page.evaluate(()=>!window.product.panel.hidden);
