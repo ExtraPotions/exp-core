@@ -69,7 +69,7 @@ test('an explicitly cleared canonical remote version is not replaced by a legacy
   assert.equal(f.checker.status().available, false);
 });
 
-test('a completed current-version check keeps its fifteen-minute throttle', async () => {
+test('a completed current-version check keeps its 12-hour throttle', async () => {
   const f = fixture({ checkedForVersion: '3.2.13', lastCheckAt: Date.now(), lastRemoteVersion: '3.2.13', state: 'checked' });
   const result = await f.checker.check();
   assert.equal(f.requests.length, 0);

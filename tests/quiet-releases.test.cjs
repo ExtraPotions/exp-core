@@ -109,3 +109,24 @@ test('isQuietUpgrade is true only when every skipped release is quiet', () => {
   assert.equal(quietUpgrade('garbage', '3.4.26', released, ['3.4.26']), false);
   assert.equal(quietUpgrade('3.4.25', '3.4.26', null, null), false);
 });
+
+test('automatic update checks are throttled to once every 12 hours', async () => {
+  const hour = 60 * 60 * 1000;
+  const recent = fixture({ checkedForVersion: '3.2.13', lastCheckAt: Date.now() - 11 * hour, lastRemoteVersion: '3.2.13', state: 'checked' });
+  assert.equal((await recent.checker.check()).state, 'cached');
+  assert.equal(recent.requests.length, 0);
+  const stale = fixture({ checkedForVersion: '3.2.13', lastCheckAt: Date.now() - 13 * hour, lastRemoteVersion: '3.2.13', state: 'checked' });
+  stale.checker.check();
+  assert.equal(stale.requests.length, 1);
+  assert.equal(recent.checker.CHECK_INTERVAL, 12 * hour);
+});
+
+test('a forced check ignores the 12-hour throttle', () => {
+  const f = fixture({ checkedForVersion: '3.2.13', lastCheckAt: Date.now(), lastRemoteVersion: '3.2.13', state: 'checked' });
+  f.checker.check(true);
+  assert.equal(f.requests.length, 1);
+});
+
+test('the shared chrome contract advertises the 12-hour interval', () => {
+  assert.match(fs.readFileSync(path.join(root, 'src/chrome-contract.js'), 'utf8'), /const UPDATE_CHECK_INTERVAL_MS = 12 \* 60 \* 60 \* 1000;/);
+});

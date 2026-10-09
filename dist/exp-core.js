@@ -3786,7 +3786,7 @@ const ExtraPotionsCore = (() => {
     const RELEASE_URL = 'https://github.com/' + repository + '/releases';
     const INSTALL_URL = RELEASE_URL + '/latest/download/' + String(options.scriptAsset || (productId + '.user.js'));
     const CACHE_KEY = 'exp:v3:' + productId + ':update-cache';
-    const CHECK_INTERVAL = 15 * 60 * 1000;
+    const CHECK_INTERVAL = 12 * 60 * 60 * 1000;
     const CHECK_LEASE = 30 * 1000;
     let memory = {};
 
