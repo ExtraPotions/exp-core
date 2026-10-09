@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { validateConfig, classifyRequest, checkImages, MIN_BYTES } = require('../scripts/capture-screenshots.cjs');
+const { validateConfig, classifyRequest, checkImages, parseArgs, MIN_BYTES } = require('../scripts/capture-screenshots.cjs');
 
 const valid = () => ({
   build: ['scripts/build.cjs'],
@@ -64,4 +64,20 @@ test('images must be non-blank and different from each other', () => {
     fs.writeFileSync(path.join(dir, 'd.png'), Buffer.alloc(100, 3));
     assert.throws(() => checkImages(dir, ['d.png']), /d\.png looks blank/);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('asset requests allow dotted names and ignore query strings, but never leave assets/', () => {
+  const base = 'https://raw.githubusercontent.com/ExtraPotions/WARD/main/';
+  assert.deepEqual(classifyRequest(`${base}assets/icon.dark.svg?v=2`, false, 'WARD'), { type: 'asset', path: 'assets/icon.dark.svg' });
+  assert.deepEqual(classifyRequest(`${base}assets/./ward-launcher.svg`, false, 'WARD'), { type: 'abort' });
+  assert.deepEqual(classifyRequest(`${base}assets/%2e%2e/package.json`, false, 'WARD'), { type: 'abort' });
+  assert.deepEqual(classifyRequest(`${base}assets/`, false, 'WARD'), { type: 'abort' });
+});
+
+test('arguments: known products once each, --no-build, and nothing else', () => {
+  const known = ['Dropper', 'SHIFT', 'WARD', 'PRISMA'];
+  assert.deepEqual(parseArgs([], known), { names: known, build: true });
+  assert.deepEqual(parseArgs(['WARD', 'PRISMA', 'WARD', '--no-build'], known), { names: ['WARD', 'PRISMA'], build: false });
+  assert.throws(() => parseArgs(['NotAProduct'], known), /Unknown product: NotAProduct\. Choose from Dropper, SHIFT, WARD, PRISMA\./);
+  assert.throws(() => parseArgs(['--nobuild'], known), /Unknown option: --nobuild\. The only option is --no-build\./);
 });

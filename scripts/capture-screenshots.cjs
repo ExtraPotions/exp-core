@@ -49,9 +49,11 @@ function validateConfig(config) {
 function classifyRequest(url, isNavigation, productName) {
   const prefix = `https://raw.githubusercontent.com/ExtraPotions/${productName}/main/`;
   if (String(url).startsWith(prefix)) {
-    const relative = String(url).slice(prefix.length);
-    if (/^assets\/[\w-]+(?:\/[\w-]+)*\.[\w]+$/.test(relative)) return { type: 'asset', path: relative };
-    return { type: 'abort' };
+    const relative = String(url).slice(prefix.length).split(/[?#]/)[0];
+    const segments = relative.split('/');
+    const safe = segments.length > 1 && segments[0] === 'assets'
+      && segments.slice(1).every(segment => /^[\w.-]+$/.test(segment) && !/^\.+$/.test(segment));
+    return safe ? { type: 'asset', path: relative } : { type: 'abort' };
   }
   if (isNavigation) return { type: 'page' };
   return { type: 'abort' };
@@ -101,20 +103,35 @@ function runBuild(root, scripts) {
   }
 }
 
+const firstLine = error => String(error?.message || error).split(/\r?\n/)[0];
+
 async function openView(host, shot) {
-  const header = host.locator('.fl-tool-header').filter({ hasText: shot.section });
-  if (!(await header.count())) throw new Error(`section "${shot.section}" not found`);
-  if ((await header.first().getAttribute('aria-expanded')) !== 'true') await header.first().click();
+  // Some menus build sections just after opening, so give a header a few seconds to appear.
+  const header = host.locator('.fl-tool-header').filter({ hasText: shot.section }).first();
+  try {
+    await header.waitFor({ state: 'visible', timeout: 5000 });
+  } catch {
+    throw new Error(`section "${shot.section}" not found`);
+  }
+  if ((await header.getAttribute('aria-expanded')) !== 'true') await header.click();
   if (!shot.tab) return;
   const tab = host.getByRole('tab', { name: shot.tab, exact: true });
   try {
-    await tab.click({ timeout: 5000 });
+    await tab.first().waitFor({ state: 'visible', timeout: 5000 });
   } catch {
     throw new Error(`tab "${shot.tab}" not found in section "${shot.section}"`);
+  }
+  const matches = await tab.count();
+  if (matches > 1) throw new Error(`tab "${shot.tab}" matches ${matches} tabs in section "${shot.section}"`);
+  try {
+    await tab.click({ timeout: 5000 });
+  } catch (error) {
+    throw new Error(`could not click tab "${shot.tab}" in section "${shot.section}": ${firstLine(error)}`);
   }
 }
 
 async function captureProduct({ name, root, browser, build = true }) {
+  if (!fs.existsSync(root)) throw new Error(`product folder not found: ${root}`);
   const configPath = path.join(root, 'docs', 'screenshots.config.cjs');
   if (!fs.existsSync(configPath)) throw new Error('docs/screenshots.config.cjs not found');
   delete require.cache[require.resolve(configPath)];
@@ -124,8 +141,9 @@ async function captureProduct({ name, root, browser, build = true }) {
   if (!fs.existsSync(userscript)) throw new Error(`userscript ${config.userscript} not found`);
 
   const work = fs.mkdtempSync(path.join(os.tmpdir(), `${name.toLowerCase()}-shots-`));
-  const context = await browser.newContext({ viewport: config.viewport, deviceScaleFactor: 2 });
+  let context = null;
   try {
+    context = await browser.newContext({ viewport: config.viewport, deviceScaleFactor: 2 });
     if (config.cookies) await context.addCookies(config.cookies);
     const page = await context.newPage();
     await page.addInitScript(gmInit, config.storage || {});
@@ -145,7 +163,8 @@ async function captureProduct({ name, root, browser, build = true }) {
     if (config.setup) await config.setup(page, host);
 
     for (const shot of config.shots) {
-      if (shot.viewport) await page.setViewportSize(shot.viewport);
+      // Each shot uses its own window size, or the shot list's when it has none.
+      await page.setViewportSize(shot.viewport || config.viewport);
       await openView(host, shot);
       await page.mouse.move(0, 0);
       await page.waitForTimeout(300);
@@ -164,30 +183,42 @@ async function captureProduct({ name, root, browser, build = true }) {
     const listed = new Set(files);
     return { count: files.length, unlisted: fs.readdirSync(output).filter(file => file.endsWith('.png') && !listed.has(file)).sort() };
   } finally {
-    await context.close();
-    fs.rmSync(work, { recursive: true, force: true });
+    try {
+      await context?.close();
+    } finally {
+      fs.rmSync(work, { recursive: true, force: true });
+    }
   }
+}
+
+function parseArgs(argv, known) {
+  const unknownOption = argv.find(arg => arg.startsWith('--') && arg !== '--no-build');
+  if (unknownOption) throw new Error(`Unknown option: ${unknownOption}. The only option is --no-build.`);
+  const requested = [...new Set(argv.filter(arg => !arg.startsWith('--')))];
+  const unknown = requested.filter(name => !known.includes(name));
+  if (unknown.length) throw new Error(`Unknown product: ${unknown.join(', ')}. Choose from ${known.join(', ')}.`);
+  return { names: requested.length ? requested : known, build: !argv.includes('--no-build') };
 }
 
 async function main(argv = process.argv.slice(2)) {
   const { loadSuiteContract } = require('./suite-contract.cjs');
   const { resolveConsumerRoots } = require('./consumer-roots.cjs');
   const known = loadSuiteContract(path.resolve(__dirname, '..')).repositories;
-  const requested = argv.filter(arg => !arg.startsWith('--'));
-  const unknown = requested.filter(name => !known.includes(name));
-  if (unknown.length) {
-    console.error(`Unknown product: ${unknown.join(', ')}. Choose from ${known.join(', ')}.`);
+  let options;
+  try {
+    options = parseArgs(argv, known);
+  } catch (error) {
+    console.error(error.message);
     return 1;
   }
-  const names = requested.length ? requested : known;
   const consumers = resolveConsumerRoots();
   const { chromium } = require('playwright');
   const browser = await launchBrowser(chromium);
   let failed = 0;
   try {
-    for (const name of names) {
+    for (const name of options.names) {
       try {
-        const result = await captureProduct({ name, root: consumers.root(name), browser, build: !argv.includes('--no-build') });
+        const result = await captureProduct({ name, root: consumers.root(name), browser, build: options.build });
         console.log(`${name}: ${result.count} screenshots`);
         if (result.unlisted.length) console.warn(`${name}: not in the shot list (left in place): ${result.unlisted.join(', ')}`);
       } catch (error) {
@@ -201,7 +232,7 @@ async function main(argv = process.argv.slice(2)) {
   return failed ? 1 : 0;
 }
 
-module.exports = { MIN_BYTES, validateConfig, classifyRequest, checkImages, launchBrowser, captureProduct, main };
+module.exports = { MIN_BYTES, validateConfig, classifyRequest, checkImages, parseArgs, launchBrowser, captureProduct, main };
 
 if (require.main === module) {
   main().then(code => { process.exitCode = code; }, error => { console.error(error); process.exitCode = 1; });
