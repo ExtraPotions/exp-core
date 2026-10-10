@@ -42,16 +42,24 @@ const ExtraPotionsTools = (() => {
     d.addEventListener('toggle',()=>{if(d.open)refresh();});d.append(row,duration,temporary,out);refresh();return d;
   }
   const productRepositories = Object.freeze({dropper:'Dropper',shift:'SHIFT',prisma:'PRISMA',ward:'WARD'});
-  function productIssueUrl(id, version, {health}={}) {
+  // GitHub prefills an issue from the link; longer links fail, so a large report goes by clipboard.
+  const ISSUE_URL_LIMIT=8000;
+  function productIssueUrl(id, version, {health,diagnostics,copied=false}={}) {
     if (!Object.hasOwn(productRepositories,id)) throw new Error('Unknown product');
     const product=productRepositories[id];
     const safeVersion=/^\d+\.\d+\.\d+(?:[-+][a-zA-Z0-9.-]+)?$/.test(String(version))?String(version):'unknown';
-    // Exclude diagnostics, page URLs, account names, and free-form data. Status is the
-    // product's own plain-language health text with links and addresses removed.
+    // Status is the product's own plain-language health text with links and addresses removed.
+    // Diagnostics are the product's own redacted report, attached only when the person reports.
     const plain=value=>String(value||'').replace(/https?:\/\/\S+/gi,'[link]').replace(/\S+@\S+/g,'[address]').replace(/\s+/g,' ').trim().slice(0,200);
     const status=health&&plain(health.label)?`\nStatus: ${plain(health.label)}${plain(health.reason)?' - '+plain(health.reason):''}\n`:'';
-    const body=`Product: ${product} v${safeVersion}\n${status}\nWhat happened?\n\nSteps to reproduce\n1. \n\nExpected behavior\n\nActual behavior\n\nBrowser and userscript manager\n\nDiagnostics (optional)\nReview Show Diagnostics and remove private information before attaching.\n`;
-    return 'https://github.com/ExtraPotions/'+product+'/issues/new?title='+encodeURIComponent('['+product+' '+safeVersion+'] Issue')+'&body='+encodeURIComponent(body);
+    const template=`Product: ${product} v${safeVersion}\n${status}\nWhat happened?\n\nSteps to reproduce\n1. \n\nExpected behavior\n\nActual behavior\n\nBrowser and userscript manager\n\n`;
+    const link=body=>'https://github.com/ExtraPotions/'+product+'/issues/new?title='+encodeURIComponent('['+product+' '+safeVersion+'] Issue')+'&body='+encodeURIComponent(body);
+    if(diagnostics&&typeof diagnostics==='object'){
+      const review='Diagnostics (review and remove anything private before submitting)\n';
+      for(const text of [JSON.stringify(diagnostics,null,2),JSON.stringify(diagnostics)]){const url=link(template+review+'```json\n'+text+'\n```\n');if(url.length<=ISSUE_URL_LIMIT)return url;}
+      return link(template+review+(copied?'The diagnostics were copied to your clipboard when you selected Report a Problem. Paste them here.\n':'The diagnostics are too long for the link. Select Copy Diagnostics and paste them here.\n'));
+    }
+    return link(template+'Diagnostics (optional)\nSelect Copy Diagnostics, paste them here, and remove anything private.\n');
   }
   const productTimelines=new Map(),resettingProducts=new Set();
   const productDataResetting=id=>resettingProducts.has(id);
@@ -119,9 +127,17 @@ const ExtraPotionsTools = (() => {
     if(copy&&show&&show.compareDocumentPosition(copy)&Node.DOCUMENT_POSITION_FOLLOWING)pair.insertBefore(copy,show);
     const output=diagnostics.querySelector?.('pre');if(output)output.style.cssText+=';max-height:240px;overflow:auto';
     const health=()=>({label:timeline.querySelector?.('[data-exp-health-state]')?.textContent||'',reason:timeline.querySelector?.('[data-exp-health-reason]')?.textContent||''});
-    const report=wide(button('Report a Problem',()=>{const link=document.createElement('a');link.href=productIssueUrl(id,version,{health:health()});link.target='_blank';link.rel='noopener noreferrer';link.click();}));
+    // Each report takes a fresh diagnostics report, copies it, and attaches it to the issue when it fits.
+    const report=wide(button('Report a Problem',async()=>{
+      if(report.disabled)return;report.disabled=true;
+      let data=null,copied=false;
+      try{const source=typeof ExtraPotionsDiagnostics==='object'?ExtraPotionsDiagnostics.reportSource?.(diagnostics):null;if(source)data=await source();}catch{}
+      if(data){try{await navigator.clipboard.writeText(JSON.stringify(data,null,2));copied=true;}catch{}}
+      try{const link=document.createElement('a');link.href=productIssueUrl(id,version,{health:health(),diagnostics:data,copied});link.target='_blank';link.rel='noopener noreferrer';link.click();}
+      finally{report.disabled=false;}
+    }));
     report.dataset.expSystemReport='1';
-    const support=ExtraPotionsCore.createDisclosure('Support',diagnostics,report,note('Copy diagnostics first, then paste them into the report after removing anything private.'));
+    const support=ExtraPotionsCore.createDisclosure('Support',diagnostics,report,note('Report a Problem attaches diagnostics from that moment. GitHub issues are public, so remove anything private before submitting.'));
     // Reset: one tap arms, a second tap within a few seconds confirms. No browser dialogs.
     const resetStatus=note('');resetStatus.setAttribute('role','status');resetStatus.setAttribute('aria-live','polite');
     let armedUntil=0,armTimer=0;

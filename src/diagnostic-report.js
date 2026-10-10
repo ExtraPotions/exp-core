@@ -199,8 +199,17 @@ const ExtraPotionsDiagnostics = (() => {
   }
   // Core owns the shared diagnostics interaction contract: Show/Hide first, Copy second,
   // transient Diagnostics Copied / Copy Failed feedback, and fresh reports per action.
+  // The report behind each set of controls, so Report a Problem can attach a fresh one.
+  const reportSources = new WeakMap();
+  function reportSource(container) {
+    if (!container) return null;
+    if (reportSources.has(container)) return reportSources.get(container);
+    for (const node of container.querySelectorAll?.('*') || []) if (reportSources.has(node)) return reportSources.get(node);
+    return null;
+  }
   function bindControls({ show, copy, output, getReport, notify = () => {}, onShow = () => {}, onCopy = () => {} }) {
     let timer, generation = 0;
+    reportSources.set(output, getReport); reportSources.set(copy, getReport);
     output.hidden = true; output.setAttribute('role', 'region');
     output.setAttribute('aria-label', 'Page, technical, console, and plugin diagnostics'); output.tabIndex = 0;
     show.setAttribute('aria-expanded', 'false');
@@ -235,5 +244,5 @@ const ExtraPotionsDiagnostics = (() => {
     bindControls({ show, copy, output, getReport, notify });
     actions.append(show, copy); wrapper.append(actions, output); return wrapper;
   }
-  return Object.freeze({ createReport, registerProduct, compatibility, bindControls, createControls, dispose });
+  return Object.freeze({ createReport, registerProduct, compatibility, bindControls, createControls, reportSource, dispose });
 })();

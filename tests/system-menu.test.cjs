@@ -91,3 +91,30 @@ test('timeline grouping counts consecutive repeats and keeps the newest time',()
  const groups=api.groupTimelineEntries([{at:1,reason:'pending'},{at:2,reason:'pending'},{at:3,reason:'found'},{at:4,reason:'pending'}]);
  assert.deepEqual(JSON.parse(JSON.stringify(groups.map(g=>[g.reason,g.count,g.at]))),[['pending',2,2],['found',1,3],['pending',1,4]]);
 });
+
+test('a report carries diagnostics in the issue when they fit, and points to the clipboard when they do not',()=>{
+ const api=vm.runInNewContext(source+';ExtraPotionsTools',{});
+ const body=(diagnostics,copied=true)=>{const url=api.productIssueUrl('shift','3.5.19',{diagnostics,copied});assert.ok(url.length<=8000,`url length ${url.length}`);return new URL(url).searchParams.get('body');};
+ const small=body({report:'SHIFT Diagnostics',plugin:{version:'3.5.19'}});
+ assert.match(small,/```json\n[\s\S]*"report": "SHIFT Diagnostics"[\s\S]*```/);
+ const large=body({report:'SHIFT Diagnostics',console:{entries:Array.from({length:400},(_,i)=>({level:'log',message:'entry '+i+' '.repeat(20)}))}});
+ assert.doesNotMatch(large,/```json/);assert.match(large,/copied to your clipboard/i);
+ assert.match(body({console:{entries:Array.from({length:400},()=>'x'.repeat(40))}},false),/Copy Diagnostics/);
+ assert.match(api.productIssueUrl('ward','3.4.17'),/Diagnostics/);
+});
+
+test('Report a Problem copies a fresh report and opens the issue with it',async t=>{
+ const {chromium}=require('playwright'),browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage();await page.setContent('<main></main>');
+ await page.addScriptTag({content:source+`;window.copied=[];window.opened=[];let count=0;
+  Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{copied.push(text);}}});HTMLAnchorElement.prototype.click=function(){opened.push(this.href);};
+  window.ExtraPotionsDiagnostics={reportSource:node=>node.id==='diag'?async()=>({report:'SHIFT Diagnostics',sequence:++count}):null};
+  window.ExtraPotionsCore={createDisclosure(label,...children){const d=document.createElement('details'),s=document.createElement('summary');s.textContent=label;d.append(s,...children);return d;}};
+  const diagnostics=document.createElement('div');diagnostics.id='diag';const timeline=document.createElement('div');
+  document.querySelector('main').append(ExtraPotionsTools.createProductSystem({id:'shift',version:'3.5.19',timeline,diagnostics,layout:'grouped'}));`});
+ await page.evaluate(()=>document.querySelectorAll('details').forEach(d=>{d.open=true;}));
+ const report=page.getByRole('button',{name:'Report a Problem'});
+ await report.click();await page.waitForFunction(()=>opened.length===1);await report.click();await page.waitForFunction(()=>opened.length===2);
+ const facts=await page.evaluate(()=>({copied,bodies:opened.map(href=>new URL(href).searchParams.get('body'))}));
+ assert.equal(facts.copied.length,2);assert.match(facts.copied[1],/"sequence": 2/,'each click takes a fresh report');
+ assert.match(facts.bodies[1],/"sequence": 2/);
+});

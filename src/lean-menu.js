@@ -118,8 +118,6 @@ const ExpLeanMenu = (() => {
     applyPalette();
     const themeObserver=new MutationObserver(applyPalette);if(themeRoot)themeObserver.observe(themeRoot,{attributes:true,attributeFilter:['data-ui-theme']});
     const style=document.createElement('style');style.dataset.expLeanMenu='1';style.textContent=css;shadow.append(style);
-    const footer=document.createElement('footer');footer.className='exp-menu-footer';
-    const brand=document.createElement('span');brand.textContent='ExtraPotions';const release=document.createElement('span');footer.append(brand,release);panel.append(footer);
     const icons=new Set();
     function decorate(){
       for(const header of panel.querySelectorAll('.fl-tool-header')){
@@ -129,12 +127,9 @@ const ExpLeanMenu = (() => {
         const icon=document.createElement('span');icon.className='exp-section-icon';icon.setAttribute('aria-hidden','true');
         icon.dataset.icon=name;header.prepend(icon);icons.add(icon);
       }
-      const value=panel.querySelector('[data-exp-part="version"],#tdh-header-version,.version')?.textContent||'';
-      if(release.textContent!==value)release.textContent=value;
-      if(panel.lastElementChild!==footer)panel.append(footer);
     }
     decorate();const observer=new MutationObserver(decorate);observer.observe(panel,{childList:true,subtree:true});
-    return ()=>{themeObserver.disconnect();observer.disconnect();icons.forEach(icon=>icon.remove());footer.remove();style.remove();for(const[key,[value,priority]]of saved){if(value)panel.style.setProperty(key,value,priority);else panel.style.removeProperty(key);}delete panel.dataset.expMenuLayout;};
+    return ()=>{themeObserver.disconnect();observer.disconnect();icons.forEach(icon=>icon.remove());style.remove();for(const[key,[value,priority]]of saved){if(value)panel.style.setProperty(key,value,priority);else panel.style.removeProperty(key);}delete panel.dataset.expMenuLayout;};
   }
   return Object.freeze({mount});
 })();
