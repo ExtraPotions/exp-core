@@ -106,16 +106,22 @@ function runBuild(root, scripts) {
 const firstLine = error => String(error?.message || error).split(/\r?\n/)[0];
 
 async function openView(host, shot) {
-  // Some menus build sections just after opening, so give a header a few seconds to appear.
+  // Products on the shared menu show sections as tabs; older menus still have section headers.
+  const sectionTab = host.locator(`[data-exp-section-tabs] [role="tab"][aria-label="${shot.section}"]`);
   const header = host.locator('.fl-tool-header').filter({ hasText: shot.section }).first();
-  try {
-    await header.waitFor({ state: 'visible', timeout: 5000 });
-  } catch {
-    throw new Error(`section "${shot.section}" not found`);
+  if (await sectionTab.count()) {
+    await sectionTab.first().click();
+  } else {
+    // Some menus build sections just after opening, so give a header a few seconds to appear.
+    try {
+      await header.waitFor({ state: 'visible', timeout: 5000 });
+    } catch {
+      throw new Error(`section "${shot.section}" not found`);
+    }
+    if ((await header.getAttribute('aria-expanded')) !== 'true') await header.click();
   }
-  if ((await header.getAttribute('aria-expanded')) !== 'true') await header.click();
   if (!shot.tab) return;
-  const tab = host.getByRole('tab', { name: shot.tab, exact: true });
+  const tab = host.locator('.exp-submenu-tablist, [role="tablist"]:not([data-exp-section-tabs])').getByRole('tab', { name: shot.tab, exact: true });
   try {
     await tab.first().waitFor({ state: 'visible', timeout: 5000 });
   } catch {
