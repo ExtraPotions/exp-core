@@ -77,7 +77,7 @@ Core reshapes each product's existing menu markup when the menu mounts, as it al
   - border 1px `#27272a`, radius 10px, background `#0c0c0e`
   - rows inside are 9px 11px, divided by 1px `#1c1c1f`
 - The System tab's Status, Recent activity, Support and Reset become cards in the same way.
-- Two disclosures are not groups and stay collapsible: Dropper's eligibility chip (`.eligibility-chip`) and SHIFT's "Why this appearance?" (`[data-shift-appearance-explanation]`). Core already treats both as inline, not as groups.
+- Two disclosures are not groups and stay collapsible: Dropper's eligibility chip (`.eligibility-chip`) and SHIFT's "Why this appearance?" (`[data-shift-appearance-explanation]`). Core already treats both as inline, not as groups. Products can also mark a group `data-exp-collapsible` when it builds expensive content on open; Core never force-opens it.
 
 **Controls**
 - **Switches:** 30×17. On is the accent with a dark knob; off is `#27272a` with a grey knob.

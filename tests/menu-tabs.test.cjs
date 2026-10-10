@@ -95,6 +95,29 @@ test('a product that opens System on its own selects the System tab', async t =>
   assert.deepEqual(groups, [{ chip: false, open: true, flat: '1' }, { chip: true, open: false, flat: null }]);
 });
 
+test('a group marked data-exp-collapsible stays collapsible while plain groups open flat', async t => {
+  const p = await page(t);
+  await p.evaluate(() => {
+    const host = document.createElement('div'); host.id = 'tdh-root'; document.body.append(host);
+    const shadow = host.attachShadow({ mode: 'open' }); const panel = document.createElement('aside'); panel.dataset.expPart = 'dock'; shadow.append(panel);
+    for (const [id, title] of [['tdh-drops-body', 'Drops'], ['tdh-diagnostics-body', 'System']]) {
+      const section = document.createElement('section'); section.className = 'fl-tool-panel';
+      section.innerHTML = `<div class="fl-tool-header" data-panel="${id}"><span class="fl-tool-title">${title}</span></div><div class="fl-tool-body fl-tool-hidden" id="${id}"><p>${title} page</p><div class="card"><details id="${id}-plain"><summary>Plain</summary><div class="row">Row</div></details><details id="${id}-lazy" data-exp-collapsible><summary>Lazy</summary><div class="row">Row</div></details></div></div>`;
+      panel.append(section);
+    }
+    panel.addEventListener('click', e => { const h = e.target.closest('.fl-tool-header'); if (!h) return; const body = shadow.getElementById(h.dataset.panel); const opening = body.classList.contains('fl-tool-hidden'); panel.querySelectorAll('.fl-tool-body').forEach(b => b.classList.add('fl-tool-hidden')); body.classList.toggle('fl-tool-hidden', !opening); });
+    ExtraPotionsCore.mountMenuArrangement({ panel, id: 'dropper' });
+    window.openSystem = () => { panel.querySelectorAll('.fl-tool-body').forEach(b => b.classList.add('fl-tool-hidden')); shadow.getElementById('tdh-diagnostics-body').classList.remove('fl-tool-hidden'); };
+  });
+  const host = p.locator('#tdh-root');
+  await p.waitForTimeout(50);
+  await p.evaluate(() => openSystem()); await p.waitForTimeout(50);
+  const read = () => host.evaluate(n => [...n.shadowRoot.querySelectorAll('#tdh-diagnostics-body details')].map(d => ({ lazy: d.hasAttribute('data-exp-collapsible'), open: d.open, flat: d.dataset.expFlat || null })));
+  assert.deepEqual(await read(), [{ lazy: false, open: true, flat: '1' }, { lazy: true, open: false, flat: null }]);
+  await host.locator('#tdh-diagnostics-body-lazy > summary').click();
+  assert.deepEqual(await read(), [{ lazy: false, open: true, flat: '1' }, { lazy: true, open: true, flat: null }], 'the collapsible group opens by its own summary');
+});
+
 test('narrow panels show icon-only tabs with their names intact and no overflow', async t => {
   const p = await page(t, 360); const host = await product(p);
   // Core's menu placement rewrites the panel's inline width, so the narrow width comes from a stylesheet.

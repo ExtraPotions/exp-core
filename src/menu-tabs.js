@@ -4,7 +4,8 @@ const ExpMenuTabs = (() => {
   const shortLabels = Object.freeze({ appearance: 'Look', protection: 'Protect' });
   const icons = Object.freeze({ drops: 'gift', streams: 'screen', appearance: 'brush', advanced: 'sliders', system: 'system', highlights: 'sparkle', protection: 'shield', amazon: 'bag' });
   // Disclosures that are inline controls, not groups, stay collapsible.
-  const KEEP_COLLAPSIBLE = '.eligibility-chip,[data-shift-appearance-explanation],[data-exp-tab-item]';
+  // Products use data-exp-collapsible for groups that build expensive content when opened.
+  const KEEP_COLLAPSIBLE = '.eligibility-chip,[data-shift-appearance-explanation],[data-exp-tab-item],[data-exp-collapsible]';
   // The doubled attribute outranks Core's content-driven `:host(...) :is(.fl-tool-header,...)` rule,
   // which would otherwise give the hidden headers their full height back.
   const css = `
