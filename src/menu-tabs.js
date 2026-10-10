@@ -31,12 +31,16 @@ const ExpMenuTabs = (() => {
     [data-exp-section-tabs] details[data-exp-flat]>summary::before,[data-exp-section-tabs] details[data-exp-flat]>summary::after{display:none!important}
     [data-exp-section-tabs] details[data-exp-flat]>summary::-webkit-details-marker{display:none}
     /* Each run of visible setting rows is one card: the run's first row opens it, its last row closes it. */
-    ${P} ${V}{margin:0!important;padding:9px 11px!important;border:1px solid var(--theme-line)!important;border-block-width:0!important;border-radius:0!important;background:var(--theme-panel)!important}
+    ${P} ${V}{margin:0!important;padding:9px 11px!important;border:1px solid var(--theme-line)!important;border-block-width:0!important;border-radius:0!important;background:var(--theme-panel)!important;box-shadow:none!important}
     ${P} ${V}:not(${AFTER_ROW}){border-top-width:1px!important;border-top-left-radius:10px!important;border-top-right-radius:10px!important}
     ${P} ${V}:not(${AFTER_ROW}):not(:nth-child(1 of :not([hidden]))){margin-top:6px!important}
     ${P} ${V}${AFTER_ROW}{border-top:1px solid var(--exp-menu-soft,#1c1c1f)!important}
     ${P} ${V}:not(:has(${BEFORE_ROW})){border-bottom-width:1px!important;border-bottom-left-radius:10px!important;border-bottom-right-radius:10px!important}
     ${P} ${V}:not(:has(${BEFORE_ROW})):has(~:not([hidden])){margin-bottom:10px!important}
+    /* A flex or grid gap would open the card between its rows, so a parent of a card with several rows has none.
+       Other children of that parent keep a 6px space; the zero-specificity rule yields to any margin a product sets. */
+    ${P} :has(>${V}${AFTER_ROW}){row-gap:0!important}
+    :where(${P} :has(>${V}${AFTER_ROW})>:not(${R}):not(${R}+*):not(:nth-child(1 of :not([hidden])))){margin-top:6px}
   `;
   const read = key => { try { return localStorage.getItem(key); } catch { return null; } };
   const write = (key, value) => { try { localStorage.setItem(key, value); } catch {} };

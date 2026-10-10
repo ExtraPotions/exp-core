@@ -251,3 +251,21 @@ test('rows hidden by the hidden attribute neither open, close nor split a card',
   const card = [{ top: line, bottom: '0px', radius: '10px 10px 0px 0px' }, { top: soft, bottom: '1px', radius: '0px 0px 10px 10px' }];
   assert.deepEqual(facts, { first: card, last: card, middle: card });
 });
+
+// Dropper's Playback rows sit in a flex column with gap:6px, and products may give rows margins.
+test('rows of one card touch even when product CSS spaces them, and the card keeps its own gaps', async t => {
+  const p = await page(t); const host = await product(p);
+  const facts = await host.evaluate(n => {
+    const s = n.shadowRoot, body = s.querySelector('.route-body:not([hidden])');
+    const style = document.createElement('style'); style.textContent = '.fl-switch{margin:8px 0;box-shadow:0 0 0 3px red}.mini-row{margin-top:6px}#gaps{display:flex;flex-direction:column;gap:6px}#gaps>p{margin:0}'; s.append(style);
+    body.insertAdjacentHTML('beforeend', '<div id="gaps"><p>Note</p><div class="fl-switch">A</div><div class="fl-switch">B</div><div class="mini-row">C</div><button type="button">One</button><button type="button">Two</button><div class="fl-switch">D</div><div class="mini-row">E</div></div>');
+    return new Promise(resolve => setTimeout(() => {
+      const r = sel => s.querySelector('#gaps>' + sel).getBoundingClientRect(), kids = [...s.querySelectorAll('#gaps>*')].map(k => k.getBoundingClientRect());
+      const gaps = kids.slice(1).map((k, i) => Math.round((k.top - kids[i].bottom) * 2) / 2);
+      resolve({ gaps, shadow: getComputedStyle(s.querySelector('#gaps>.fl-switch')).boxShadow });
+    }, 100));
+  });
+  // Note, A, B, C, One, Two, D, E: 6px to the card, rows touch, 10px after it, 6px between buttons.
+  assert.deepEqual(facts.gaps, [6, 0, 0, 10, 6, 6, 0]);
+  assert.equal(facts.shadow, 'none');
+});
