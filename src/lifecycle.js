@@ -350,7 +350,8 @@ function createProductLifecycle(shared) {
   // thousands of components (Reddit) cost seconds. Later roots only check that their adopted
   // list took the sheet. A root that edits its style gets its own copy first.
   const sharedShadowSheets = new Map();
-  let shadowPaintVerified = false;
+  // null until the first connected root answers; false sends every later root to the fallback.
+  let shadowAdoptionPaints = null;
 
   function withoutOne(list, sheet, replacement) {
     const next = [...list];
@@ -373,6 +374,7 @@ function createProductLifecycle(shared) {
     if (typeof Ctor !== 'function' || !Ctor.prototype.replaceSync) return null;
     const current = root.adoptedStyleSheets;
     if (!current || typeof current[Symbol.iterator] !== 'function') return null;
+    if (shadowAdoptionPaints === false) throw new Error('adoptedStyleSheets did not paint');
     let entry = sharedShadowSheets.get(css);
     if (!entry) {
       const created = new Ctor();
@@ -386,12 +388,14 @@ function createProductLifecycle(shared) {
       try { setAdopted(root, withoutOne(root.adoptedStyleSheets, sheet)); } catch {}
       throw new Error('adoptedStyleSheets ignored');
     }
-    if (!shadowPaintVerified && isConnectedNode(root)) {
-      if (!adoptionPaints(root, Ctor, view)) {
+    if (shadowAdoptionPaints === null && isConnectedNode(root)) {
+      let painted = false;
+      try { painted = adoptionPaints(root, Ctor, view); } catch {}
+      shadowAdoptionPaints = painted;
+      if (!painted) {
         try { setAdopted(root, withoutOne(root.adoptedStyleSheets, sheet)); } catch {}
         throw new Error('adoptedStyleSheets did not paint');
       }
-      shadowPaintVerified = true;
     }
     entry.users += 1;
     sharedShadowSheets.set(css, entry);
@@ -407,7 +411,9 @@ function createProductLifecycle(shared) {
         if (!shared) { writeSheet(sheet, text, view); return; }
         const own = new Ctor();
         writeSheet(own, text, view);
-        setAdopted(root, withoutOne(root.adoptedStyleSheets, sheet, own));
+        const list = [...root.adoptedStyleSheets];
+        // A component that reassigned its list dropped the shared copy; the edit still lands.
+        setAdopted(root, list.includes(sheet) ? withoutOne(list, sheet, own) : [...list, own]);
         release();
         sheet = own;
       },

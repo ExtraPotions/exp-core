@@ -887,7 +887,7 @@ const ExtraPotionsCore = (() => {
     // Roots are delivered in chunks, each a complete epoch through every phase, and the
     // event loop gets a turn whenever a task has run past its budget: listeners do real
     // work per root, and one task holding a whole page's batch froze Reddit for seconds.
-    const CHUNK_ROOTS = 16;
+    const CHUNK_ROOTS = 32;
     const TASK_BUDGET_MS = 8;
     const flush = () => {
       timer = 0;

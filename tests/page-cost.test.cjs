@@ -138,7 +138,48 @@ test('large page batches are delivered in small chunks with the event loop free 
   assert.equal(facts.roots, 300);
   assert.equal(facts.once, true, 'each root is delivered exactly once');
   assert.ok(facts.batches.length > 1, `batches: ${facts.batches.join(',')}`);
-  assert.ok(Math.max(...facts.batches) <= 16, `largest batch ${Math.max(...facts.batches)}`);
+  assert.ok(Math.max(...facts.batches) <= 32, `largest batch ${Math.max(...facts.batches)}`);
   assert.ok(facts.timerRanAt > 0 && facts.timerRanAt < 300, `a timer queued during delivery ran after ${facts.timerRanAt} roots`);
   assert.deepEqual(facts.epochs, [...facts.epochs].sort((a, b) => a - b), 'epochs increase');
+});
+
+test('a page where adopted sheets do not paint probes once and falls back for every root', async (t) => {
+  const page = await openPage(t);
+  const facts = await page.evaluate(() => {
+    const descriptor = Object.getOwnPropertyDescriptor(ShadowRoot.prototype, 'adoptedStyleSheets');
+    // Adoption appears to work (the list grows) but nothing paints.
+    const lists = new WeakMap();
+    Object.defineProperty(ShadowRoot.prototype, 'adoptedStyleSheets', { configurable: true, get() { return lists.get(this) || []; }, set(value) { lists.set(this, [...value]); } });
+    const lifecycle = ExtraPotionsCore.createLifecycle();
+    const roots = [];
+    for (let index = 0; index < 20; index += 1) {
+      const host = document.createElement('div'); document.body.append(host);
+      const shadow = host.attachShadow({ mode: 'open' }); shadow.innerHTML = '<span class="hit">x</span>'; roots.push(shadow);
+    }
+    const before = window.__computed;
+    roots.forEach((shadow) => lifecycle.injectStyle(shadow, '.hit{color:rgb(4, 5, 6)}'));
+    const probes = window.__computed - before;
+    const fallback = roots.every((shadow) => shadow.querySelector('style[data-exp-owned="1"]') && (lists.get(shadow)?.length ?? 0) === 0);
+    Object.defineProperty(ShadowRoot.prototype, 'adoptedStyleSheets', descriptor);
+    return { probes, fallback, styled: roots.filter((shadow) => getComputedStyle(shadow.querySelector('.hit')).color === 'rgb(4, 5, 6)').length };
+  });
+  assert.ok(facts.probes <= 1, `probes: ${facts.probes}`);
+  assert.equal(facts.fallback, true, JSON.stringify(facts));
+  assert.equal(facts.styled, 20);
+});
+
+test('an edit after a component reassigned its sheets still applies', async (t) => {
+  const page = await openPage(t);
+  const color = await page.evaluate(() => {
+    const lifecycle = ExtraPotionsCore.createLifecycle();
+    const host = document.createElement('div'); document.body.append(host);
+    const shadow = host.attachShadow({ mode: 'open' }); shadow.innerHTML = '<span class="hit">x</span>';
+    const other = document.createElement('div'); document.body.append(other);
+    lifecycle.injectStyle(other.attachShadow({ mode: 'open' }), '.hit{color:rgb(1, 1, 1)}');
+    const handle = lifecycle.injectStyle(shadow, '.hit{color:rgb(1, 1, 1)}');
+    shadow.adoptedStyleSheets = [];
+    handle.textContent = '.hit{color:rgb(3, 3, 3)}';
+    return getComputedStyle(shadow.querySelector('.hit')).color;
+  });
+  assert.equal(color, 'rgb(3, 3, 3)');
 });
