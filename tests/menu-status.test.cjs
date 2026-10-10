@@ -26,13 +26,13 @@ test('the header shows the product status in place of its tagline and follows ch
   assert.equal((await read()).dot, 'working');
 });
 
-async function setup(t, { clock = false } = {}) {
+async function setup(t, { clock = false, settings = {} } = {}) {
   const browser = await chromium.launch(); t.after(() => browser.close());
   const p = await browser.newPage();
   if (clock) await p.clock.install();
   await p.route('**/*', r => r.fulfill({ contentType: 'text/html', body: '<!doctype html><main>Page</main>' }));
   await p.goto('https://fixture.test/'); await p.addScriptTag({ content: source });
-  await p.evaluate(icon => { window.product = ExtraPotionsCore.createProduct({ id: 'shift', name: 'SHIFT', version: '1.0.0', subtitle: 'Tagline', artwork: icon, getSettings: () => ({}), sections: [{ id: 'a', label: 'Appearance', render: () => document.createElement('p') }, { id: 'b', label: 'System', render: () => document.createElement('p') }] }); product.open(); }, icon);
+  await p.evaluate(([icon, settings]) => { window.product = ExtraPotionsCore.createProduct({ id: 'shift', name: 'SHIFT', version: '1.0.0', subtitle: 'Tagline', artwork: icon, getSettings: () => settings, sections: [{ id: 'a', label: 'Appearance', render: () => document.createElement('p') }, { id: 'b', label: 'System', render: () => document.createElement('p') }] }); product.open(); }, [icon, settings]);
   await p.waitForTimeout(50);
   return p;
 }
@@ -81,4 +81,25 @@ test('the status is re-attached when the header is replaced', async t => {
   await p.evaluate(() => { const s = document.querySelector('#exp-shift-root').shadowRoot, old = s.querySelector('.header-copy'), fresh = old.cloneNode(true); fresh.querySelector('[data-exp-part="status"]')?.remove(); old.replaceWith(fresh); });
   await p.clock.fastForward(10500);
   await p.waitForFunction(() => !!document.querySelector('#exp-shift-root').shadowRoot.querySelector('.header-copy [data-exp-part="status"]'));
+});
+
+// Dropper's dock and WARD's shell show and hide by a class, never the hidden attribute.
+test('the poll stops while a class hides the menu, refreshes as it shows, and leaves unchanged text alone', async t => {
+  const p = await setup(t, { clock: true, settings: { menuAutoClose: false } });
+  await p.evaluate(() => { window.calls = 0; window.health = { state: 'working' }; ExtraPotionsCore.setMenuStatus('shift', () => { window.calls++; return window.health; }); });
+  await p.waitForFunction(() => document.querySelector('#exp-shift-root').shadowRoot.querySelector('.exp-status-text')?.textContent === 'Working');
+  await p.evaluate(() => { const s = document.querySelector('#exp-shift-root').shadowRoot; window.writes = 0;
+    new MutationObserver(records => { window.writes += records.length; }).observe(s.querySelector('[data-exp-part="status"]'), { subtree: true, childList: true, characterData: true, attributes: true });
+    const style = document.createElement('style'); style.textContent = '[data-exp-menu-layout].closed{display:none!important}'; s.append(style); });
+  await p.clock.runFor(30500); await p.waitForTimeout(50);
+  const open = await p.evaluate(() => ({ calls: window.calls, writes: window.writes }));
+  assert.ok(open.calls >= 4, `the open menu polls (${open.calls} calls)`);
+  assert.equal(open.writes, 0, 'an unchanged status is not rewritten');
+  await p.evaluate(() => document.querySelector('#exp-shift-root').shadowRoot.querySelector('[data-exp-menu-layout]').classList.add('closed'));
+  await p.waitForTimeout(100);
+  const before = await p.evaluate(() => window.calls);
+  await p.clock.runFor(30500); await p.waitForTimeout(50);
+  assert.equal(await p.evaluate(() => window.calls), before, 'no polling while the class hides the menu');
+  await p.evaluate(() => { window.health = { state: 'paused' }; document.querySelector('#exp-shift-root').shadowRoot.querySelector('[data-exp-menu-layout]').classList.remove('closed'); });
+  await p.waitForFunction(() => document.querySelector('#exp-shift-root').shadowRoot.querySelector('.exp-status-text')?.textContent === 'Paused', null, { timeout: 2000 });
 });
