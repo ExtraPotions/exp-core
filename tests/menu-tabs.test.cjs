@@ -230,3 +230,24 @@ test('each run of setting rows is one boxed card and other content stays outside
   assert.equal(facts.note.top.split(' ')[0], '0px'); assert.equal(facts.note.left.split(' ')[0], '0px'); assert.equal(facts.note.bottom, '0px');
   assert.deepEqual([facts.d.top, facts.d.right, facts.d.bottom, facts.d.left, facts.d.radius, facts.d.bg], [line, line, '1px', line, '10px 10px 10px 10px', card]);
 });
+
+test('rows hidden by the hidden attribute neither open, close nor split a card', async t => {
+  const p = await page(t); const host = await product(p);
+  const facts = await host.evaluate(n => {
+    const body = n.shadowRoot.querySelector('.route-body:not([hidden])');
+    n.shadowRoot.querySelector('.exp-core-theme,.cluster').dataset.uiTheme = 'shift';
+    body.insertAdjacentHTML('beforeend', '<div id="first"><h3>L</h3><div class="row" hidden>X</div><div class="row">A</div><div class="row">B</div><p>n</p></div>'
+      + '<div id="last"><h3>L</h3><div class="row">A</div><div class="row">B</div><div class="row" hidden>X</div><p>n</p></div>'
+      + '<div id="middle"><h3>L</h3><div class="row">A</div><div class="row" hidden>X</div><div class="row">B</div><p>n</p></div>');
+    return new Promise(resolve => setTimeout(() => {
+      const box = node => { const c = getComputedStyle(node); return { top: c.borderTopWidth + ' ' + c.borderTopColor, bottom: c.borderBottomWidth,
+        radius: [c.borderTopLeftRadius, c.borderTopRightRadius, c.borderBottomRightRadius, c.borderBottomLeftRadius].join(' ') }; };
+      const rows = id => [...body.querySelectorAll(`#${id}>.row:not([hidden])`)].map(box);
+      resolve({ first: rows('first'), last: rows('last'), middle: rows('middle') });
+    }, 100));
+  });
+  const line = '1px rgb(39, 39, 42)', soft = '1px rgb(28, 28, 31)';
+  // In each case the first visible row opens the card and the last visible row closes the same card.
+  const card = [{ top: line, bottom: '0px', radius: '10px 10px 0px 0px' }, { top: soft, bottom: '1px', radius: '0px 0px 10px 10px' }];
+  assert.deepEqual(facts, { first: card, last: card, middle: card });
+});
