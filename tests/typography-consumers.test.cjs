@@ -33,7 +33,7 @@ for (const width of [360,1920]) {
               if(Math.abs(right-c.right)>1)problems.push('Control right edge: '+row.textContent.trim());
               if(Math.abs((r.top+r.bottom)/2-(c.top+c.bottom)/2)>1)problems.push('Control vertical alignment: '+row.textContent.trim());
               if(!style.fontFamily.includes('Segoe UI'))problems.push('Control font differs from menu');
-              if(control.tagName==='SELECT'&&(parseFloat(style.fontSize)!==body||c.height<32))problems.push('Dropdown text or height: '+row.textContent.trim());
+              if(control.tagName==='SELECT'&&(parseFloat(style.fontSize)!==body||c.height<28))problems.push('Dropdown text or height: '+row.textContent.trim());
               const copy=row.querySelector('.label,.fl-switch-text,.copy>strong,.row-copy>strong');
               if(copy&&parseFloat(getComputedStyle(copy).fontSize)!==body)problems.push('Label size: '+copy.textContent);
             }

@@ -125,3 +125,52 @@ test('inner tabs are an underlined text row and buttons follow their roles', asy
   assert.equal(facts.primary, 'rgb(128, 215, 210)'); assert.equal(facts.destructive, 'rgb(248, 113, 113)'); assert.equal(facts.other, 'rgba(0, 0, 0, 0)');
   assert.deepEqual(facts.switchSize, [30, 17, 'rgb(128, 215, 210)']);
 });
+
+// Opens the SHIFT menu with a checked switch and returns its colours under the given theme state.
+async function switchColour(t, { theme, skin, forced } = {}) {
+  const p = await page(t); const host = await product(p);
+  if (forced) await p.emulateMedia({ forcedColors: 'active' });
+  const probe = await host.evaluate((n, { theme, skin }) => {
+    const s = n.shadowRoot, root = s.querySelector('.exp-core-theme,.cluster'), body = s.querySelector('.route-body:not([hidden])');
+    root.dataset.uiTheme = theme || 'shift'; if (skin) root.dataset.themeSkin = skin;
+    const sw = document.createElement('button'); sw.className = 'toggleSwitch'; sw.setAttribute('aria-checked', 'true'); sw.style.transition = 'none'; body.append(sw);
+    const ref = document.createElement('i'); ref.style.cssText = 'background:Highlight'; body.append(ref);
+    return new Promise(resolve => setTimeout(() => resolve({ bg: getComputedStyle(sw).backgroundColor, highlight: getComputedStyle(ref).backgroundColor }), 100));
+  }, { theme, skin });
+  return probe;
+}
+
+test('a checked switch keeps its colours under the contrast theme, the gradient skin and forced colours', async t => {
+  assert.equal((await switchColour(t, { theme: 'contrast' })).bg, 'rgb(255, 255, 255)', 'contrast theme: white switch, not the accent');
+  assert.equal((await switchColour(t, { skin: 'gradient' })).bg, 'rgb(128, 215, 210)', 'gradient skin: flat accent, as the lean layout intends');
+  const forced = await switchColour(t, { skin: 'gradient', forced: true });
+  assert.equal(forced.bg, forced.highlight, 'forced colors: the Highlight system color');
+  assert.notEqual(forced.bg, 'rgb(128, 215, 210)');
+});
+
+test('the System Reset button is a red outline in the lean menu', async t => {
+  const p = await page(t); const host = await product(p);
+  const facts = await host.evaluate(n => {
+    const s = n.shadowRoot, body = s.querySelector('.route-body:not([hidden])');
+    const system = ExtraPotionsCore.createProductSystem({ id: 'shift', version: '1.0.0', timeline: document.createElement('div'), diagnostics: document.createElement('div'), onReset() {}, layout: 'grouped' });
+    body.append(system); system.querySelector('[data-exp-system-item="reset"]').open = true;
+    return new Promise(resolve => setTimeout(() => {
+      const b = system.querySelector('[data-exp-system-item="reset"] button'), c = getComputedStyle(b);
+      resolve({ border: c.borderTopColor, width: c.borderTopWidth, bg: c.backgroundColor, destructive: b.dataset.expDestructive });
+    }, 100));
+  });
+  assert.deepEqual(facts, { border: 'rgb(248, 113, 113)', width: '1px', bg: 'rgba(0, 0, 0, 0)', destructive: '1' });
+});
+
+test('a long inner tab row scrolls sideways without widening the panel', async t => {
+  const p = await page(t, 360); const host = await product(p);
+  const facts = await host.evaluate(n => {
+    const s = n.shadowRoot, body = s.querySelector('.route-body:not([hidden])');
+    body.insertAdjacentHTML('beforeend', Array.from({ length: 12 }, (_, i) => `<details><summary>Group number ${i}</summary><div class="row">r</div></details>`).join(''));
+    return new Promise(resolve => setTimeout(() => {
+      const list = s.querySelector('.exp-submenu-tablist'), panel = s.querySelector('aside');
+      resolve({ scrolls: list.scrollWidth > list.clientWidth, wrap: getComputedStyle(list).flexWrap, overflow: panel.scrollWidth - panel.clientWidth });
+    }, 100));
+  });
+  assert.equal(facts.scrolls, true); assert.equal(facts.wrap, 'nowrap'); assert.ok(facts.overflow <= 1);
+});
