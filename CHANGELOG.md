@@ -1,3 +1,8 @@
+## 3.8.0 — 2026-10-09
+
+- Redesigns the shared menu: sections are tabs, inner pages are a second row of tabs, and groups are always-open cards.
+- Neutral surfaces with each product's accent, a compact header with a live status line, and clear primary and destructive buttons.
+
 ## 3.7.9 — 2026-10-09
 
 - Report a Problem fills in the GitHub issue with a short summary (versions, manager, browser, site, changed settings, recent errors and activity) and copies the full diagnostics.
