@@ -1,3 +1,8 @@
+## 3.8.1 — 2026-10-10
+
+- Copy Diagnostics and Report a Problem list hard-to-read text and anything covering the page, for every product.
+- Records element names and colors only, never page text.
+
 ## 3.8.0 — 2026-10-09
 
 - Redesigns the shared menu: sections are tabs, inner pages are a second row of tabs, and groups are always-open cards.
