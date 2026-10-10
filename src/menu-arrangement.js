@@ -227,10 +227,13 @@ const ExpMenuArrangement = (() => {
       onChange();
     }
     apply();
+    const sectionTabs = ExpMenuTabs.mount({ panel, id, entries: desired });
     return {
-      update() { collapseSubmenus(panel);tabs.update(); },
+      update() { collapseSubmenus(panel); tabs.update(); sectionTabs.update(); },
+      select: key => sectionTabs.select(key),
       describe: () => describe(id, entries.map(({ key, label, category }) => ({ key, label, category }))),
       destroy() {
+        sectionTabs.destroy();
         tabs.destroy();
         style.remove();
         entries.forEach(entry => { delete entry.section.dataset.expMenuCategory; });

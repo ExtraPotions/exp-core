@@ -12,9 +12,11 @@ for(const [repo,id,selector,launcher,url]of products)test(repo+' installed compa
  const palette=await root.locator('[data-exp-part="dock"]').evaluate(n=>getComputedStyle(n).getPropertyValue('--theme-accent').trim());assert.equal(palette,{prisma:'#91bfff',shift:'#80d7d2',ward:'#e7bb75',dropper:'#bc94f5'}[id]);
  const headers=root.locator('.fl-tool-header');const names=await headers.evaluateAll(nodes=>nodes.map(n=>(n.querySelector('.fl-tool-title')||n).textContent.replace(/[▸▾]/g,'').trim()));
  assert.equal(names.at(-1),'System');let visited=0;
- for(let h=0;h<await headers.count();h++){
-  await headers.nth(h).click();await page.waitForTimeout(80);
-  const lists=root.getByRole('tablist');
+ // Sections are main tabs; the inner submenu rows sit inside each section's page.
+ const sectionTabs=root.locator('[data-exp-section-tabs][role=tablist] [role=tab]');assert.deepEqual(await sectionTabs.evaluateAll(nodes=>nodes.map(n=>n.getAttribute('aria-label'))),names);
+ for(let h=0;h<await sectionTabs.count();h++){
+  await sectionTabs.nth(h).click();await page.waitForTimeout(80);assert.equal(await sectionTabs.nth(h).getAttribute('aria-selected'),'true');
+  const lists=root.locator('[data-exp-submenu-tabs]>[role=tablist]');
   for(let l=0;l<await lists.count();l++){
    const list=lists.nth(l);if(!await list.isVisible())continue;
    const labels=await list.getByRole('tab').allTextContents();assert.ok(labels.length<=4,repo+' keeps the compact row focused');
@@ -27,7 +29,7 @@ for(const [repo,id,selector,launcher,url]of products)test(repo+' installed compa
  const diagnostics=root.locator(id==='dropper'?'#tdh-diagnostics':'.diagnostics-controls pre');await diagnostics.waitFor({state:'visible'});assert.equal(JSON.parse(await diagnostics.innerText()).report,repo+' Diagnostics');
  await root.getByRole('tab',{name:'Reset',exact:true}).click();assert.equal(await root.getByRole('button',{name:'Reset All Settings',exact:true}).isVisible(),true);
  if(id==='dropper'){
-  await root.locator('[data-panel="tdh-streams-body"]').click();
+  await root.locator('[data-exp-section-tab="tdh-streams-body"]').click();
   const list=root.locator('#tdh-streams-body').getByRole('tablist');assert.deepEqual(await list.getByRole('tab').allTextContents(),['Stream','Playback','Routing','Alerts']);
   await list.getByRole('tab',{name:'Playback',exact:true}).click();assert.equal(await root.locator('#tdh-remember-content-warnings').isVisible(),true);
  }

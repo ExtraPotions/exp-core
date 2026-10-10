@@ -26,8 +26,12 @@ for(const[repo,id,hostId,accent]of products)test(repo+' installed menu matches a
  assert.deepEqual(Object.fromEntries(categories.map(c=>[c.title,c.icon])),categoryIcons[repo]);
  assert.equal(new Set(categories.map(c=>c.icon)).size,categories.length,'Every category in a product has a distinct icon');
  for(const category of categories){assert.equal(category.hidden,'true');assert.equal(category.shape,'""');assert.ok(category.width>=12&&category.width<=16);}
- const type=await host.locator('.fl-tool-title').first().evaluate(n=>({font:getComputedStyle(n).fontFamily,size:getComputedStyle(n).fontSize,line:getComputedStyle(n).lineHeight,weight:getComputedStyle(n).fontWeight,tracking:getComputedStyle(n).letterSpacing,height:n.closest('.fl-tool-header').getBoundingClientRect().height}));
- assert.ok(type.font.includes('Segoe UI'));assert.equal(type.size,'13px');assert.ok(parseFloat(type.line)>=16);assert.equal(type.weight,'500');assert.equal(type.tracking,'-0.1px');assert.ok(Math.round(type.height)>=38,JSON.stringify(type));
+ const type=await host.locator('.fl-tool-title').first().evaluate(n=>({font:getComputedStyle(n).fontFamily,size:getComputedStyle(n).fontSize,line:getComputedStyle(n).lineHeight,weight:getComputedStyle(n).fontWeight,tracking:getComputedStyle(n).letterSpacing}));
+ assert.ok(type.font.includes('Segoe UI'));assert.equal(type.size,'13px');assert.ok(parseFloat(type.line)>=16);assert.equal(type.weight,'500');assert.equal(type.tracking,'-0.1px');
+ // Section headers sit behind the main tab row, one tab per section in the same order.
+ const tabs=await host.locator('[data-exp-section-tabs][role=tablist] [role=tab]').evaluateAll(nodes=>nodes.map(n=>({name:n.getAttribute('aria-label'),height:n.getBoundingClientRect().height})));
+ assert.deepEqual(tabs.map(tab=>tab.name),categories.map(c=>c.title));
+ for(const tab of tabs)assert.ok(Math.round(tab.height)>=28,JSON.stringify(tab));
  // A retained custom theme must change the menu, rather than becoming an inert setting.
  const themeRoot=host.locator('.exp-core-theme,.cluster').first();
  await themeRoot.evaluate(n=>{n.dataset.uiTheme='contrast';n.style.setProperty('--theme-bg','#000000');n.style.setProperty('--theme-accent','#ffffff');});

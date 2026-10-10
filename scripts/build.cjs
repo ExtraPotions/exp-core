@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '..');
 const { loadSuiteContract } = require('./suite-contract.cjs');
 const hash = text => crypto.createHash('sha256').update(text).digest('hex');
 const normalize = text => text.replace(/\r\n/g, '\n');
-const files = ['foundation.js','diagnostic-report.js','lifecycle.js','product-tools.js','menu-arrangement.js','health-summary.js','recovery-control.js','lean-menu.js','menu-typography.js','menu-preferences.js','runtime.js'];
+const files = ['foundation.js','diagnostic-report.js','lifecycle.js','product-tools.js','menu-tabs.js','menu-arrangement.js','health-summary.js','recovery-control.js','lean-menu.js','menu-typography.js','menu-preferences.js','runtime.js'];
 const contractFile = 'suite-contract.json';
 const version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
 const { contract: suiteContract, text: contractText } = loadSuiteContract(root);

@@ -21,9 +21,9 @@ function instrumentReadableSource(repo) {
 // readable assembly. check-suite-coexistence.cjs and product browser tests execute
 // the actual minified installs without exposing or depending on private names.
 for (const [repo, url, root, system] of [
-  ['WARD', 'https://www.amazon.com/dp/fixture', '#exp-ward-root', '.route[data-view="system"]'],
-  ['SHIFT', 'https://www.steamgifts.com/', '#exp-shift-root', '[data-section="system"]'],
-  ['Dropper', 'https://www.twitch.tv/fixture', '#tdh-root', '[data-panel="tdh-diagnostics-body"]'],
+  ['WARD', 'https://www.amazon.com/dp/fixture', '#exp-ward-root', '[data-exp-section-tabs] [role=tab][aria-label="System"]'],
+  ['SHIFT', 'https://www.steamgifts.com/', '#exp-shift-root', '[data-exp-section-tabs] [role=tab][aria-label="System"]'],
+  ['Dropper', 'https://www.twitch.tv/fixture', '#tdh-root', '[data-exp-section-tab="tdh-diagnostics-body"]'],
 ]) {
   test(repo + ' readable internal fixture updates an open System health card when a feature is suspended', consumers.options([repo]), async t => {
     const browser = await chromium.launch();

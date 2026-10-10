@@ -48,16 +48,17 @@ test('Core does not re-collapse a submenu after the user opens it',async t=>{
     appearance.querySelector('.fl-tool-body').append(nested);
     panel.append(appearance,make('advanced','Advanced'),make('system','System'));document.body.append(panel);
     const controller=ExtraPotionsCore.mountMenuArrangement({panel,id:'shift'});
-    const initiallyOpen=nested.open;
+    // Main section tabs flatten groups inside a page: they are open from the start.
+    const initiallyOpen=nested.open,flat=nested.dataset.expFlat||null;
     nested.open=true;
     controller.update();
     const afterUpdate=nested.open;
     ExtraPotionsCore.collapseMenuSubmenus(panel);
     const afterCollapsePass=nested.open;
     controller.destroy();
-    return {initiallyOpen,afterUpdate,afterCollapsePass};
+    return {initiallyOpen,flat,afterUpdate,afterCollapsePass};
   });
-  assert.deepEqual(result,{initiallyOpen:false,afterUpdate:true,afterCollapsePass:true});
+  assert.deepEqual(result,{initiallyOpen:true,flat:'1',afterUpdate:true,afterCollapsePass:true});
 });
 
 test('Core orders sections by category and offers nothing to rearrange or hide',async t=>{

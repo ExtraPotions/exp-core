@@ -34,6 +34,9 @@ function inspectSection(hostSelector) {
   const shadow = host.shadowRoot;
   const visible = (node) => {
     if (!node.isConnected || node.closest('[hidden]')) return false;
+    // Section headers behind the main tab row are visually hidden (clipped to 1px); the tabs carry their names.
+    const header = node.closest('.fl-tool-header');
+    if (header && getComputedStyle(header).clipPath === 'inset(50%)') return false;
     const rect = node.getBoundingClientRect();
     const style = getComputedStyle(node);
     return (rect.width > 0 || rect.height > 0) && style.visibility !== 'hidden' && style.display !== 'none';
