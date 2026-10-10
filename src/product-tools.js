@@ -183,6 +183,7 @@ const ExtraPotionsTools = (() => {
       disarm();reset.disabled=true;
       try{await onReset();notify(product+' reset complete.');}catch{notify('Reset did not complete. Check storage permissions and try again.');}finally{reset.disabled=false;}
     }));
+    reset.dataset.expDestructive='1';
     function disarm(){clearTimeout(armTimer);armedUntil=0;reset.textContent='Reset All Settings';delete reset.dataset.expResetArmed;resetStatus.textContent='';}
     reset.style.cssText+=';border:1px solid #ff2438;background:#e11428;color:#fff;font-weight:700';
     const resetCard=ExtraPotionsCore.createDisclosure('Reset',note(`Clears ${product} settings and stored data on this browser. This cannot be undone.`),reset,resetStatus);

@@ -104,3 +104,24 @@ test('narrow panels show icon-only tabs with their names intact and no overflow'
     return { compact: list.dataset.compact, label: getComputedStyle(list.querySelector('.exp-section-tab-label')).display, names: [...list.children].map(t => t.getAttribute('aria-label')), overflow: panel.scrollWidth - panel.clientWidth }; });
   assert.equal(facts.compact, '1'); assert.equal(facts.label, 'none'); assert.deepEqual(facts.names, ['Appearance', 'Advanced', 'System']); assert.equal(facts.overflow, 0);
 });
+
+test('inner tabs are an underlined text row and buttons follow their roles', async t => {
+  const p = await page(t); const host = await product(p);
+  const facts = await host.evaluate(n => {
+    const s = n.shadowRoot, body = s.querySelector('.route-body:not([hidden])');
+    // The fixture's default theme is not SHIFT's, so select SHIFT's to get its accent.
+    s.querySelector('.exp-core-theme,.cluster').dataset.uiTheme = 'shift';
+    body.insertAdjacentHTML('beforeend', '<details><summary>One</summary><div class="row">a</div></details><details><summary>Two</summary><div class="row">b</div></details><button type="button" class="life-btn action" data-exp-primary="1">Go</button><button type="button" class="life-btn action" data-exp-destructive="1">Reset</button><button type="button" class="life-btn action">Other</button>');
+    return new Promise(resolve => setTimeout(() => {
+      const list = s.querySelector('.exp-submenu-tablist'), active = list?.querySelector('[aria-selected=true]');
+      const css = node => getComputedStyle(node);
+      const [primary, destructive, other] = [...body.querySelectorAll(':scope button.life-btn')].slice(-3);
+      resolve({ wraps: css(list).flexWrap, activeShadow: css(active).boxShadow.includes('inset'), activeBg: css(active).backgroundColor,
+        primary: css(primary).backgroundColor, destructive: css(destructive).borderTopColor, other: css(other).backgroundColor,
+        switchSize: (() => { const sw = document.createElement('button'); sw.className = 'toggleSwitch'; sw.setAttribute('aria-checked', 'true'); body.append(sw); const r = sw.getBoundingClientRect(), bg = css(sw).backgroundColor; sw.remove(); return [Math.round(r.width), Math.round(r.height), bg]; })() });
+    }, 100));
+  });
+  assert.equal(facts.wraps, 'nowrap'); assert.equal(facts.activeShadow, true); assert.equal(facts.activeBg, 'rgba(0, 0, 0, 0)');
+  assert.equal(facts.primary, 'rgb(128, 215, 210)'); assert.equal(facts.destructive, 'rgb(248, 113, 113)'); assert.equal(facts.other, 'rgba(0, 0, 0, 0)');
+  assert.deepEqual(facts.switchSize, [30, 17, 'rgb(128, 215, 210)']);
+});
