@@ -24,7 +24,7 @@ for (const width of [360,1920]) {
             if(parseFloat(getComputedStyle(panel).fontSize)!==body)problems.push('Incorrect menu body size');
             if(panel.scrollWidth>panel.clientWidth+1)problems.push('Horizontal menu overflow');
             const version=panel.querySelector('[data-exp-part="version"],#tdh-header-version');
-            if(version&&(parseFloat(getComputedStyle(version).fontSize)!==11||version.getBoundingClientRect().height>28))problems.push('Version control should use compact metadata typography');
+            if(version&&(parseFloat(getComputedStyle(version).fontSize)!==small-1||version.getBoundingClientRect().height>28))problems.push('Version control should use compact metadata typography');
             for(const row of panel.querySelectorAll('.row,.mini-row,.fl-switch,.setting-row')){
               if(!visible(row))continue;
               const control=row.querySelector(':scope > select,:scope > button[role="switch"]');if(!control)continue;rows++;
