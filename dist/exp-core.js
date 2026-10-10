@@ -1642,7 +1642,7 @@ const ExpMenuTabs = (() => {
     [data-exp-section-tabs] .fl-tool-panel{margin:0!important;border:0!important;background:transparent!important}
     [data-exp-section-tabs] .fl-tool-body{padding:0!important}
     .exp-section-tabs{display:flex;gap:2px;margin:0 0 2px;padding:3px;border-radius:9px;background:var(--exp-menu-track,#18181b);min-width:0}
-    .exp-section-tabs>[role=tab]{flex:1 1 0;display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;min-height:28px;padding:4px 6px;border:0;border-radius:7px;background:transparent;color:var(--theme-muted);font:500 11.5px/1.2 Inter,"Segoe UI",system-ui,sans-serif;white-space:nowrap;cursor:pointer}
+    .exp-section-tabs>[role=tab]{flex:1 1 auto;display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;min-height:28px;padding:4px 6px;border:0;border-radius:7px;background:transparent;color:var(--theme-muted);font:500 11.5px/1.2 Inter,"Segoe UI",system-ui,sans-serif;white-space:nowrap;cursor:pointer}
     .exp-section-tabs>[role=tab]:hover{color:var(--theme-text)}
     .exp-section-tabs>[role=tab][aria-selected=true]{background:var(--theme-line);color:var(--theme-text);box-shadow:inset 0 -2px 0 var(--theme-accent)}
     .exp-section-tabs>[role=tab]:focus-visible{outline:2px solid var(--theme-accent);outline-offset:1px}
@@ -1981,7 +1981,7 @@ const ExpMenuArrangement = (() => {
       return { section, header, body, label, key };
     }).filter(entry => entry?.key);
     const tabs=mountTabs({panel,id,onChange});
-    const none = { update() { collapseSubmenus(panel);tabs.update(); }, describe: () => [], destroy() {tabs.destroy();} };
+    const none = { update() { collapseSubmenus(panel);tabs.update(); }, select() {}, describe: () => [], destroy() {tabs.destroy();} };
     if (entries.length < 2) return none;
     const parent = entries[0].section.parentElement;
     if (entries.some(entry => entry.section.parentElement !== parent)) return none;

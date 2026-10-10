@@ -205,7 +205,7 @@ const ExpMenuArrangement = (() => {
       return { section, header, body, label, key };
     }).filter(entry => entry?.key);
     const tabs=mountTabs({panel,id,onChange});
-    const none = { update() { collapseSubmenus(panel);tabs.update(); }, describe: () => [], destroy() {tabs.destroy();} };
+    const none = { update() { collapseSubmenus(panel);tabs.update(); }, select() {}, describe: () => [], destroy() {tabs.destroy();} };
     if (entries.length < 2) return none;
     const parent = entries[0].section.parentElement;
     if (entries.some(entry => entry.section.parentElement !== parent)) return none;
