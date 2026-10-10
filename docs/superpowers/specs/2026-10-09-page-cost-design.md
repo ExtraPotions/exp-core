@@ -20,16 +20,17 @@ User trace on reddit.com, 92 s, SHIFT 3.5.18, PRISMA 3.2.16:
 
 - **Shadow-root styles.**
   - One constructed sheet per stylesheet text is shared by every root that injects it.
-  - Paint is probed once per page, with a separate probe sheet in the first connected root. Later roots only check that `adoptedStyleSheets` took the sheet.
-  - Editing a handle's text gives that root its own copy first (copy-on-write). Removing a handle detaches from that root only; the shared sheet is dropped when no root uses it.
+  - Paint is probed once per page, with a separate probe sheet in the first connected root. Later roots only check that `adoptedStyleSheets` took the sheet. A failed probe is remembered, and later roots go straight to the fallback. This assumes adoption behaves the same for every root on a page.
+  - Editing a handle's text gives that root its own copy first (copy-on-write). If the component has since dropped the shared copy, the edited copy is adopted anyway. Removing a handle detaches from that root only; the shared sheet is dropped when no root uses it.
   - If adoption fails or does not paint, the existing `<style>` fallback is used.
 - **Presentation state.** `presentationStateChain` and `isPresentationSuppressed` find state-carrying ancestors with `closest('[data-exp-presentation-state]')`, so elements without state are never parsed.
 - **Page observer delivery.**
-  - Queued roots are delivered in chunks of at most 16. Each chunk is a complete epoch through every phase.
+  - Queued roots are delivered in chunks of at most 32. Each chunk is a complete epoch through every phase.
   - Once a task has run 8 ms, the rest continues in a new task (`setTimeout(0)`).
   - Mutations arriving meanwhile join the same queue.
   - Protocol `exp-page-observer-v1` is unchanged: `rootIndex` and `rootCount` describe the chunk.
   - With mixed Core versions, the leader's behaviour applies, so older leaders still deliver whole batches.
+  - Phase order holds within a chunk, not across chunks: WARD can hide content in a later chunk than the one where PRISMA highlighted it. PRISMA therefore leaves matches inside hidden content out of its count and navigation until they are revealed.
 
 ## SHIFT 3.5.19
 
@@ -59,7 +60,10 @@ They now call the binding directly, and each product's tests forbid the global f
   - 200 roots get at most one probe and share one sheet.
   - Editing or removing one root's style leaves the others alone.
   - A 120-deep tree is parsed only where state exists.
-  - 300 roots arrive in batches of at most 16, each exactly once, with timers running in between.
+  - A page where adoption does not paint probes once and falls back for every root.
+  - An edit lands after a component reassigned its sheets.
+  - 300 roots arrive in batches of at most 32, each exactly once, with timers running in between.
+- **PRISMA**: matches inside content WARD hides later leave the count until it is revealed.
 - **SHIFT**:
   - `tests/visibility-cost.test.cjs`: computed-style reads stay near the viewport.
   - `tests/dynamic-engine-controller.test.cjs`:
