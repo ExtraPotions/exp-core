@@ -118,3 +118,25 @@ test('Report a Problem copies a fresh report and opens the issue with it',async 
  assert.equal(facts.copied.length,2);assert.match(facts.copied[1],/"sequence": 2/,'each click takes a fresh report');
  assert.match(facts.bodies[1],/"sequence": 2/);
 });
+
+const sampleReport=()=>({
+ plugin:{id:'shift',version:'3.5.20',compatibility:{products:[{id:'shift',status:'observed',versions:['3.5.20']},{id:'prisma',status:'observed',versions:['3.2.18']},{id:'ward',status:'not-observed',versions:[]}]}},
+ technical:{manager:{name:'Tampermonkey',version:'5.3.3'},core:{version:'3.7.9'}},
+ environment:{hostname:'www.reddit.com',userAgent:'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.8010.12 Safari/537.36',viewport:{width:1280,height:720,pixelRatio:1.5}},
+ core:{errors:Array.from({length:8},(_,i)=>({source:'shift',code:'E'+i,message:'failure '+i+' at https://private.example/?token=secret '+'x'.repeat(400)}))},
+ console:{entries:[{level:'log',message:'noise'},{level:'error',message:'TypeError: boom'}]},
+});
+test('the issue summary carries the minimum triage facts, compactly and without links',()=>{
+ const api=vm.runInNewContext(source+';ExtraPotionsTools',{});
+ const summary=api.issueSummary(sampleReport(),{settings:{current:{theme:'midnight',safeMode:false,surfaceLevel:'balanced',list:['a','b']},defaults:{theme:'original',safeMode:false,surfaceLevel:'conservative',list:['a','b']}},activity:['10:01 Themed page','10:02 Paused']});
+ for(const text of ['SHIFT 3.5.20','Core 3.7.9','PRISMA 3.2.18','Tampermonkey 5.3.3','Chrome 153','Windows','www.reddit.com','1280×720','theme: "midnight"','surfaceLevel: "balanced"','TypeError: boom','E7','10:02 Paused'])assert.ok(summary.includes(text),text+' in\n'+summary);
+ for(const text of ['safeMode','list:','E2','noise','secret','https://','WARD'])assert.ok(!summary.includes(text),text+' not in\n'+summary);
+ assert.ok(summary.length<2000,`summary ${summary.length} chars`);
+});
+test('a large report still puts the summary in the issue',()=>{
+ const api=vm.runInNewContext(source+';ExtraPotionsTools',{});
+ const report={...sampleReport(),console:{entries:Array.from({length:400},(_,i)=>({level:'log',message:'entry '+i+' '.repeat(30)}))}};
+ const url=api.productIssueUrl('shift','3.5.20',{diagnostics:report,copied:true,summary:api.issueSummary(report)});
+ assert.ok(url.length<=8000);const body=new URL(url).searchParams.get('body');
+ assert.ok(body.includes('Tampermonkey 5.3.3')&&body.includes('www.reddit.com'));assert.ok(/copied to your clipboard/i.test(body));
+});
