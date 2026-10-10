@@ -269,3 +269,109 @@ test('rows of one card touch even when product CSS spaces them, and the card kee
   assert.deepEqual(facts.gaps, [6, 0, 0, 10, 6, 6, 0]);
   assert.equal(facts.shadow, 'none');
 });
+
+// PRISMA's "explain this match" opens the menu and then its first section on purpose.
+test('a section the product opens as the menu shows wins over the remembered tab, even the first', async t => {
+  const p = await page(t); const host = await product(p);
+  await host.locator('[data-exp-section-tab="system"]').click();
+  await p.evaluate(() => product.close()); await p.waitForTimeout(50);
+  await host.evaluate(n => { product.open(); n.shadowRoot.querySelector('button[data-section="appearance"]').click(); });
+  await p.waitForTimeout(50);
+  const s = await state(host);
+  assert.equal(s.selected, 0); assert.deepEqual(s.text, ['Appearance page']);
+  assert.equal(await p.evaluate(() => localStorage.getItem('exp:suite:menu-tab:shift')), 'system', 'the tab the user chose is still remembered');
+});
+
+test('hidden section headers and flattened group labels are not Tab stops, and destroy restores them', async t => {
+  const p = await page(t);
+  await p.evaluate(() => {
+    const host = document.createElement('div'); host.id = 'tdh-root'; document.body.append(host);
+    const shadow = host.attachShadow({ mode: 'open' }); const panel = document.createElement('aside'); panel.dataset.expPart = 'dock'; shadow.append(panel);
+    for (const [id, title] of [['tdh-drops-body', 'Drops'], ['tdh-diagnostics-body', 'System']]) {
+      const section = document.createElement('section'); section.className = 'fl-tool-panel';
+      section.innerHTML = `<div class="fl-tool-header" data-panel="${id}"><span class="fl-tool-title">${title}</span><button class="fl-tool-chevron" type="button" aria-expanded="false">v</button></div><div class="fl-tool-body fl-tool-hidden" id="${id}"><button type="button" class="first">First</button><div class="card"><details><summary>Group</summary><div class="row"><button type="button" class="inner">Inner</button></div></details></div></div>`;
+      panel.append(section);
+    }
+    panel.addEventListener('click', e => { const h = e.target.closest('.fl-tool-header'); if (!h) return; const body = shadow.getElementById(h.dataset.panel); const opening = body.classList.contains('fl-tool-hidden'); panel.querySelectorAll('.fl-tool-body').forEach(b => b.classList.add('fl-tool-hidden')); body.classList.toggle('fl-tool-hidden', !opening); });
+    window.arrangement = ExtraPotionsCore.mountMenuArrangement({ panel, id: 'dropper' });
+  });
+  const host = p.locator('#tdh-root');
+  await p.waitForTimeout(50);
+  await host.locator('[data-exp-section-tabs] [role=tab][aria-selected=true]').focus();
+  const stops = [];
+  for (let i = 0; i < 6; i++) {
+    await p.keyboard.press('Tab');
+    stops.push(await host.evaluate(n => { const a = n.shadowRoot.activeElement; if (!a) return 'outside';
+      return a.closest('.fl-tool-header') ? 'header:' + a.className : a.matches('details[data-exp-flat]>summary') ? 'flat summary' : a.className || a.tagName; }));
+  }
+  assert.deepEqual(stops.slice(0, 2), ['first', 'inner'], 'Tab goes from the tabs to the page content');
+  assert.ok(!stops.some(stop => stop.startsWith('header:') || stop === 'flat summary'), stops.join(', '));
+  const toggled = await host.evaluate(n => new Promise(resolve => {
+    const details = n.shadowRoot.querySelector('#tdh-drops-body details'); let toggles = 0; details.addEventListener('toggle', () => toggles++);
+    details.querySelector('summary').click();
+    setTimeout(() => resolve({ toggles, open: details.open }), 100);
+  }));
+  assert.deepEqual(toggled, { toggles: 0, open: true }, 'a flattened group label does not collapse');
+  await host.locator('#tdh-drops-body summary').focus();
+  await p.keyboard.press('Enter'); await p.keyboard.press('Space'); await p.waitForTimeout(100);
+  assert.equal(await host.evaluate(n => n.shadowRoot.querySelector('#tdh-drops-body details').open), true, 'Enter and Space on a flattened group label do not collapse it');
+  const restored = await host.evaluate(n => { arrangement.destroy(); const s = n.shadowRoot;
+    return { chevron: s.querySelector('.fl-tool-chevron').getAttribute('tabindex'), header: s.querySelector('.fl-tool-header').getAttribute('tabindex'), summary: s.querySelector('summary').getAttribute('tabindex') }; });
+  assert.deepEqual(restored, { chevron: null, header: null, summary: null });
+});
+
+test('in forced colours the selected section tab and inner tab are underlined in Highlight', async t => {
+  const p = await page(t); await p.emulateMedia({ forcedColors: 'active' }); const host = await product(p);
+  const facts = await host.evaluate(n => {
+    const s = n.shadowRoot, body = s.querySelector('.route-body:not([hidden])');
+    body.insertAdjacentHTML('beforeend', '<details><summary>One</summary><div class="row">a</div></details><details><summary>Two</summary><div class="row">b</div></details>');
+    const ref = document.createElement('i'); ref.style.cssText = 'color:Highlight'; body.append(ref);
+    return new Promise(resolve => setTimeout(() => {
+      const mark = node => { const c = getComputedStyle(node); return [c.borderBottomStyle, c.borderBottomWidth, c.borderBottomColor]; };
+      const pick = (sel, on) => s.querySelector(`${sel}[aria-selected=${on}]`);
+      resolve({ highlight: getComputedStyle(ref).color,
+        section: [mark(pick('[data-exp-section-tabs] [role=tab]', true)), mark(pick('[data-exp-section-tabs] [role=tab]', false))],
+        inner: [mark(pick('.exp-submenu-tablist>button', true)), mark(pick('.exp-submenu-tablist>button', false))] });
+    }, 100));
+  });
+  const on = ['solid', '2px', facts.highlight];
+  assert.deepEqual(facts.section[0], on); assert.equal(facts.section[1][0], 'none');
+  assert.deepEqual(facts.inner[0], on); assert.equal(facts.inner[1][0], 'none');
+});
+
+test('the menu size preference scales tabs, buttons, header and group labels from the approved default', async t => {
+  const p = await page(t); const host = await product(p);
+  await host.evaluate(n => {
+    ExtraPotionsCore.setMenuStatus('shift', () => ({ state: 'working' }));
+    n.shadowRoot.querySelector('.route-body:not([hidden])').insertAdjacentHTML('beforeend', '<details><summary>One</summary><div class="filters"><select><option>x</option></select></div><div class="card"><details><summary>Group</summary><div class="row">r</div></details></div><div class="button-grid"><button type="button" class="action">Btn</button></div></details><details><summary>Two</summary><div class="row">b</div></details>');
+  });
+  const read = size => host.evaluate((n, size) => {
+    ExtraPotionsCore.setMenuSizePreference(size);
+    return new Promise(resolve => setTimeout(() => {
+      const s = n.shadowRoot, f = sel => getComputedStyle(s.querySelector(sel)).fontSize;
+      resolve({ sectionTab: f('[data-exp-section-tabs] [role=tab]'), title: f('[data-exp-part=title]'), version: f('[data-exp-part=version]'), status: f('[data-exp-part=status]'),
+        innerTab: f('.exp-submenu-tablist>button'), select: f('.route-body:not([hidden]) select'), button: f('.route-body:not([hidden]) .action'), groupLabel: f('details[data-exp-flat]>summary') });
+    }, 100));
+  }, size);
+  const standard = await read('standard');
+  assert.deepEqual(standard, { sectionTab: '11.5px', title: '14px', version: '11px', status: '11.5px', innerTab: '12px', select: '12px', button: '12px', groupLabel: '11px' });
+  const large = await read('extra-large');
+  for (const [part, px] of Object.entries(large)) assert.ok(parseFloat(px) > parseFloat(standard[part]), `${part}: ${px} at Extra Large, ${standard[part]} at Standard`);
+});
+
+test('in compact mode a tab without an icon keeps its label', async t => {
+  const p = await page(t, 360);
+  await p.evaluate(icon => {
+    const page = () => () => document.createElement('p');
+    window.product = ExtraPotionsCore.createProduct({ id: 'ward', name: 'WARD', version: '1.0.0', subtitle: 'Tagline', artwork: icon, getSettings: () => ({}),
+      sections: [{ id: 'protection', label: 'Protection', render: page() }, { id: 'retailer', label: 'Retailer', render: page() }, { id: 'appearance', label: 'Appearance', render: page() }, { id: 'system', label: 'System', render: page() }] });
+    product.open();
+  }, icon);
+  const host = p.locator('#exp-ward-root');
+  await host.evaluate(n => { const style = document.createElement('style'); style.textContent = 'aside{width:220px!important;min-width:0!important}'; n.shadowRoot.append(style); });
+  await p.waitForTimeout(100);
+  const facts = await host.evaluate(n => { const list = n.shadowRoot.querySelector('[data-exp-section-tabs][role=tablist]');
+    return { compact: list.dataset.compact, labels: [...list.children].map(tab => [tab.getAttribute('aria-label'), getComputedStyle(tab.querySelector('.exp-section-tab-label')).display]) }; });
+  assert.equal(facts.compact, '1');
+  assert.deepEqual(facts.labels, [['Protection', 'none'], ['Retailer', 'block'], ['Appearance', 'none'], ['System', 'none']]);
+});

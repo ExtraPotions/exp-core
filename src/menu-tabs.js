@@ -19,15 +19,17 @@ const ExpMenuTabs = (() => {
     [data-exp-section-tabs] .fl-tool-panel{margin:0!important;border:0!important;background:transparent!important}
     [data-exp-section-tabs] .fl-tool-body{padding:0!important}
     .exp-section-tabs{display:flex;gap:2px;margin:0 0 2px;padding:3px;border-radius:9px;background:var(--exp-menu-track,#18181b);min-width:0}
-    .exp-section-tabs>[role=tab]{flex:1 1 auto;display:flex;align-items:center;justify-content:center;gap:4px;min-width:0;min-height:28px;padding:4px 2px;border:0;border-radius:7px;background:transparent;color:var(--theme-muted);font:500 11.5px/1.2 Inter,"Segoe UI",system-ui,sans-serif;white-space:nowrap;cursor:pointer}
+    .exp-section-tabs>[role=tab]{flex:1 1 auto;display:flex;align-items:center;justify-content:center;gap:4px;min-width:0;min-height:28px;padding:4px 2px;border:0;border-radius:7px;background:transparent;color:var(--theme-muted);font:500 calc(var(--exp-font-size-small,12px) - .5px)/1.2 Inter,"Segoe UI",system-ui,sans-serif;white-space:nowrap;cursor:pointer}
     .exp-section-tabs>[role=tab]:hover{color:var(--theme-text)}
     .exp-section-tabs>[role=tab][aria-selected=true]{background:var(--theme-line);color:var(--theme-text);box-shadow:inset 0 -2px 0 var(--theme-accent)}
     .exp-section-tabs>[role=tab]:focus-visible{outline:2px solid var(--theme-accent);outline-offset:1px}
     .exp-section-tabs .exp-section-icon{flex:0 0 12px;transform:scale(.8)}
+    .exp-section-tabs .exp-section-icon:not([data-icon]){display:none}
     .exp-section-tabs .exp-section-tab-label{overflow:hidden;text-overflow:ellipsis}
-    .exp-section-tabs[data-compact="1"] .exp-section-tab-label{display:none}
+    .exp-section-tabs[data-compact="1"] .exp-section-icon[data-icon]+.exp-section-tab-label{display:none}
+    @media(forced-colors:active){.exp-section-tabs>[role=tab][aria-selected=true]{border-bottom:2px solid Highlight}}
     [data-exp-section-tabs] details[data-exp-flat]{border:0!important;padding:0!important;margin:0!important;background:transparent!important}
-    [data-exp-section-tabs] details[data-exp-flat]>summary{display:block!important;margin:14px 0 6px!important;padding:0!important;list-style:none!important;color:var(--theme-muted)!important;font:500 11px/1.3 Inter,"Segoe UI",system-ui,sans-serif!important;pointer-events:none!important}
+    [data-exp-section-tabs] details[data-exp-flat]>summary{display:block!important;margin:14px 0 6px!important;padding:0!important;list-style:none!important;color:var(--theme-muted)!important;font:500 calc(var(--exp-font-size-small,12px) - 1px)/1.3 Inter,"Segoe UI",system-ui,sans-serif!important;pointer-events:none!important}
     [data-exp-section-tabs] details[data-exp-flat]>summary::before,[data-exp-section-tabs] details[data-exp-flat]>summary::after{display:none!important}
     [data-exp-section-tabs] details[data-exp-flat]>summary::-webkit-details-marker{display:none}
     /* Each run of visible setting rows is one card: the run's first row opens it, its last row closes it. */
@@ -45,6 +47,7 @@ const ExpMenuTabs = (() => {
   const read = key => { try { return localStorage.getItem(key); } catch { return null; } };
   const write = (key, value) => { try { localStorage.setItem(key, value); } catch {} };
   const isOpen = entry => !entry.body.hidden && !entry.body.classList.contains('fl-tool-hidden');
+  const FOCUSABLE = 'a[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
   let serial = 0;
 
   function mount({ panel, id, entries }) {
@@ -56,7 +59,14 @@ const ExpMenuTabs = (() => {
     const list = document.createElement('div');
     list.className = 'exp-section-tabs'; list.dataset.expSectionTabs = '1';
     list.setAttribute('role', 'tablist'); list.setAttribute('aria-label', 'Sections');
-    const saved = new Map();
+    const saved = new Map(), tabStops = new Map();
+    // Hidden headers and flattened group labels are not controls anyone can see; the tabs replace them.
+    function untab(node) { if (!tabStops.has(node)) tabStops.set(node, node.getAttribute('tabindex')); node.setAttribute('tabindex', '-1'); }
+    function retab(node) {
+      if (!tabStops.has(node)) return;
+      const before = tabStops.get(node); tabStops.delete(node);
+      if (before === null) node.removeAttribute('tabindex'); else node.setAttribute('tabindex', before);
+    }
     const tabs = entries.map(entry => {
       const index = ++serial, slug = entry.label.toLowerCase();
       const tab = document.createElement('button');
@@ -74,7 +84,7 @@ const ExpMenuTabs = (() => {
       return tab;
     });
     panel.dataset.expSectionTabs = '1';
-    let wasVisible = false, syncing = false, disposed = false, queued = false;
+    let syncing = false, disposed = false, queued = false;
     const visible = () => !panel.hidden && panel.getClientRects().length > 0;
 
     function place() {
@@ -89,7 +99,17 @@ const ExpMenuTabs = (() => {
         details.dataset.expFlat = '1';
         if (!details.open) details.open = true;
       }
+      for (const [node] of tabStops) if (node.matches('summary') && !node.matches('details[data-exp-flat]>summary')) retab(node);
+      for (const entry of entries) {
+        entry.header.querySelectorAll(FOCUSABLE).forEach(untab);
+        entry.body.querySelectorAll('details[data-exp-flat]>summary').forEach(untab);
+      }
     }
+    // A flattened group label stays open: clicking it, or Enter or Space on it, does nothing.
+    const guard = event => {
+      const summary = event.target.closest?.('summary');
+      if (summary && summary === event.target.closest(FOCUSABLE) && summary.matches('details[data-exp-flat]>summary')) event.preventDefault();
+    };
     // Tabs shrink with an ellipsis instead of overflowing the row, so a label that no longer
     // fits is the signal to drop to icons.
     function compact() {
@@ -106,14 +126,11 @@ const ExpMenuTabs = (() => {
         const nowVisible = visible();
         let active = entries.findIndex(isOpen);
         if (nowVisible) {
-          const remembered = entries.findIndex(entry => entry.key === read(storageKey));
-          // On opening, the remembered tab wins over a product's default first section; a section
-          // the product opened on purpose (anything but the first) is kept.
-          if (!wasVisible && remembered >= 0 && active <= 0 && remembered !== active) open(remembered);
-          else if (active < 0) open(remembered >= 0 ? remembered : 0);
+          // Products close their sections as the menu opens, so the remembered tab is restored then.
+          // A section the product opened itself, the first one included, is kept.
+          if (active < 0) { const remembered = entries.findIndex(entry => entry.key === read(storageKey)); open(remembered >= 0 ? remembered : 0); }
           active = entries.findIndex(isOpen);
         }
-        wasVisible = nowVisible;
         tabs.forEach((tab, i) => { const on = i === active; tab.setAttribute('aria-selected', String(on)); tab.tabIndex = on || (active < 0 && i === 0) ? 0 : -1; });
         flatten();
         if (nowVisible) compact();
@@ -133,7 +150,7 @@ const ExpMenuTabs = (() => {
       if (index < 0) return;
       event.preventDefault(); select(index, true);
     };
-    list.addEventListener('click', click); list.addEventListener('keydown', keydown);
+    list.addEventListener('click', click); list.addEventListener('keydown', keydown); panel.addEventListener('click', guard, true);
     const observer = new view.MutationObserver(() => { if (!queued && !disposed) { queued = true; queueMicrotask(() => { queued = false; sync(); }); } });
     observer.observe(panel, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class', 'aria-expanded', 'open'] });
     const resize = new view.ResizeObserver(() => { if (visible()) compact(); }); resize.observe(panel);
@@ -143,7 +160,8 @@ const ExpMenuTabs = (() => {
       select: key => select(entries.findIndex(entry => entry.key === key)),
       destroy() {
         disposed = true; observer.disconnect(); resize.disconnect();
-        list.removeEventListener('click', click); list.removeEventListener('keydown', keydown); list.remove(); style.remove();
+        list.removeEventListener('click', click); list.removeEventListener('keydown', keydown); panel.removeEventListener('click', guard, true); list.remove(); style.remove();
+        for (const [node] of tabStops) retab(node);
         delete panel.dataset.expSectionTabs;
         for (const [entry, before] of saved) {
           for (const [node, name, value] of [[entry.header, 'tabindex', before.tabindex], [entry.header, 'aria-hidden', before.hidden], [entry.body, 'role', before.role], [entry.body, 'aria-labelledby', before.labelledby]]) {
