@@ -77,6 +77,7 @@ Core reshapes each product's existing menu markup when the menu mounts, as it al
   - border 1px `#27272a`, radius 10px, background `#0c0c0e`
   - rows inside are 9px 11px, divided by 1px `#1c1c1f`
 - The System tab's Status, Recent activity, Support and Reset become cards in the same way.
+- Two disclosures are not groups and stay collapsible: Dropper's eligibility chip (`.eligibility-chip`) and SHIFT's "Why this appearance?" (`[data-shift-appearance-explanation]`). Core already treats both as inline, not as groups.
 
 **Controls**
 - **Switches:** 30×17. On is the accent with a dark knob; off is `#27272a` with a grey knob.
@@ -89,7 +90,7 @@ Core reshapes each product's existing menu markup when the menu mounts, as it al
 
 **Typography and color**
 - Inter, Segoe UI or the system font. Body 13px, labels 11px.
-- Text `#fafafa`, muted `#71717a`.
+- Text `#fafafa`, muted `#a1a1aa`.
 
 ## 5. Color and themes
 
@@ -101,7 +102,7 @@ Core reshapes each product's existing menu markup when the menu mounts, as it al
 | card | `#0c0c0e` |
 | line | `#27272a` |
 | soft line | `#1c1c1f` |
-| muted | `#71717a` |
+| muted | `#a1a1aa` (the mockup's `#71717a` is only 4.1:1 on `#09090b`; `#a1a1aa` is 7.8:1) |
 | text | `#fafafa` |
 
 **Product accents (unchanged from today):**
