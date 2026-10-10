@@ -1,3 +1,8 @@
+## 3.7.9 — 2026-10-09
+
+- Report a Problem fills in the GitHub issue with a short summary (versions, manager, browser, site, changed settings, recent errors and activity) and copies the full diagnostics.
+- Removes the menu footer.
+
 ## 3.7.8 — 2026-10-09
 
 - Shares one stylesheet across components and checks it paints once per page, instead of forcing a full style recalculation for every component.

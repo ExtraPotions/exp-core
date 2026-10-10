@@ -5,7 +5,7 @@
  * Product userscripts remain self-contained; this module defines the suite baseline
  * that products consume through the canonical Core bundle.
  */
-const VERSION = '3.7.8';
+const VERSION = '3.7.9';
 const UPDATE_CHECK_INTERVAL_MS = 12 * 60 * 60 * 1000;
 const UPDATE_NOTICE_DURATION_MS = 30 * 1000;
 const MENU_DISMISS_MS = 15 * 1000;

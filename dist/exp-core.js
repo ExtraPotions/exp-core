@@ -802,8 +802,17 @@ const ExtraPotionsDiagnostics = (() => {
   }
   // Core owns the shared diagnostics interaction contract: Show/Hide first, Copy second,
   // transient Diagnostics Copied / Copy Failed feedback, and fresh reports per action.
+  // The report behind each set of controls, so Report a Problem can attach a fresh one.
+  const reportSources = new WeakMap();
+  function reportSource(container) {
+    if (!container) return null;
+    if (reportSources.has(container)) return reportSources.get(container);
+    for (const node of container.querySelectorAll?.('*') || []) if (reportSources.has(node)) return reportSources.get(node);
+    return null;
+  }
   function bindControls({ show, copy, output, getReport, notify = () => {}, onShow = () => {}, onCopy = () => {} }) {
     let timer, generation = 0;
+    reportSources.set(output, getReport); reportSources.set(copy, getReport);
     output.hidden = true; output.setAttribute('role', 'region');
     output.setAttribute('aria-label', 'Page, technical, console, and plugin diagnostics'); output.tabIndex = 0;
     show.setAttribute('aria-expanded', 'false');
@@ -838,7 +847,7 @@ const ExtraPotionsDiagnostics = (() => {
     bindControls({ show, copy, output, getReport, notify });
     actions.append(show, copy); wrapper.append(actions, output); return wrapper;
   }
-  return Object.freeze({ createReport, registerProduct, compatibility, bindControls, createControls, dispose });
+  return Object.freeze({ createReport, registerProduct, compatibility, bindControls, createControls, reportSource, dispose });
 })();
 
 /* Canonical ExtraPotions shared lifecycle runtime. */
@@ -1448,16 +1457,52 @@ const ExtraPotionsTools = (() => {
     d.addEventListener('toggle',()=>{if(d.open)refresh();});d.append(row,duration,temporary,out);refresh();return d;
   }
   const productRepositories = Object.freeze({dropper:'Dropper',shift:'SHIFT',prisma:'PRISMA',ward:'WARD'});
-  function productIssueUrl(id, version, {health}={}) {
+  // GitHub prefills an issue from the link; longer links fail, so a large report goes by clipboard.
+  const ISSUE_URL_LIMIT=8000;
+  const plain=(value,limit=200)=>String(value||'').replace(/https?:\/\/\S+/gi,'[link]').replace(/\S+@\S+/g,'[address]').replace(/\s+/g,' ').trim().slice(0,limit);
+  function browserName(agent=''){
+    const version=pattern=>(agent.match(pattern)||[])[1];
+    const name=version(/Edg\/(\d+)/)?'Edge '+version(/Edg\/(\d+)/):version(/OPR\/(\d+)/)?'Opera '+version(/OPR\/(\d+)/):version(/Firefox\/(\d+)/)?'Firefox '+version(/Firefox\/(\d+)/):version(/Chrome\/(\d+)/)?'Chrome '+version(/Chrome\/(\d+)/):version(/Version\/(\d+)[^ ]* Safari/)?'Safari '+version(/Version\/(\d+)[^ ]* Safari/):'Unknown browser';
+    const os=/Windows/.test(agent)?'Windows':/Android/.test(agent)?'Android':/iPhone|iPad/.test(agent)?'iOS':/Mac OS X/.test(agent)?'macOS':/CrOS/.test(agent)?'ChromeOS':/Linux/.test(agent)?'Linux':'Unknown OS';
+    return name+' · '+os;
+  }
+  // The minimum a maintainer needs to triage, small enough to always fit in the issue link.
+  // Only settings that differ from the product's defaults are listed.
+  function issueSummary(report={},{settings,activity=[]}={}){
+    const lines=[],add=(label,value)=>{if(value)lines.push(`- ${label}: ${value}`);};
+    const self=report.plugin?.id;
+    add('Product',[productRepositories[self]||self,report.plugin?.version].filter(Boolean).join(' ')+(report.technical?.core?.version?' · Core '+report.technical.core.version:''));
+    add('Other products on page',(report.plugin?.compatibility?.products||[]).filter(p=>p.id!==self&&p.status==='observed').map(p=>(productRepositories[p.id]||p.id)+' '+(p.versions||[]).join('/')).join(', '));
+    const manager=report.technical?.manager;add('Userscript manager',manager?.name?plain(manager.name+' '+(manager.version||''),60):'');
+    const env=report.environment||{};add('Browser',env.userAgent?browserName(env.userAgent):'');add('Site',plain(env.hostname,100));
+    if(env.viewport)add('Viewport',`${env.viewport.width}×${env.viewport.height} @${env.viewport.pixelRatio}x`);
+    if(settings?.current&&settings?.defaults){
+      const changed=Object.keys(settings.current).filter(key=>JSON.stringify(settings.current[key])!==JSON.stringify(settings.defaults[key])).slice(0,25);
+      add('Settings changed from defaults',changed.map(key=>`${key}: ${plain(JSON.stringify(settings.current[key]),60)}`).join(', ')||'none');
+    }
+    const errors=[...(report.core?.errors||[]).map(e=>[e.source,e.code,e.message].filter(Boolean).join(' ')),...(report.console?.entries||[]).filter(e=>/error|warn/.test(e.level)).map(e=>e.message||e.text||'')].filter(Boolean).slice(-5);
+    if(errors.length)lines.push('- Recent errors:',...errors.map(e=>'  - '+plain(e,200)));
+    const recent=activity.map(entry=>plain(entry,120)).filter(Boolean).slice(-5);
+    if(recent.length)lines.push('- Recent activity:',...recent.map(e=>'  - '+e));
+    return lines.join('\n');
+  }
+  function productIssueUrl(id, version, {health,diagnostics,copied=false,summary=''}={}) {
     if (!Object.hasOwn(productRepositories,id)) throw new Error('Unknown product');
     const product=productRepositories[id];
     const safeVersion=/^\d+\.\d+\.\d+(?:[-+][a-zA-Z0-9.-]+)?$/.test(String(version))?String(version):'unknown';
-    // Exclude diagnostics, page URLs, account names, and free-form data. Status is the
-    // product's own plain-language health text with links and addresses removed.
-    const plain=value=>String(value||'').replace(/https?:\/\/\S+/gi,'[link]').replace(/\S+@\S+/g,'[address]').replace(/\s+/g,' ').trim().slice(0,200);
+    // Status is the product's own plain-language health text with links and addresses removed.
+    // Diagnostics are the product's own redacted report, attached only when the person reports.
     const status=health&&plain(health.label)?`\nStatus: ${plain(health.label)}${plain(health.reason)?' - '+plain(health.reason):''}\n`:'';
-    const body=`Product: ${product} v${safeVersion}\n${status}\nWhat happened?\n\nSteps to reproduce\n1. \n\nExpected behavior\n\nActual behavior\n\nBrowser and userscript manager\n\nDiagnostics (optional)\nReview Show Diagnostics and remove private information before attaching.\n`;
-    return 'https://github.com/ExtraPotions/'+product+'/issues/new?title='+encodeURIComponent('['+product+' '+safeVersion+'] Issue')+'&body='+encodeURIComponent(body);
+    const template=`Product: ${product} v${safeVersion}\n${status}\nWhat happened?\n\nSteps to reproduce\n1. \n\nExpected behavior\n\nActual behavior\n\n`+(summary?`Summary (review and remove anything private before submitting)\n${summary}\n\n`:'Browser and userscript manager\n\n');
+    const link=body=>'https://github.com/ExtraPotions/'+product+'/issues/new?title='+encodeURIComponent('['+product+' '+safeVersion+'] Issue')+'&body='+encodeURIComponent(body);
+    if(diagnostics&&typeof diagnostics==='object'){
+      const review='Full diagnostics\n';
+      for(const text of [JSON.stringify(diagnostics,null,2),JSON.stringify(diagnostics)]){const url=link(template+review+'```json\n'+text+'\n```\n');if(url.length<=ISSUE_URL_LIMIT)return url;}
+      const url=link(template+review+(copied?'The full diagnostics were copied to your clipboard when you selected Report a Problem. Paste them here if asked.\n':'Select Copy Diagnostics and paste the full diagnostics here if asked.\n'));
+      if(url.length<=ISSUE_URL_LIMIT||summary.length<=1500)return url;
+      return productIssueUrl(id,version,{health,diagnostics,copied,summary:summary.slice(0,1500)});
+    }
+    return link(template+'Diagnostics (optional)\nSelect Copy Diagnostics, paste them here, and remove anything private.\n');
   }
   const productTimelines=new Map(),resettingProducts=new Set();
   const productDataResetting=id=>resettingProducts.has(id);
@@ -1513,7 +1558,7 @@ const ExtraPotionsTools = (() => {
     return {element:timeline,dispose(){disposed=true;health.dispose();},refresh:health.refresh};
   }
   const RESET_ARM_MS=4000;
-  function groupedProductSystem({id,version,timeline,diagnostics,preferences,onReset,notify}) {
+  function groupedProductSystem({id,version,timeline,diagnostics,preferences,onReset,notify,issueSettings}) {
     const product=productRepositories[id];
     const system=document.createElement('div');system.dataset.expProductSystem=id;system.dataset.expSystemLayout='grouped';
     system.style.cssText='display:grid;grid-template-columns:minmax(0,1fr);gap:8px;min-width:0;max-width:100%;overflow-wrap:anywhere';
@@ -1525,9 +1570,21 @@ const ExtraPotionsTools = (() => {
     if(copy&&show&&show.compareDocumentPosition(copy)&Node.DOCUMENT_POSITION_FOLLOWING)pair.insertBefore(copy,show);
     const output=diagnostics.querySelector?.('pre');if(output)output.style.cssText+=';max-height:240px;overflow:auto';
     const health=()=>({label:timeline.querySelector?.('[data-exp-health-state]')?.textContent||'',reason:timeline.querySelector?.('[data-exp-health-reason]')?.textContent||''});
-    const report=wide(button('Report a Problem',()=>{const link=document.createElement('a');link.href=productIssueUrl(id,version,{health:health()});link.target='_blank';link.rel='noopener noreferrer';link.click();}));
+    // Each report takes a fresh diagnostics report, copies it, and attaches it to the issue when it fits.
+    const report=wide(button('Report a Problem',async()=>{
+      if(report.disabled)return;report.disabled=true;
+      let data=null,copied=false;
+      try{const source=typeof ExtraPotionsDiagnostics==='object'?ExtraPotionsDiagnostics.reportSource?.(diagnostics):null;if(source)data=await source();}catch{}
+      if(data){try{await navigator.clipboard.writeText(JSON.stringify(data,null,2));copied=true;}catch{}}
+      let summary='';
+      if(data){try{let settings=null;try{settings=issueSettings?.()||null;}catch{}
+        const reason=health().reason.trim(),activity=[...(timeline.querySelectorAll?.('p')||[])].map(p=>p.textContent.trim()).filter(text=>text&&text!==reason).slice(-5);
+        summary=issueSummary(data,{settings,activity});}catch{}}
+      try{const link=document.createElement('a');link.href=productIssueUrl(id,version,{health:health(),diagnostics:data,copied,summary});link.target='_blank';link.rel='noopener noreferrer';link.click();}
+      finally{report.disabled=false;}
+    }));
     report.dataset.expSystemReport='1';
-    const support=ExtraPotionsCore.createDisclosure('Support',diagnostics,report,note('Copy diagnostics first, then paste them into the report after removing anything private.'));
+    const support=ExtraPotionsCore.createDisclosure('Support',diagnostics,report,note('Report a Problem attaches diagnostics from that moment. GitHub issues are public, so remove anything private before submitting.'));
     // Reset: one tap arms, a second tap within a few seconds confirms. No browser dialogs.
     const resetStatus=note('');resetStatus.setAttribute('role','status');resetStatus.setAttribute('aria-live','polite');
     let armedUntil=0,armTimer=0;
@@ -1551,9 +1608,9 @@ const ExtraPotionsTools = (() => {
     }
     return system;
   }
-  function createProductSystem({id,version,timeline,diagnostics,preferences,onReset,notify=()=>{},layout='classic'}) {
+  function createProductSystem({id,version,timeline,diagnostics,preferences,onReset,notify=()=>{},layout='classic',issueSettings}) {
     if(!Object.hasOwn(productRepositories,id))throw new Error('Unknown product');
-    if(layout==='grouped')return groupedProductSystem({id,version,timeline,diagnostics,preferences,onReset,notify});
+    if(layout==='grouped')return groupedProductSystem({id,version,timeline,diagnostics,preferences,onReset,notify,issueSettings});
     const system=document.createElement('div');system.dataset.expProductSystem=id;
     system.style.cssText='display:grid;grid-template-columns:minmax(0,1fr);gap:8px;min-width:0;max-width:100%;overflow-wrap:anywhere';
     const issue=button('Create GitHub Issue',()=>{const link=document.createElement('a');link.href=productIssueUrl(id,version);link.target='_blank';link.rel='noopener noreferrer';link.click();});
@@ -1568,7 +1625,7 @@ const ExtraPotionsTools = (() => {
     for(const [key,node] of [['timeline',timeline],['diagnostics',diagnostics],['issue',issue],['preferences',preferences],['reset',reset]]){node.dataset.expSystemItem=key;node.style.minWidth='0';node.style.maxWidth='100%';const summary=node.tagName==='DETAILS'?node.querySelector(':scope > summary'):null;if(summary)summary.style.cssText+=';min-height:28px;padding:4px 0;box-sizing:border-box;cursor:pointer';system.append(node);}
     return system;
   }
-  return Object.freeze({productIssueUrl,productDataResetting,clearProductData,groupTimelineEntries,createProductTimeline,createProductSystem,placeDonationPanel,createBitcoinDonation,compatibilitySnapshot,createCompatibilityControls,createSuiteSiteControls});
+  return Object.freeze({issueSummary,productIssueUrl,productDataResetting,clearProductData,groupTimelineEntries,createProductTimeline,createProductSystem,placeDonationPanel,createBitcoinDonation,compatibilitySnapshot,createCompatibilityControls,createSuiteSiteControls});
 })();
 
 // Shared ExtraPotions menu categories, submenu behavior, reordering, and visibility.
@@ -2000,8 +2057,6 @@ const ExpLeanMenu = (() => {
     applyPalette();
     const themeObserver=new MutationObserver(applyPalette);if(themeRoot)themeObserver.observe(themeRoot,{attributes:true,attributeFilter:['data-ui-theme']});
     const style=document.createElement('style');style.dataset.expLeanMenu='1';style.textContent=css;shadow.append(style);
-    const footer=document.createElement('footer');footer.className='exp-menu-footer';
-    const brand=document.createElement('span');brand.textContent='ExtraPotions';const release=document.createElement('span');footer.append(brand,release);panel.append(footer);
     const icons=new Set();
     function decorate(){
       for(const header of panel.querySelectorAll('.fl-tool-header')){
@@ -2011,12 +2066,9 @@ const ExpLeanMenu = (() => {
         const icon=document.createElement('span');icon.className='exp-section-icon';icon.setAttribute('aria-hidden','true');
         icon.dataset.icon=name;header.prepend(icon);icons.add(icon);
       }
-      const value=panel.querySelector('[data-exp-part="version"],#tdh-header-version,.version')?.textContent||'';
-      if(release.textContent!==value)release.textContent=value;
-      if(panel.lastElementChild!==footer)panel.append(footer);
     }
     decorate();const observer=new MutationObserver(decorate);observer.observe(panel,{childList:true,subtree:true});
-    return ()=>{themeObserver.disconnect();observer.disconnect();icons.forEach(icon=>icon.remove());footer.remove();style.remove();for(const[key,[value,priority]]of saved){if(value)panel.style.setProperty(key,value,priority);else panel.style.removeProperty(key);}delete panel.dataset.expMenuLayout;};
+    return ()=>{themeObserver.disconnect();observer.disconnect();icons.forEach(icon=>icon.remove());style.remove();for(const[key,[value,priority]]of saved){if(value)panel.style.setProperty(key,value,priority);else panel.style.removeProperty(key);}delete panel.dataset.expMenuLayout;};
   }
   return Object.freeze({mount});
 })();
@@ -2095,7 +2147,7 @@ const ExpMenuPreferences = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.7.8';
+  const version = '3.7.9';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
