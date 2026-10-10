@@ -38,6 +38,9 @@ for(const[repo,id,hostId,accent]of products)test(repo+' installed menu matches a
  const labelRow=await host.locator('[data-exp-section-tabs][role=tablist]').evaluate(list=>({compact:list.dataset.compact,labels:[...list.querySelectorAll('.exp-section-tab-label')].map(label=>label.textContent+':'+getComputedStyle(label).display+':'+label.scrollWidth+'/'+label.clientWidth)}));
  assert.equal(labelRow.compact,'0',JSON.stringify(labelRow));
  assert.ok(labelRow.labels.every(label=>label.split(':')[1]!=='none'),JSON.stringify(labelRow));
+ // Runs of setting rows are boxed cards: at least one visible row opens a card.
+ const cardStarts=await host.locator('[data-exp-part="dock"]').evaluate(dock=>[...dock.querySelectorAll('.row,.mini-row,.fl-switch,.setting-row')].filter(row=>row.checkVisibility()&&row.getBoundingClientRect().height>0).filter(row=>{const c=getComputedStyle(row);return c.borderTopWidth==='1px'&&c.borderTopLeftRadius==='10px';}).length);
+ assert.ok(cardStarts>0,'an opened menu shows at least one boxed card of setting rows');
  // A retained custom theme must change the menu, rather than becoming an inert setting.
  const themeRoot=host.locator('.exp-core-theme,.cluster').first();
  await themeRoot.evaluate(n=>{n.dataset.uiTheme='contrast';n.style.setProperty('--theme-bg','#000000');n.style.setProperty('--theme-accent','#ffffff');});

@@ -208,3 +208,25 @@ test('a long inner tab row scrolls sideways without widening the panel', async t
   });
   assert.equal(facts.scrolls, true); assert.equal(facts.wrap, 'nowrap'); assert.ok(facts.overflow <= 1);
 });
+
+test('each run of setting rows is one boxed card and other content stays outside it', async t => {
+  const p = await page(t); const host = await product(p);
+  const facts = await host.evaluate(n => {
+    const body = n.shadowRoot.querySelector('.route-body:not([hidden])');
+    n.shadowRoot.querySelector('.exp-core-theme,.cluster').dataset.uiTheme = 'shift';
+    body.insertAdjacentHTML('beforeend', '<div id="cards"><h3>Label</h3><div class="row">A</div><div class="row">B</div><div class="row">C</div><p>Note</p><div class="row">D</div></div>');
+    return new Promise(resolve => setTimeout(() => {
+      const box = node => { const c = getComputedStyle(node); return { top: c.borderTopWidth + ' ' + c.borderTopColor, right: c.borderRightWidth + ' ' + c.borderRightColor, bottom: c.borderBottomWidth, left: c.borderLeftWidth + ' ' + c.borderLeftColor,
+        radius: [c.borderTopLeftRadius, c.borderTopRightRadius, c.borderBottomRightRadius, c.borderBottomLeftRadius].join(' '), bg: c.backgroundColor, padding: c.padding }; };
+      const [a, b, c, d] = [...body.querySelectorAll('#cards>.row')].map(box);
+      resolve({ a, b, c, d, note: box(body.querySelector('#cards>p')) });
+    }, 100));
+  });
+  const line = '1px rgb(39, 39, 42)', soft = '1px rgb(28, 28, 31)', card = 'rgb(12, 12, 14)';
+  assert.equal(facts.a.top, line); assert.equal(facts.a.radius, '10px 10px 0px 0px'); assert.equal(facts.a.bottom, '0px');
+  for (const row of [facts.a, facts.b, facts.c]) { assert.equal(row.left, line); assert.equal(row.right, line); assert.equal(row.bg, card); assert.equal(row.padding, '9px 11px'); }
+  assert.equal(facts.b.top, soft); assert.equal(facts.b.radius, '0px 0px 0px 0px');
+  assert.equal(facts.c.top, soft); assert.equal(facts.c.radius, '0px 0px 10px 10px'); assert.equal(facts.c.bottom, '1px');
+  assert.equal(facts.note.top.split(' ')[0], '0px'); assert.equal(facts.note.left.split(' ')[0], '0px'); assert.equal(facts.note.bottom, '0px');
+  assert.deepEqual([facts.d.top, facts.d.right, facts.d.bottom, facts.d.left, facts.d.radius, facts.d.bg], [line, line, '1px', line, '10px 10px 10px 10px', card]);
+});
