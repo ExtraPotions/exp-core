@@ -34,6 +34,10 @@ for(const[repo,id,hostId,accent]of products)test(repo+' installed menu matches a
  for(const tab of tabs)assert.ok(Math.round(tab.height)>=28,JSON.stringify(tab));
  const headerHeights=await host.locator('.fl-tool-header').evaluateAll(nodes=>nodes.map(n=>Math.round(n.getBoundingClientRect().height)));
  assert.ok(headerHeights.every(height=>height<=1),'section headers are hidden behind the tabs '+JSON.stringify(headerHeights));
+ // At the default 320px menu every product shows its tab labels, not icons only.
+ const labelRow=await host.locator('[data-exp-section-tabs][role=tablist]').evaluate(list=>({compact:list.dataset.compact,labels:[...list.querySelectorAll('.exp-section-tab-label')].map(label=>label.textContent+':'+getComputedStyle(label).display+':'+label.scrollWidth+'/'+label.clientWidth)}));
+ assert.equal(labelRow.compact,'0',JSON.stringify(labelRow));
+ assert.ok(labelRow.labels.every(label=>label.split(':')[1]!=='none'),JSON.stringify(labelRow));
  // A retained custom theme must change the menu, rather than becoming an inert setting.
  const themeRoot=host.locator('.exp-core-theme,.cluster').first();
  await themeRoot.evaluate(n=>{n.dataset.uiTheme='contrast';n.style.setProperty('--theme-bg','#000000');n.style.setProperty('--theme-accent','#ffffff');});
