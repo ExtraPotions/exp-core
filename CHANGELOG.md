@@ -1,3 +1,9 @@
+## 3.7.8 — 2026-10-09
+
+- Shares one stylesheet across components and checks it paints once per page, instead of forcing a full style recalculation for every component.
+- Delivers page changes in small chunks, so busy pages stay responsive.
+- Reads presentation state only from elements that carry it.
+
 ## 3.7.7 — 2026-10-09
 
 - Recognizes quiet releases, so products can show only the update badge for them.
