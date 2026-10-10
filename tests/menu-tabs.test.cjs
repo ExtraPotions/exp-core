@@ -118,6 +118,17 @@ test('a group marked data-exp-collapsible stays collapsible while plain groups o
   assert.deepEqual(await read(), [{ lazy: false, open: true, flat: '1' }, { lazy: true, open: true, flat: null }], 'the collapsible group opens by its own summary');
 });
 
+test('inner tabs keep a 28px target on fine pointers', async t => {
+  const p = await page(t); const host = await product(p);
+  const heights = await host.evaluate(n => {
+    const body = n.shadowRoot.querySelector('.route-body:not([hidden])');
+    body.insertAdjacentHTML('beforeend', '<details><summary>One</summary><div class="row">a</div></details><details><summary>Two</summary><div class="row">b</div></details>');
+    return new Promise(resolve => setTimeout(() => resolve([...n.shadowRoot.querySelectorAll('.exp-submenu-tablist>button')].map(b => [b.getAttribute('aria-selected'), b.getBoundingClientRect().height])), 100));
+  });
+  assert.ok(heights.some(h => h[0] === 'true') && heights.some(h => h[0] !== 'true'), 'an active and an inactive inner tab exist');
+  for (const [sel, h] of heights) assert.ok(h >= 28, `inner tab (selected=${sel}) is ${h}px tall`);
+});
+
 test('narrow panels show icon-only tabs with their names intact and no overflow', async t => {
   const p = await page(t, 360); const host = await product(p);
   // Core's menu placement rewrites the panel's inline width, so the narrow width comes from a stylesheet.
