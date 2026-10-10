@@ -345,6 +345,79 @@ function createProductLifecycle(shared) {
     };
   }
 
+  // Shadow roots share one constructed sheet per stylesheet text. Paint is probed once per
+  // page: every probe forces a style recalculation of the whole page, which on a site with
+  // thousands of components (Reddit) cost seconds. Later roots only check that their adopted
+  // list took the sheet. A root that edits its style gets its own copy first.
+  const sharedShadowSheets = new Map();
+  let shadowPaintVerified = false;
+
+  function withoutOne(list, sheet, replacement) {
+    const next = [...list];
+    const index = next.lastIndexOf(sheet);
+    if (index >= 0) { if (replacement) next[index] = replacement; else next.splice(index, 1); }
+    return next;
+  }
+
+  function adoptionPaints(root, Ctor, view) {
+    const token = paintToken();
+    const probe = new Ctor();
+    writeSheet(probe, withPaintProbe('', token), view);
+    setAdopted(root, [...root.adoptedStyleSheets, probe]);
+    try { return sawPaint(token, root); } finally { try { setAdopted(root, withoutOne(root.adoptedStyleSheets, probe)); } catch {} }
+  }
+
+  function adoptShared(root, css) {
+    const view = pageView();
+    const Ctor = view.CSSStyleSheet || (typeof CSSStyleSheet === 'function' ? CSSStyleSheet : null);
+    if (typeof Ctor !== 'function' || !Ctor.prototype.replaceSync) return null;
+    const current = root.adoptedStyleSheets;
+    if (!current || typeof current[Symbol.iterator] !== 'function') return null;
+    let entry = sharedShadowSheets.get(css);
+    if (!entry) {
+      const created = new Ctor();
+      writeSheet(created, css, view);
+      entry = { sheet: created, users: 0 };
+    }
+    let sheet = entry.sheet;
+    const before = current.length;
+    setAdopted(root, [...current, sheet]);
+    if (root.adoptedStyleSheets.length !== before + 1) {
+      try { setAdopted(root, withoutOne(root.adoptedStyleSheets, sheet)); } catch {}
+      throw new Error('adoptedStyleSheets ignored');
+    }
+    if (!shadowPaintVerified && isConnectedNode(root)) {
+      if (!adoptionPaints(root, Ctor, view)) {
+        try { setAdopted(root, withoutOne(root.adoptedStyleSheets, sheet)); } catch {}
+        throw new Error('adoptedStyleSheets did not paint');
+      }
+      shadowPaintVerified = true;
+    }
+    entry.users += 1;
+    sharedShadowSheets.set(css, entry);
+    let shared = true;
+    const release = () => {
+      if (!shared) return;
+      shared = false;
+      entry.users -= 1;
+      if (entry.users <= 0 && sharedShadowSheets.get(css) === entry) sharedShadowSheets.delete(css);
+    };
+    return {
+      write(text) {
+        if (!shared) { writeSheet(sheet, text, view); return; }
+        const own = new Ctor();
+        writeSheet(own, text, view);
+        setAdopted(root, withoutOne(root.adoptedStyleSheets, sheet, own));
+        release();
+        sheet = own;
+      },
+      detach() {
+        try { setAdopted(root, withoutOne(root.adoptedStyleSheets, sheet)); } catch {}
+        release();
+      }
+    };
+  }
+
   function injectShadowStyle(root, css, data) {
     const mark = (node) => {
       node.dataset.expOwned = '1';
@@ -356,7 +429,7 @@ function createProductLifecycle(shared) {
     // blocks <style>. GM_addElement / GM_addStyle are not used here: managers
     // attach those to the document and leak header/nav/button/* onto the site.
     try {
-      const adopted = adoptConstructable(root, css, root);
+      const adopted = adoptShared(root, css);
       if (adopted) {
         const node = document.createElement('style');
         let current = css;

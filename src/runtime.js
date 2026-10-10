@@ -832,10 +832,15 @@ const ExtraPotionsCore = (() => {
     return setPresentationState(target, productId, Object.fromEntries(PRESENTATION_CHANNELS.map(channel => [channel, null])));
   }
 
+  // Only elements carrying the attribute are parsed; closest() skips the rest natively.
+  // Visibility checks call this for every candidate element, so an ancestor-by-ancestor
+  // JSON walk cost seconds on deep pages.
   function presentationStateChain(target) {
     const chain = [];
     let node = target instanceof Element ? target : target?.parentElement;
     while (node instanceof Element) {
+      node = node.closest(PRESENTATION_STATE_SELECTOR);
+      if (!node) break;
       const state = readPresentationState(node);
       if (Object.keys(state).length) chain.push(Object.freeze({ node, state }));
       node = node.parentElement;
@@ -843,6 +848,7 @@ const ExtraPotionsCore = (() => {
     return Object.freeze(chain);
   }
 
+  const PRESENTATION_STATE_SELECTOR = '[data-exp-presentation-state]';
   function isPresentationSuppressed(target) {
     for (const entry of presentationStateChain(target)) {
       for (const state of Object.values(entry.state)) {
@@ -878,11 +884,29 @@ const ExtraPotionsCore = (() => {
       state.removed += record.removedNodes?.length || 0;
       pending.set(target, state);
     };
+    // Roots are delivered in chunks, each a complete epoch through every phase, and the
+    // event loop gets a turn whenever a task has run past its budget: listeners do real
+    // work per root, and one task holding a whole page's batch froze Reddit for seconds.
+    const CHUNK_ROOTS = 16;
+    const TASK_BUDGET_MS = 8;
     const flush = () => {
       timer = 0;
-      const entries = [...pending.entries()].filter(([target]) => target.isConnected);
-      pending.clear();
-      if (!entries.length) return;
+      const started = performance.now();
+      while (pending.size) {
+        const chunk = [];
+        for (const entry of pending) {
+          pending.delete(entry[0]);
+          if (entry[0].isConnected) chunk.push(entry);
+          if (chunk.length >= CHUNK_ROOTS) break;
+        }
+        if (chunk.length) deliver(chunk);
+        if (pending.size && performance.now() - started >= TASK_BUDGET_MS) {
+          timer = setTimeout(flush, 0);
+          return;
+        }
+      }
+    };
+    const deliver = (entries) => {
       epoch += 1;
       marker.dataset.expPageObserverEpoch = String(epoch);
       const payloads = entries.map(([target, state], index) => [target, JSON.stringify({
