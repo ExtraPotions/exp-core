@@ -2225,7 +2225,9 @@ const ExpLeanMenu = (() => {
     async function refreshStatus(){
       const source=statusSources.get(id);
       if(!source){delete panel.dataset.expMenuStatus;status.remove();return;}
-      const copy=panel.querySelector('.header-copy');if(copy&&status.parentElement!==copy)copy.append(status);
+      const copy=panel.querySelector('.header-copy');
+      if(!copy){delete panel.dataset.expMenuStatus;status.remove();return;}
+      if(!copy.contains(status))copy.append(status);
       panel.dataset.expMenuStatus='1';const ticket=++statusTicket;
       let value=null;try{value=await source();}catch{}
       if(ticket!==statusTicket)return;
