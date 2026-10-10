@@ -7,15 +7,15 @@ const path = require('node:path');
 const { chromium } = require('playwright');
 const { captureProduct, launchBrowser, main } = require('../scripts/capture-screenshots.cjs');
 
-const fixture = path.join(__dirname, 'fixtures', 'screenshots', 'fixture.user.js');
+const fixtureDir = path.join(__dirname, 'fixtures', 'screenshots');
 
-function product(shots, extra = '') {
+function product(shots, extra = '', userscript = 'fixture.user.js') {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'shots-product-'));
   fs.mkdirSync(path.join(root, 'docs', 'screenshots'), { recursive: true });
-  fs.copyFileSync(fixture, path.join(root, 'fixture.user.js'));
+  fs.copyFileSync(path.join(fixtureDir, userscript), path.join(root, userscript));
   fs.writeFileSync(path.join(root, 'docs', 'screenshots.config.cjs'), `module.exports = {
     build: [],
-    userscript: 'fixture.user.js',
+    userscript: '${userscript}',
     host: '#fixture-root',
     url: 'https://sample.test/page',
     page: '<!doctype html><html><body style="background:#fff"><h1>Sample</h1></body></html>',
@@ -93,6 +93,15 @@ test('a section built after the menu opens is still found', async t => {
   const root = product([{ file: 'delta.png', section: 'Delta' }]);
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   assert.equal((await captureProduct({ name: 'Fixture', root, browser, build: false })).count, 1);
+});
+
+test('a section tab built after the menu opens is found and opened', async t => {
+  const browser = await launchBrowser(chromium); t.after(() => browser.close());
+  const root = product([{ file: 'beta-tab.png', section: 'Beta', include: 'page' }], '', 'fixture-tabs.user.js');
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const result = await captureProduct({ name: 'Fixture', root, browser, build: false });
+  assert.equal(result.count, 1);
+  assert.ok(fs.statSync(path.join(root, 'docs', 'screenshots', 'beta-tab.png')).size > 3000);
 });
 
 test('a tab name matching more than one tab fails with the count', async t => {

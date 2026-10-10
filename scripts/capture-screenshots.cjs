@@ -107,12 +107,17 @@ const firstLine = error => String(error?.message || error).split(/\r?\n/)[0];
 
 async function openView(host, shot) {
   // Products on the shared menu show sections as tabs; older menus still have section headers.
-  const sectionTab = host.locator(`[data-exp-section-tabs] [role="tab"][aria-label="${shot.section}"]`);
+  const sectionTab = host.locator('[data-exp-section-tabs]').getByRole('tab', { name: shot.section, exact: true });
   const header = host.locator('.fl-tool-header').filter({ hasText: shot.section }).first();
+  // Some menus build sections just after opening, so give a tab or a header a few seconds to appear.
+  try {
+    await sectionTab.or(header).first().waitFor({ state: 'attached', timeout: 5000 });
+  } catch {
+    throw new Error(`section "${shot.section}" not found`);
+  }
   if (await sectionTab.count()) {
     await sectionTab.first().click();
   } else {
-    // Some menus build sections just after opening, so give a header a few seconds to appear.
     try {
       await header.waitFor({ state: 'visible', timeout: 5000 });
     } catch {
