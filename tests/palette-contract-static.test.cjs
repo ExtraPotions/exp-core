@@ -1,0 +1,4 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const runtime=fs.readFileSync(path.join(__dirname,'../src/runtime.js'),'utf8'),foundation=fs.readFileSync(path.join(__dirname,'../src/foundation.js'),'utf8');
+test('menu palette choices are restricted to each product identity',()=>{const f=runtime.slice(runtime.indexOf('  function themes('),runtime.indexOf('  function createThemeSwatches('));assert.doesNotMatch(f,/SHARED_UI_THEMES|CRIMSON_THEME/);assert.match(f,/productTheme \|\| CoreFoundation.UI_THEMES.at\(-1\)/);assert.match(runtime,/paintTheme\(localTheme\)/);});
+test('shared menu shell keeps a visible themed outer border',()=>assert.match(foundation,/\[data-exp-part="dock"\] \{[^}]*border:1px solid var\(--theme-line\)/));

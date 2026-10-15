@@ -1,0 +1,172 @@
+{
+  "dropper": {
+    "role": "flagship",
+    "priority": 4,
+    "launcherPriority": 110,
+    "themePriority": 4,
+    "capabilities": [
+      "twitch.drops",
+      "twitch.campaigns",
+      "twitch.progress",
+      "twitch.claims",
+      "twitch.stream-management"
+    ],
+    "presentationPhases": [],
+    "state": {
+      "type": "dropper.state-changed",
+      "fields": {
+        "activeReward": "boolean",
+        "progressPercent": "percent-nullable",
+        "routingState": "token"
+      }
+    },
+    "menuSections": {
+      "main": [
+        "drops",
+        "streams"
+      ],
+      "appearance": [
+        "appearance"
+      ],
+      "advanced": [
+        "advanced"
+      ],
+      "system": [
+        "system"
+      ]
+    },
+    "repository": "Dropper",
+    "rootId": "tdh-root"
+  },
+  "shift": {
+    "role": "product",
+    "priority": 3,
+    "launcherPriority": 100,
+    "themePriority": 3,
+    "capabilities": [
+      "appearance.theme",
+      "appearance.readability",
+      "appearance.site-profile"
+    ],
+    "presentationPhases": [
+      "theme"
+    ],
+    "state": {
+      "type": "shift.state-changed",
+      "fields": {
+        "active": "boolean",
+        "theme": "token",
+        "safeMode": "boolean",
+        "excluded": "boolean"
+      }
+    },
+    "menuSections": {
+      "appearance": [
+        "appearance",
+        "readability"
+      ],
+      "advanced": [
+        "effects",
+        "effects-integrations",
+        "profiles",
+        "profiles-sites"
+      ],
+      "system": [
+        "system"
+      ]
+    },
+    "repository": "SHIFT",
+    "rootId": "exp-shift-root"
+  },
+  "ward": {
+    "role": "product",
+    "priority": 2,
+    "launcherPriority": 60,
+    "themePriority": 1,
+    "capabilities": [
+      "retail.classification",
+      "retail.cleanup",
+      "retail.coupons"
+    ],
+    "presentationPhases": [
+      "classify",
+      "visibility"
+    ],
+    "state": {
+      "type": "ward.state-changed",
+      "fields": {
+        "active": "boolean",
+        "pageType": "token",
+        "interventions": "count",
+        "hide": "count",
+        "dim": "count",
+        "collapse": "count",
+        "annotate": "count"
+      }
+    },
+    "menuSections": {
+      "main": [
+        "protection",
+        "amazon",
+        "tools"
+      ],
+      "appearance": [
+        "appearance"
+      ],
+      "advanced": [
+        "advanced",
+        "patterns",
+        "advanced-amazon"
+      ],
+      "system": [
+        "system"
+      ]
+    },
+    "repository": "WARD",
+    "rootId": "exp-ward-root"
+  },
+  "prisma": {
+    "role": "product",
+    "priority": 1,
+    "launcherPriority": 40,
+    "themePriority": 2,
+    "capabilities": [
+      "text.identity-detection",
+      "text.identity-highlighting",
+      "identity.catalog"
+    ],
+    "presentationPhases": [
+      "annotate"
+    ],
+    "state": {
+      "type": "prisma.state-changed",
+      "fields": {
+        "status": "token",
+        "total": "count",
+        "temporarilyHidden": "boolean"
+      }
+    },
+    "menuSections": {
+      "main": [
+        "page",
+        "highlights"
+      ],
+      "appearance": [
+        "style",
+        "highlight-style",
+        "look",
+        "appearance"
+      ],
+      "advanced": [
+        "tools",
+        "language",
+        "sites"
+      ],
+      "system": [
+        "system"
+      ]
+    },
+    "repository": "PRISMA",
+    "rootId": "exp-prisma-root"
+  }
+}
