@@ -7,11 +7,18 @@ on:
   pull_request:
   workflow_dispatch:
 
+  workflow_call:
+    inputs:
+      release:
+        type: boolean
+        default: false
+
 permissions:
   contents: read
 
 jobs:
   verify:
+    if: inputs.release || github.event_name != 'push' || !(startsWith(github.ref, 'refs/tags/') || startsWith(github.event.head_commit.message, 'Release exp-core '))
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -21,8 +28,38 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+        if: '!inputs.release'
       - run: npx playwright install --with-deps chromium
+        if: '!inputs.release'
       - name: Verify generated Core bundle
+        if: '!inputs.release'
         run: npm run build
       - name: Run Core regression suite
+        if: '!inputs.release'
         run: node --test tests/*.test.cjs
+      - name: Verify release once
+        if: inputs.release
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run verify:release
+          node --check dist/exp-core.js
+          git diff --exit-code -- dist/exp-core.js dist/manifest.json
+          version="$(node -p "require('./package.json').version")"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then test "$GITHUB_REF_NAME" = "v$version"; fi
+          test "$(node -p "require('./dist/manifest.json').coreVersion")" = "$version"
+          mkdir .verified-release
+          cp dist/exp-core.js .verified-release/
+          cp dist/manifest.json .verified-release/
+          printf '%s\n' "$GITHUB_SHA" > .verified-release/commit.txt
+          (cd .verified-release && sha256sum exp-core.js manifest.json > SHA256SUMS)
+      - name: Retain verified release
+        if: inputs.release
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verified-release-${{ github.sha }}
+          include-hidden-files: true
+          path: .verified-release/
+          if-no-files-found: error
+          retention-days: 7

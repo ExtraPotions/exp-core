@@ -101,7 +101,7 @@ RELEASE_NOTES_JSON='["First note.","Second note."]' npm run prepare:release:feat
 # add RELEASE_QUIET=1 for a quiet release: launcher badge only, no update cards
 ```
 
-The script bumps the patch version, writes the changelog section and the in-app notes, and builds. Run the full suite and `release:check`, then commit with `Release <Product> <version>`.
+The script bumps the patch version, writes the changelog section and the in-app notes, and builds. Run `npm run verify:release` once, then commit with `Release <Product> <version>`.
 
 ### Core release
 
@@ -109,7 +109,7 @@ The script bumps the patch version, writes the changelog section and the in-app 
 2. Run `npm run build` and the full Core suite. The build writes the version into `dist/manifest.json`; CI checks that it matches `package.json`.
 3. Commit the source and `dist/` together, with the message `Release exp-core <version>`.
 
-CI rebuilds, runs Verify consumers and the Core suite, commits rebuilt `dist/` files if they differ, publishes `exp-core.js`, `manifest.json` and `SHA256SUMS` under tag `v<version>`, and dispatches the release to each product.
+CI verifies the release artifact once, retains the separate Core consumer/integration gate, rejects generated-file drift, and publishes the checked artifact: `exp-core.js`, `manifest.json` and `SHA256SUMS` under tag `v<version>`, and dispatches the release to each product.
 
 After a Core release publishes, each product's Sync exp-core workflow (dispatched by the release, and hourly at :17 as a fallback) vendors the new Core, bumps the product's patch version and publishes it. A product whose vendored Core already matches is left alone.
 
@@ -118,9 +118,9 @@ The order depends on whether the new Core breaks the products' current tests:
 - **Compatible Core change.** Release Core first. The products follow through Sync exp-core.
 - **Core change that products must ship with** (menu markup, placement, anything their tests assert):
   1. Sync the new Core into the products locally, build, and pass every suite plus both CI-only checks.
-  2. Push the product release commits. Dropper and SHIFT publish straight away. In CI, PRISMA's and WARD's `release:check` and every product's Verify userscript wait up to 30 minutes for the Core tag (`verify-exp-core-pin.cjs`), then carry on.
+  2. Push the product release commits. All four products wait for the Core pin. In CI, every product's release verification waits up to 30 minutes for the Core tag (`verify-exp-core-pin.cjs`), then carry on.
   3. Push the Core release commit within those 30 minutes. Verify consumers now sees the updated products and Core publishes; the waiting product runs then finish on their own.
-  4. The hourly Sync exp-core never moves a product to an older Core, so it leaves the products alone while their newer Core is unpublished, and makes no commit once it is published. The Sync workflows stay enabled throughout.
+  4. The hourly Sync exp-core never moves a product to an older Core, so it leaves the products alone while their newer Core is unpublished, and makes no commit once it is published. Disable product Sync workflows for this coordinated release and restore their prior states afterward.
 
   Only a product run that timed out (Core not published within 30 minutes) needs a re-run: `gh run rerun <id> --failed`.
 
@@ -157,3 +157,13 @@ The product repository needs:
 - [ ] Badge and launcher artwork in `assets/`.
 
 Before the first release, run the full Core gate (`npm run suite:local`) with the new product beside the others.
+
+## Single local release gate
+
+Run `npm run verify:release` to build and run Core tests. Shared changes still require `npm run suite:local` and WARD release checks as documented above. Windows test entry points limit concurrency to two files; CI keeps its normal concurrency.
+
+Publishing calls the reusable Verify workflow and reuses its checked artifact for the exact commit. Commit generated files before requesting a release; CI rejects build drift rather than committing or rebasing during publication. The publisher checks the stored commit and SHA256 checksums and does not rebuild.
+
+From the workspace root, run `pwsh -NoProfile -File .release-tools/Status-ExtraPotions.ps1` for claim, dirty state, upstream versions, CI, Core pins and install/update endpoint health. It does not fetch, build, test, claim or write files. Unavailable network results are not passes.
+
+Claude, Codex and Antigravity should follow this gate and acknowledge the applicable workflow rules in their next handoff. The workspace AGENTS.md contains the shared routing; completed history belongs in HANDOFF.md, with TASK.md limited to the current assignment.

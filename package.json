@@ -7,11 +7,13 @@
     "build:check": "node scripts/build.cjs --check",
     "sync:check": "node scripts/sync-products.cjs --check",
     "duplicates:check": "node scripts/check-core-duplicates.cjs",
-    "test": "npm run build:check && node --test tests/*.test.cjs",
+    "test": "npm run build:check && node scripts/run-tests.cjs",
     "sync": "node scripts/sync-products.cjs",
     "test:installed-browser": "node scripts/test-installed-browser.cjs",
     "suite:local": "node scripts/suite-local.cjs",
-    "screenshots": "node scripts/capture-screenshots.cjs"
+    "screenshots": "node scripts/capture-screenshots.cjs",
+    "release:check": "npm run build && npm test",
+    "verify:release": "npm run release:check"
   },
   "devDependencies": {
     "acorn": "8.18.0",

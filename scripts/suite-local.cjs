@@ -56,9 +56,8 @@ try {
     if (run(npm, ['run', 'build', '--silent'], { cwd: target }).status !== 0) fail(`${name} build failed.`);
   }
 
-  const testFiles = fs.readdirSync(path.join(root, 'tests')).filter(file => file.endsWith('.test.cjs')).map(file => path.join('tests', file));
   const preload = path.join(__dirname, 'use-installed-browser.cjs').replace(/\\/g, '/');
-  const result = run(process.execPath, ['--test', ...testFiles], {
+  const result = run(process.execPath, ['scripts/run-tests.cjs'], {
     cwd: root,
     env: { ...process.env, EXP_SUITE_ROOT: workspace, EXP_PRODUCT_ROOTS: '', EXP_REQUIRE_CONSUMERS: '1', NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --require ${preload}`.trim() },
   });
