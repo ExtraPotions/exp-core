@@ -1,4 +1,9 @@
-## 3.9.4 — 2026-10-16
+## 3.9.5 â€” 2026-10-16
+
+- Defers menu arrangement, base styles and panel observers until the menu first opens, reducing initial memory use.
+- Preserves menu styling and safely handles menus destroyed before their first open.
+
+## 3.9.4 ï¿½ 2026-10-16
 
 - Release and test workflows now run only when requested.
 - Removes automatic consumer releases and required verification chains.
