@@ -10,8 +10,7 @@ function check(root){
  for(const file of fs.readdirSync(folder).filter(name=>name.endsWith('.yml'))){
   const text=fs.readFileSync(path.join(folder,file),'utf8');
   assert.doesNotMatch(text,/node-version:\s*["']?22\b/,file);
-  if(file==='consumer-rollout.yml')assert.match(text,/default: "24"/);
-  if(/npm test|node --test/.test(text)&&!/uses:.*consumer-rollout/.test(text))assert.match(text,/playwright install --with-deps chromium/,file+' installs the matching browser');
+  if(/npm test|node --test|node scripts\/run-tests\.cjs/.test(text))assert.match(text,/playwright install --with-deps chromium/,file+' installs the matching browser');
  }
 }
 test('Core declares the common toolchain and installs the matching browser for CI',()=>check(path.join(__dirname,'..')));

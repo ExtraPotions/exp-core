@@ -33,18 +33,7 @@ exp-core is the one implementation of shared behaviour: the launcher and its fly
 
 `npm test` in each repository builds and then runs its full suite.
 
-Two checks run only in CI unless you run them yourself. Run both before any Core change that reaches the products:
-
-```
-# from exp-core, with all four products built beside it
-EXP_REQUIRE_CONSUMERS=1 node scripts/check-suite-coexistence.cjs
-# from WARD
-npm run release:check
-```
-
-`release:check` in SHIFT, PRISMA and WARD starts by comparing the vendored Core with the published Core tag. Until that Core version is published it stops there with `HTTP 404`; the remaining steps (build check, tests, metadata, WARD's interval count) still need to pass before release. Run `build:check` and the full suite now; `release:check` completes once Core is published.
-
-`npm run suite:local` (from exp-core) does the whole Core release gate in a temporary copy: it injects the built Core into copies of the four products, rebuilds them, and runs Core's tests and the coexistence check. Your product folders are not modified.
+Checks are manual. Build affected products and choose the tests relevant to the change. `release:check`, `verify:release`, `suite:local`, Core-pin verification and coexistence checks remain optional diagnostic commands, not release gates. Some checks need sibling products or published Core assets; a failure there does not impose a release order.
 
 ## Fixing a bug
 
@@ -56,7 +45,7 @@ Start by deciding where the bug lives.
    1. Build Core: `npm run build`.
    2. Copy it into the products: `node scripts/sync-products.cjs` (or name products: `node scripts/sync-products.cjs Dropper WARD`). This rewrites each product's `vendor/exp-core/`.
    3. Build each product and run its full suite.
-   4. Run the coexistence check and WARD's `release:check` (see Commands).
+   4. Choose relevant integration or coexistence checks for the shared change.
    5. For anything visible, check it in a real page as well as in the fixtures.
 
 Tests drive real pages through Playwright. Two things catch out live checks:
@@ -84,51 +73,16 @@ Products can also run `npm run screenshots`. Each product's tests fix the number
 
 ## Shipping
 
-Nothing is published until a commit reaches `main` with the right message, or a version tag is pushed.
+Publish only on the user's explicit request. Commit and push requests are separate from release authorization; commit messages and tag pushes never start publication.
 
-| Change | What to push | What happens |
-|---|---|---|
-| README, screenshots, docs | an ordinary commit, for example `docs: …` | Nothing publishes. GitHub serves READMEs from `main`. |
-| Product release | the commit made by `prepare:release:feature`, message `Release <Product> <version>` | The product's Publish release workflow tests, checks the Core pin and publishes `<product>.user.js`. |
-| Core release | message `Release exp-core <version>` | Verify consumers runs every product against the new Core; then Core publishes and dispatches the release to each product. |
+1. Prepare the version and release notes, build the intended assets, and run relevant manual checks. Existing release preparation scripts are optional helpers.
+2. When authorized, commit and push the intended source and built assets. GitHub workflows use the committed files, not uncommitted local builds.
+3. When publication is authorized, run this repository's Publish release workflow manually on the intended commit. It derives `v<version>` from package.json and uploads the committed bundle, manifest or launcher asset, and SHA256SUMS, with notes from CHANGELOG.md. An existing version tag must point to that commit. Existing releases are not overwritten.
+4. Download the published assets and compare their SHA256 with the intended local files.
 
-**Never start an ordinary commit message with `Release `.** That prefix is the publish trigger.
+Manual tests (`verify.yml`) is independent of Publish release (`release.yml`). There are no required test jobs, consumer gates, published Core-pin waits, scheduled syncs, automatic commits or downstream releases. Core and products are released individually when requested. For a shared change, synchronize the intended products locally and build them; choose integration checks according to the change.
 
-### Product release
-
-```
-RELEASE_NOTES_JSON='["First note.","Second note."]' npm run prepare:release:feature
-# add RELEASE_QUIET=1 for a quiet release: launcher badge only, no update cards
-```
-
-The script bumps the patch version, writes the changelog section and the in-app notes, and builds. Run `npm run verify:release` once, then commit with `Release <Product> <version>`.
-
-### Core release
-
-1. Set the new version in `package.json` and add its `## <version> — <YYYY-MM-DD>` section to `CHANGELOG.md`. The first section becomes the GitHub release notes.
-2. Run `npm run build` and the full Core suite. The build writes the version into `dist/manifest.json`; CI checks that it matches `package.json`.
-3. Commit the source and `dist/` together, with the message `Release exp-core <version>`.
-
-CI verifies the release artifact once, retains the separate Core consumer/integration gate, rejects generated-file drift, and publishes the checked artifact: `exp-core.js`, `manifest.json` and `SHA256SUMS` under tag `v<version>`, and dispatches the release to each product.
-
-After a Core release publishes, each product's Sync exp-core workflow (dispatched by the release, and hourly at :17 as a fallback) vendors the new Core, bumps the product's patch version and publishes it. A product whose vendored Core already matches is left alone.
-
-The order depends on whether the new Core breaks the products' current tests:
-
-- **Compatible Core change.** Release Core first. The products follow through Sync exp-core.
-- **Core change that products must ship with** (menu markup, placement, anything their tests assert):
-  1. Sync the new Core into the products locally, build, and pass every suite plus both CI-only checks.
-  2. Push the product release commits. All four products wait for the Core pin. In CI, every product's release verification waits up to 30 minutes for the Core tag (`verify-exp-core-pin.cjs`), then carry on.
-  3. Push the Core release commit within those 30 minutes. Verify consumers now sees the updated products and Core publishes; the waiting product runs then finish on their own.
-  4. The hourly Sync exp-core never moves a product to an older Core, so it leaves the products alone while their newer Core is unpublished, and makes no commit once it is published. Disable product Sync workflows for this coordinated release and restore their prior states afterward.
-
-  Only a product run that timed out (Core not published within 30 minutes) needs a re-run: `gh run rerun <id> --failed`.
-
-A release commit already on `main` cannot be amended. If a publish fails, fix it in a new commit and push a fresh release commit (`git commit --allow-empty -m "Release <Product> <version>"`) to trigger publishing again.
-
-### After publishing
-
-Download each published asset and compare its SHA256 with the local build. Then regenerate the browser update package if you maintain one.
+These definitions take effect on GitHub only after a separately authorized push. Repository-side protection settings are managed separately.
 
 ## Adding a product
 
@@ -143,7 +97,6 @@ A new product touches Core in several places. Work through all of them in one Co
 - [ ] `scripts/check-suite-coexistence.cjs`: the injection orders and the expected order.
 - [ ] `scripts/check-product-menus.cjs` and `scripts/check-annotations.cjs`: the product's host, launcher and test page.
 - [ ] `scripts/suite-local.cjs` and `scripts/capture-launcher-screenshot.cjs`: the product list.
-- [ ] `.github/workflows/release.yml`: the dispatch loop's repository list.
 - [ ] Core tests that list every product (search `src/`, `scripts/` and `tests/` for `ward`; a plain `ward` search also matches words such as "forward").
 
 The product repository needs:
@@ -151,19 +104,13 @@ The product repository needs:
 - [ ] `package.json` with `build`, `build:check` or `release:check`, `test`, `screenshots`, `prepare:release:feature`, `test:installed-browser`, and `engines.node >=24`.
 - [ ] `vendor/exp-core/` filled by `node scripts/sync-products.cjs <Product>` from exp-core.
 - [ ] Copies of the shared scripts the other products carry: `sync-exp-core.cjs`, `verify-exp-core-pin.cjs`, `prepare-core-release.cjs`, `prepare-feature-release.cjs`, `use-installed-browser.cjs`, `test-installed-browser.cjs`.
-- [ ] `.github/workflows/`: `verify.yml`, `release.yml` (triggered by `Release <Product> `), and `sync-exp-core.yml` calling `consumer-rollout.yml`.
+- [ ] `.github/workflows/`: manual `verify.yml` and independent manual `release.yml`.
 - [ ] `docs/screenshots.config.cjs`, the README screenshots, and a test that fixes their names.
 - [ ] `README.md`, `CHANGELOG.md`, `LICENSE-CODE.md`, `LICENSE-ASSETS.md`, `NOTICE.md`, `docs/development.md`.
 - [ ] Badge and launcher artwork in `assets/`.
 
-Before the first release, run the full Core gate (`npm run suite:local`) with the new product beside the others.
+For a new product, choose integration and coexistence checks that exercise it beside the existing products. `npm run suite:local` remains available as an optional broader check.
 
-## Single local release gate
+## Workspace status
 
-Run `npm run verify:release` to build and run Core tests. Shared changes still require `npm run suite:local` and WARD release checks as documented above. Windows test entry points limit concurrency to two files; CI keeps its normal concurrency.
-
-Publishing calls the reusable Verify workflow and reuses its checked artifact for the exact commit. Commit generated files before requesting a release; CI rejects build drift rather than committing or rebasing during publication. The publisher checks the stored commit and SHA256 checksums and does not rebuild.
-
-From the workspace root, run `pwsh -NoProfile -File .release-tools/Status-ExtraPotions.ps1` for claim, dirty state, upstream versions, CI, Core pins and install/update endpoint health. It does not fetch, build, test, claim or write files. Unavailable network results are not passes.
-
-Claude, Codex and Antigravity should follow this gate and acknowledge the applicable workflow rules in their next handoff. The workspace AGENTS.md contains the shared routing; completed history belongs in HANDOFF.md, with TASK.md limited to the current assignment.
+From the workspace root, `pwsh -NoProfile -File .release-tools/Status-ExtraPotions.ps1` reads ownership, repository state and release information without modifying files. Network failures are unavailable results.

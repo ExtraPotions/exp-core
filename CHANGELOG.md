@@ -1,3 +1,8 @@
+## 3.9.4 — 2026-10-16
+
+- Release and test workflows now run only when requested.
+- Removes automatic consumer releases and required verification chains.
+
 ## 3.9.3 â€” 2026-10-14
 
 - Keeps the launcher clear of floating site controls whose button role is on a shadow host, including when their shadow content contains only text or spans.

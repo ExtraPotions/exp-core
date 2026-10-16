@@ -1,9 +1,7 @@
 name: Publish release
 
 on:
-  push:
-    branches: [main]
-    tags: ["v*.*.*"]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,76 +11,27 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  verify:
-    if: startsWith(github.ref, 'refs/tags/') || startsWith(github.event.head_commit.message, 'Release exp-core ')
-    uses: ./.github/workflows/verify.yml
-    with:
-      release: true
-    permissions:
-      contents: read
-
-  # Nothing is published until every product passes against this Core.
-  verify-consumers:
-    if: startsWith(github.ref, 'refs/tags/') || startsWith(github.event.head_commit.message, 'Release exp-core ')
-    uses: ./.github/workflows/verify-consumers.yml
-    with:
-      gate: true
-    permissions:
-      contents: read
-
   release:
-    needs: [verify, verify-consumers]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: verified-release-${{ github.sha }}
-          path: .verified-release/
-      - name: Check verified artifact identity
-        run: |
-          set -euo pipefail
-          test "$(cat .verified-release/commit.txt)" = "$GITHUB_SHA"
-          (cd .verified-release && sha256sum --check SHA256SUMS)
-      - name: Resolve release tag
-        id: release
+          fetch-depth: 0
+      - name: Publish committed assets
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            tag="$GITHUB_REF_NAME"
-          else
-            version="$(jq -r .version package.json)"
-            tag="v$version"
+          version="$(jq -r .version package.json)"
+          tag="v$version"
+          if git rev-parse --verify "refs/tags/$tag" >/dev/null 2>&1; then
+            test "$(git rev-parse "$tag^{commit}")" = "$GITHUB_SHA"
           fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-      - name: Publish assets
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.release.outputs.tag }}
-        run: |
-          set -euo pipefail
-          if gh release view "$TAG" >/dev/null 2>&1; then exit 0; fi
+          (cd dist && sha256sum exp-core.js manifest.json) > SHA256SUMS
           awk '
             /^## / { section += 1; if (section > 1) exit }
             { print }
           ' CHANGELOG.md > release-notes.md
-          gh release create "$TAG" .verified-release/exp-core.js .verified-release/manifest.json .verified-release/SHA256SUMS \
-            --target "$GITHUB_SHA" --title "exp-core $TAG" --notes-file release-notes.md
-
-      - name: Dispatch Core release to consumers
-        env:
-          GH_TOKEN: ${{ secrets.CORE_ROLLOUT_TOKEN }}
-          TAG: ${{ steps.release.outputs.tag }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -z "${GH_TOKEN:-}" ]]; then
-            echo "CORE_ROLLOUT_TOKEN is not configured; scheduled consumer sync remains the fallback."
-            exit 0
-          fi
-          for repo in Dropper SHIFT WARD PRISMA; do
-            payload="$(jq -nc --arg tag "$TAG" '{event_type:"exp-core-release",client_payload:{tag:$tag}}')"
-            gh api --method POST "repos/ExtraPotions/$repo/dispatches" --input - <<<"$payload"
-            echo "Dispatched $TAG to $repo."
-          done
+          gh release create "$tag" dist/exp-core.js dist/manifest.json SHA256SUMS \
+            --target "$GITHUB_SHA" --title "exp-core $version" --notes-file release-notes.md

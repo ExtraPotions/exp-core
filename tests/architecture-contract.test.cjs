@@ -50,17 +50,10 @@ test('Core synchronization discovers downstream consumers from the suite manifes
   assert.match(sync, /const pin='v'\+version/u);
 });
 
-test('consumer verification topology is discovered from the suite manifest', () => {
-  const workflow = read('.github/workflows/verify-consumers.yml');
+test('manual consumer discovery remains available from the suite manifest', () => {
   const matrix = read('scripts/consumer-matrix.cjs');
-  assert.match(matrix, /loadSuiteContract\(root\)/u);
-  assert.match(matrix, /\{flagship,products\}=loadSuiteContract\(root\)/u);
-  assert.match(matrix, /products='\+JSON\.stringify\(products\)/u);
-  assert.match(workflow, /node scripts\/consumer-matrix\.cjs >> "\$GITHUB_OUTPUT"/u);
-  assert.match(workflow, /fromJSON\(needs\.discover\.outputs\.products\)/u);
-  assert.match(workflow, /ExtraPotions\/\$\{\{ needs\.discover\.outputs\.flagship \}\}/u);
-  assert.doesNotMatch(workflow, /repository: ExtraPotions\/Dropper/u);
-  assert.doesNotMatch(workflow, /product: \[SHIFT, WARD, PRISMA\]/u);
+  assert.match(matrix, /loadSuiteContract/u);
+  assert.equal(exists('.github/workflows/verify-consumers.yml'), false);
 });
 
 test('build, sync, and CI share one validated suite-contract loader', () => {
@@ -205,24 +198,17 @@ test('suite manifest owns launcher and theme coordination priorities', () => {
   assert.doesNotMatch(runtime, /\.ward-shell\{display:contents\}/u);
 });
 
-test('consumer verification includes a full-suite coexistence browser gate', () => {
-  const workflow = read('.github/workflows/verify-consumers.yml');
+test('manual coexistence checks retain suite coverage', () => {
   const coexistence = read('scripts/check-suite-coexistence.cjs');
-  assert.match(workflow, /name: Suite coexistence/u);
-  assert.match(workflow, /node scripts\/check-suite-coexistence\.cjs/u);
   assert.match(coexistence, /coexistence coverage must match the suite manifest/u);
   assert.match(coexistence, /only one suite menu may be visible/u);
   assert.match(coexistence, /\['dropper', 'shift', 'ward', 'prisma'\]/u);
 });
 
-test('event-driven rollout contract is suite-discovered and keeps a scheduled fallback', () => {
-  const check = read('scripts/check-consumer-rollout-contract.cjs');
+test('Core publication does not dispatch consumer releases', () => {
   const release = read('.github/workflows/release.yml');
-  assert.match(check, /loadSuiteContract/u);
-  assert.match(check, /repository_dispatch/u);
-  assert.match(check, /scheduled fallback/u);
-  assert.match(release, /CORE_ROLLOUT_TOKEN/u);
-  assert.match(release, /exp-core-release/u);
+  assert.match(release, /workflow_dispatch:/u);
+  assert.doesNotMatch(release, /CORE_ROLLOUT_TOKEN|exp-core-release|dispatches/u);
 });
 
 test('Core foundation contains no Dropper-specific DOM selectors', () => {
