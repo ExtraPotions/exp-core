@@ -103,7 +103,7 @@ The product repository needs:
 
 - [ ] `package.json` with `build`, `build:check` or `release:check`, `test`, `screenshots`, `prepare:release:feature`, `test:installed-browser`, and `engines.node >=24`.
 - [ ] `vendor/exp-core/` filled by `node scripts/sync-products.cjs <Product>` from exp-core.
-- [ ] Copies of the shared scripts the other products carry: `sync-exp-core.cjs`, `verify-exp-core-pin.cjs`, `prepare-core-release.cjs`, `prepare-feature-release.cjs`, `use-installed-browser.cjs`, `test-installed-browser.cjs`.
+- [ ] Copies of the shared scripts the other products carry: `sync-exp-core.cjs`, `verify-exp-core-pin.cjs`, `prepare-feature-release.cjs`, `use-installed-browser.cjs`, `test-installed-browser.cjs`.
 - [ ] `.github/workflows/`: manual `verify.yml` and independent manual `release.yml`.
 - [ ] `docs/screenshots.config.cjs`, the README screenshots, and a test that fixes their names.
 - [ ] `README.md`, `CHANGELOG.md`, `LICENSE-CODE.md`, `LICENSE-ASSETS.md`, `NOTICE.md`, `docs/development.md`.

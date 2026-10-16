@@ -50,15 +50,10 @@ test('Core synchronization discovers downstream consumers from the suite manifes
   assert.match(sync, /const pin='v'\+version/u);
 });
 
-test('manual consumer discovery remains available from the suite manifest', () => {
-  const matrix = read('scripts/consumer-matrix.cjs');
-  assert.match(matrix, /loadSuiteContract/u);
-  assert.equal(exists('.github/workflows/verify-consumers.yml'), false);
-});
 
-test('build, sync, and CI share one validated suite-contract loader', () => {
+test('build and sync share one validated suite-contract loader', () => {
   const loader = read('scripts/suite-contract.cjs');
-  for (const script of ['scripts/build.cjs','scripts/sync-products.cjs','scripts/consumer-matrix.cjs']) {
+  for (const script of ['scripts/build.cjs','scripts/sync-products.cjs']) {
     assert.match(read(script), /suite-contract\.cjs/u, script);
     assert.match(read(script), /loadSuiteContract/u, script);
   }
