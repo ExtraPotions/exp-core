@@ -18,6 +18,7 @@ exp-core is the one implementation of shared behaviour: the launcher and its fly
 
 - Node 24 or newer (`engines` in every `package.json`). Run `npm ci` once in each repository.
 - Browser tests use Playwright's Chromium. To use an installed Chrome or Edge instead, run `npm run test:installed-browser`, or set `EXP_BROWSER_PATH` to a browser executable. Vivaldi is not a supported test browser: a Playwright run pointed at it did not finish. Use Vivaldi with a userscript manager for manual checks of the installed scripts.
+- On Windows, the installed-browser preloads require `EXP_BROWSER_PATH` to point to `chrome-headless-shell.exe`. Full Chromium 153 fresh profiles generated failed Windows logons and locked the local account; full-browser overrides are refused until a fix or mitigation is verified. Default Playwright headless tests use the shell without this override. Do not change credentials or weaken account lockout policy for browser tests.
 - Keep the five repositories side by side in one folder. The sync, coexistence and screenshot scripts look for the products beside exp-core (override with `EXP_SUITE_ROOT` or `EXP_PRODUCT_ROOTS`).
 - On a machine with few cores, run tests with `--test-concurrency=2`.
 
