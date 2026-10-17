@@ -1075,15 +1075,22 @@ const ExtraPotionsCore = (() => {
     const node = document.createElement('style');
     Object.assign(node.dataset, data);
     node.dataset.expOwned = '1';
+    // Keep the editable handle without parsing a second copy of the adopted CSS.
+    node.type = 'text/plain';
     node.textContent = css;
-    shadow.append(node);
-    // Constructed sheets survive pages that block style elements. Keep the style
-    // node as a fallback and as the editable public handle used by product code.
     let sheet;
-    try { sheet = new CSSStyleSheet(); sheet.replaceSync(OWNED_SHEET_MARKER + css); shadow.adoptedStyleSheets = [...shadow.adoptedStyleSheets, sheet]; } catch {}
-    const observe = new MutationObserver(() => { if (sheet) { try { sheet.replaceSync(OWNED_SHEET_MARKER + node.textContent); } catch {} } });
-    observe.observe(node, { childList: true, characterData: true, subtree: true });
-    node.dispose = () => { observe.disconnect(); if (sheet) shadow.adoptedStyleSheets = [...shadow.adoptedStyleSheets].filter(s => s !== sheet); node.remove(); };
+    try {
+      sheet = new CSSStyleSheet(); sheet.replaceSync(OWNED_SHEET_MARKER + css);
+      shadow.adoptedStyleSheets = [...shadow.adoptedStyleSheets, sheet];
+      if (!shadow.adoptedStyleSheets.includes(sheet)) throw new Error('Style adoption ignored');
+    } catch {
+      if (sheet) { try { shadow.adoptedStyleSheets = [...shadow.adoptedStyleSheets].filter(item => item !== sheet); } catch {} }
+      sheet = undefined; node.type = 'text/css';
+    }
+    shadow.append(node);
+    const observe = sheet ? new MutationObserver(() => { try { sheet.replaceSync(OWNED_SHEET_MARKER + node.textContent); } catch {} }) : null;
+    observe?.observe(node, { childList: true, characterData: true, subtree: true });
+    node.dispose = () => { observe?.disconnect(); if (sheet) shadow.adoptedStyleSheets = [...shadow.adoptedStyleSheets].filter(item => item !== sheet); node.remove(); };
     node.expSheet = sheet;
     return node;
   }

@@ -1,3 +1,8 @@
+## 3.9.6 — 2026-10-17
+
+- Uses one parsed copy of injected menu styles while keeping stylesheet editing and fallback support.
+- Adds readable native dropdown option colors to shared menus.
+
 ## 3.9.5 — 2026-10-16
 
 - Defers menu arrangement, base styles and panel observers until the menu first opens, reducing initial memory use.

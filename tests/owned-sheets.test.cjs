@@ -25,6 +25,7 @@ test('every stylesheet Core injects is marked as owned, including constructed sh
     const before = constructed.cssRules[0]?.selectorText;
     node.textContent = '.probe{color:blue}';
     await new Promise((resolve) => setTimeout(resolve, 30));
+    const updated = node.expSheet;
     const foreign = document.createElement('style');
     foreign.textContent = '.other{color:green}';
     document.head.append(foreign);
@@ -35,10 +36,10 @@ test('every stylesheet Core injects is marked as owned, including constructed sh
       lifecycleOwned: lifecycleSheets.length > 0 && lifecycleSheets.every((sheet) => ExtraPotionsCore.isOwnedSheet(sheet)),
       nodeOwned: node.dataset.expOwned,
       before,
-      after: constructed.cssRules[0]?.selectorText,
-      rules: constructed.cssRules.length,
-      updatedRule: constructed.cssRules[1]?.cssText,
-      nodeSheetOwned: ExtraPotionsCore.isOwnedSheet(node.sheet),
+      after: updated.cssRules[0]?.selectorText,
+      rules: updated.cssRules.length,
+      updatedRule: updated.cssRules[1]?.cssText,
+      nodeSheet: node.sheet,
       constructedOwned: ExtraPotionsCore.isOwnedSheet(constructed),
       foreignOwned: ExtraPotionsCore.isOwnedSheet(foreign.sheet),
     };
@@ -48,7 +49,7 @@ test('every stylesheet Core injects is marked as owned, including constructed sh
   assert.equal(facts.after, '.exp-owned-sheet-marker', 'marker survives a later edit of the style text');
   assert.match(facts.updatedRule, /blue/);
   assert.equal(facts.lifecycleOwned, true, 'styles injected through the product lifecycle are marked too');
-  assert.equal(facts.nodeSheetOwned, true);
+  assert.equal(facts.nodeSheet, null, 'editable handle does not create a second stylesheet');
   assert.equal(facts.constructedOwned, true);
   assert.equal(facts.foreignOwned, false);
 });

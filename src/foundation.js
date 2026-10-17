@@ -148,6 +148,7 @@ function css() {
       [data-exp-part="dock"]:focus { outline:none; }
       [data-exp-part="dock"] :is(.fl-tool-body,.row,.group,.section,.fl-tool-title) { min-width:0; max-width:100%; overflow-wrap:anywhere; }
       [data-exp-part="dock"] :is(input,select,textarea) { min-width:0; max-width:100%; }
+      [data-exp-part="dock"] :is(option,optgroup) { background:var(--theme-panel) !important; color:var(--theme-text) !important; }
       .menu-head {
         position:relative;
         display:grid; grid-template-columns:minmax(0,1fr) auto;
