@@ -46,7 +46,7 @@ for (const [repo, url, root, system] of [
     await page.addScriptTag({ content: instrumentReadableSource(repo) });
     await page.locator(root).waitFor({ state: 'attached' });
     await page.locator(root).locator('[data-exp-part="launcher"]').click();
-    await page.locator(root).locator(system).click();
+    await page.locator(root).locator(repo==='Dropper'?'[data-exp-menu-shortcut="support"]':system).click();
     const layout = await page.locator(root).locator('[data-exp-product-system]').evaluate(n => n.dataset.expSystemLayout || 'classic');
     if (layout !== 'grouped') await page.locator(root).locator('[data-exp-system-item="timeline"] > summary').click();
     assert.deepEqual(await page.locator(root).locator('[data-exp-product-system] [data-exp-system-item]').evaluateAll(

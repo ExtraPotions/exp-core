@@ -140,9 +140,10 @@ const ExpMenuArrangement = (() => {
         if(node.matches('style,script,[data-exp-submenu-tabs],.badge-only-progress-slot'))continue;
         // Everyday controls stay on the home view; each submenu disclosure becomes
         // a row that opens its own detail view.
+        if(drops&&node.id==='tdh-open-campaigns'){home.push(node);continue;}
         let label=tabLabel(node);
         // System status stays open on the home view so recovery actions remain in sight.
-        if(!label||node.matches('[data-exp-system-item="status"]')){home.push(node);continue;}
+        if(!label||(id!=='dropper'&&node.matches('[data-exp-system-item="status"]'))){home.push(node);continue;}
         if(stream){
           const key=slug(node.querySelector(':scope>summary')?.textContent);
           label=key==='playback-options'?'Playback':key==='notifications'?'Alerts':node.id==='tdh-routing-history-panel'||['routing-and-backup','interruption-rules','why-did-it-switch'].includes(key)?'Routing':label;
@@ -240,7 +241,8 @@ const ExpMenuArrangement = (() => {
       const key = header.dataset.route || header.dataset.section || header.dataset.panel || body.id;
       return { section, header, body, label, key };
     }).filter(entry => entry?.key);
-    const tabs=mountTabs({panel,id,onChange});
+    // Compact menus retain the product's native inline disclosures and lazy toggle handlers.
+    const tabs={update(){},destroy(){}};
     const none = { update() { collapseSubmenus(panel);tabs.update(); }, select() {}, describe: () => [], destroy() {tabs.destroy();} };
     if (entries.length < 2) return none;
     const parent = entries[0].section.parentElement;

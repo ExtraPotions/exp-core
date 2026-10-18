@@ -58,7 +58,7 @@ test('Core does not re-collapse a submenu after the user opens it',async t=>{
     controller.destroy();
     return {initiallyOpen,flat,afterUpdate,afterCollapsePass};
   });
-  assert.deepEqual(result,{initiallyOpen:true,flat:'1',afterUpdate:true,afterCollapsePass:true});
+  assert.deepEqual(result,{initiallyOpen:false,flat:null,afterUpdate:true,afterCollapsePass:true});
 });
 
 test('Core orders sections by category and offers nothing to rearrange or hide',async t=>{
@@ -71,7 +71,7 @@ test('Core orders sections by category and offers nothing to rearrange or hide',
     const make=(key,label)=>{const s=document.createElement('section');s.className='fl-tool-panel';const h=document.createElement('button');h.className='fl-tool-header';h.dataset.section=key;const t=document.createElement('span');t.className='fl-tool-title';t.textContent=label;h.append(t);const b=document.createElement('div');b.className='fl-tool-body';b.id=key+'-body';s.append(h,b);return s;};
     panel.append(make('system','System'),make('profiles','Profiles & Sites'),make('readability','Readability'),make('appearance','Appearance'));document.body.append(panel);
     const controller=ExtraPotionsCore.mountMenuArrangement({panel,id:'shift'});
-    const ordered=[...panel.querySelectorAll(':scope > .fl-tool-panel')].map(n=>({key:n.querySelector('.fl-tool-header').dataset.section,category:n.dataset.expMenuCategory,hidden:n.hidden}));
+    const ordered=[...panel.querySelectorAll('.exp-menu-content > .fl-tool-panel')].map(n=>({key:n.querySelector('.fl-tool-header').dataset.section,category:n.dataset.expMenuCategory,hidden:n.hidden}));
     const extras={grips:panel.querySelectorAll('.exp-section-grip').length,editor:panel.querySelectorAll('.exp-menu-editor').length};
     controller.destroy();return {ordered,extras};
   });
@@ -85,5 +85,7 @@ test('Core menus use the compact width',async t=>{
   const browser=await chromium.launch({headless:true});t.after(()=>browser.close());
   const page=await browser.newPage({viewport:{width:900,height:700}});await page.setContent('<!doctype html><html><body></body></html>');await page.addScriptTag({content:source});
   const width=await page.evaluate(()=>ExtraPotionsCore.menuWidth());
-  assert.equal(width,320);
+  assert.equal(width,304);
 });
+
+

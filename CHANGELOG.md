@@ -1,3 +1,9 @@
+## 3.9.7 — 2026-10-18
+
+- Adds compact sidebar menus, inline settings and keyboard-accessible help within the menu.
+- Offers Standard, Compact and Mini layouts with tighter controls and readable diagnostics.
+- Keeps floating progress cards stable by excluding them from their own placement obstacles.
+
 ## 3.9.6 — 2026-10-17
 
 - Uses one parsed copy of injected menu styles while keeping stylesheet editing and fallback support.

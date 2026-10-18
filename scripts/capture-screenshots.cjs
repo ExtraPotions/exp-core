@@ -131,7 +131,8 @@ async function openView(host, shot) {
   if (!shot.tab) return;
   const exact = new RegExp(`^${shot.tab.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
   const tab = host.locator('.exp-submenu-row:visible').filter({ hasText: exact })
-    .or(host.locator('[role="tablist"]:not([data-exp-section-tabs])').getByRole('tab', { name: shot.tab, exact: true }));
+    .or(host.locator('[role="tablist"]:not([data-exp-section-tabs])').getByRole('tab', { name: shot.tab, exact: true }))
+    .or(host.locator('summary:visible').filter({hasText:exact}));
   try {
     await tab.first().waitFor({ state: 'visible', timeout: 5000 });
   } catch {
@@ -185,6 +186,7 @@ async function captureProduct({ name, root, browser, build = true }) {
       await page.mouse.move(0, 0);
       await page.waitForTimeout(300);
       if (shot.before) await shot.before(page, host);
+      await page.mouse.move(0, 0);
       await host.evaluate(node => { for (const toast of node.shadowRoot?.querySelectorAll('.toast') || []) toast.hidden = true; });
       const file = path.join(work, shot.file);
       if (shot.include === 'page') await page.screenshot({ path: file });

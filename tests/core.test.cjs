@@ -24,7 +24,7 @@ test('core is a private build-time bundle, not an installable userscript', () =>
   assert.doesNotMatch(bundle, /==UserScript==|@match|@downloadURL|@updateURL/);
 });
 
-test('Core exposes one canonical menu size without width presets', async (t) => {
+test('Core exposes the compact default and keeps the retired width API absent', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
   await page.addScriptTag({ content: source });
@@ -32,7 +32,7 @@ test('Core exposes one canonical menu size without width presets', async (t) => 
     version: ExtraPotionsCore.version, sourceVersion: ExtraPotionsCore.sourceVersion,
     width: ExtraPotionsCore.menuWidth(), retiredApi: typeof ExtraPotionsCore.menuWidthForMode,
   }));
-  assert.deepEqual(state, { version: pkg.version, sourceVersion: pkg.version, width: 320, retiredApi: 'undefined' });
+  assert.deepEqual(state, { version: pkg.version, sourceVersion: pkg.version, width: 304, retiredApi: 'undefined' });
 });
 
 test('Core products rerender the active section without owning product state', async (t) => {
@@ -1342,3 +1342,4 @@ test('Core product services resolve product versions lazily', async (t) => {
   });
   assert.deepEqual(result, { current: '3.2.23', exposed: '3.2.23', lifecycle: true, diagnostics: true });
 });
+

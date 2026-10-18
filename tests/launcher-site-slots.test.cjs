@@ -209,11 +209,12 @@ test('theater mode that covers the top bar instead of hiding it moves the launch
   const page=await open(t);
   assert.equal((await facts(page)).hub.width,40);
   await page.evaluate(()=>{const p=document.createElement('div');p.id='theater';p.style.cssText='position:fixed;inset:0 340px 0 0;z-index:3000;background:#000';document.body.append(p);});
-  await page.waitForTimeout(150);await settle(page);
+  // Wait for the cached site-slot check, rather than accepting two stable frames at its old position.
+  await page.waitForFunction(()=>[...document.querySelectorAll('[data-exp-product-launcher="1"]')].some(h=>h.shadowRoot.querySelector('[data-exp-part="flyout-hub"]')?.getBoundingClientRect().width===48));await settle(page);
   const f=await facts(page);
   assert.deepEqual([f.hub.width,Math.round(1600-f.hub.right),Math.round(900-f.hub.bottom)],[48,12,12]);
   await page.evaluate(()=>document.getElementById('theater').remove());
-  await page.waitForTimeout(150);await settle(page);
+  await page.waitForFunction(()=>[...document.querySelectorAll('[data-exp-product-launcher="1"]')].some(h=>h.shadowRoot.querySelector('[data-exp-part="flyout-hub"]')?.getBoundingClientRect().width===40));await settle(page);
   assert.equal((await facts(page)).hub.width,40,'and back to the top bar after theater mode');
 });
 

@@ -63,7 +63,7 @@ test('SHIFT themes leave stylesheets injected by Core alone but still theme ordi
     : route.abort()));
   await page.goto('https://fixture.test/');
   await page.evaluate(() => {
-    const store = new Map([['exp:v3:shift:settings', { schema: 1, theme: 'pride', accent: 'pride-default' }]]);
+    const store = new Map([['exp:v3:shift:settings', { schema: 1, theme: 'blue', accent: 'site-default' }]]);
     window.GM_getValue = (key, fallback) => (store.has(key) ? store.get(key) : fallback);
     window.GM_setValue = (key, value) => store.set(key, value);
     window.GM_deleteValue = (key) => store.delete(key);
@@ -89,7 +89,7 @@ test('SHIFT themes leave stylesheets injected by Core alone but still theme ordi
     const generated = (name) => selectors.filter((selector) => selector.includes(name) && selector.includes('data-exp-shift-preserve'));
     return { themed, ownedRules: generated('exp-probe-owned').length, plainRules: generated('exp-probe-plain').length };
   });
-  assert.equal(facts.themed, 'pride', 'the SHIFT theme is active');
+  assert.equal(facts.themed, 'blue', 'the SHIFT theme is active');
   assert.equal(facts.plainRules > 0, true, 'SHIFT rewrites ordinary page rules (control)');
   assert.equal(facts.ownedRules, 0, 'SHIFT does not rewrite rules from a Core-injected stylesheet');
 });

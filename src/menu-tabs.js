@@ -5,7 +5,7 @@ const ExpMenuTabs = (() => {
   const icons = Object.freeze({ drops: 'gift', streams: 'screen', appearance: 'brush', advanced: 'sliders', system: 'system', highlights: 'sparkle', protection: 'shield', amazon: 'bag' });
   // Disclosures that are inline controls, not groups, stay collapsible.
   // Products use data-exp-collapsible for groups that build expensive content when opened.
-  const KEEP_COLLAPSIBLE = '.eligibility-chip,[data-shift-appearance-explanation],[data-exp-tab-item],[data-exp-collapsible]';
+  const KEEP_COLLAPSIBLE = 'details';
   // Setting rows for the cards. Rows with the hidden attribute are skipped when finding where a run
   // starts and ends; selectors cannot skip an unbounded number, so up to three hidden rows in a row are bridged.
   const P = '[data-exp-section-tabs][data-exp-section-tabs]', R = ':is(.row,.mini-row,.fl-switch,.setting-row)';
@@ -70,7 +70,7 @@ const ExpMenuTabs = (() => {
       const tab = document.createElement('button');
       tab.type = 'button'; tab.id = 'exp-section-tab-' + index; tab.dataset.expSectionTab = entry.key;
       // The accessible name is the word on the tab, so voice control and screen readers match what is seen.
-      const name = shortLabels[slug] || entry.label;
+      const name = id==='shift'&&slug==='appearance'&&entries.some(item=>item.label==='Look')?'Appearance':shortLabels[slug] || entry.label;
       tab.setAttribute('role', 'tab'); tab.setAttribute('aria-label', name);
       if (!entry.body.id) entry.body.id = 'exp-section-panel-' + index;
       tab.setAttribute('aria-controls', entry.body.id);
@@ -87,10 +87,28 @@ const ExpMenuTabs = (() => {
     let syncing = false, disposed = false, queued = false;
     const visible = () => !panel.hidden && panel.getClientRects().length > 0;
 
+    const workspace=document.createElement('div'),rail=document.createElement('div'),content=document.createElement('div');
+    workspace.className='exp-menu-workspace';rail.className='exp-menu-rail';content.className='exp-menu-content';
+    list.setAttribute('aria-orientation','vertical');
+    const shortcuts=document.createElement('div');shortcuts.className='exp-menu-shortcuts';
+    function reveal(label){
+      const find=()=>[...panel.querySelectorAll('details')].find(node=>node.querySelector(':scope>summary')?.textContent.trim()===label);
+      let target=find();
+      if(!target){const source=entries.findIndex(entry=>/system/i.test(entry.label))>=0?entries.findIndex(entry=>/system/i.test(entry.label)):entries.findIndex(entry=>entry.label==='Settings');if(source>=0)select(source);target=find();}
+      if(!target)return;
+      const owner=entries.findIndex(entry=>entry.section.contains(target));if(owner>=0)select(owner);
+      // Keep each existing disclosure and its handlers; the sidebar is a direct route to it.
+      for(let node=target;node&&node!==panel;node=node.parentElement)if(node.tagName==='DETAILS')node.open=true;
+      target.scrollIntoView({block:'nearest'});target.querySelector(':scope>summary')?.focus();
+    }
+    for(const label of ['Look','Support','Reset']){
+      if(entries.some(entry=>(shortLabels[entry.label.toLowerCase()]||entry.label)===label))continue;
+      const button=document.createElement('button');button.type='button';button.textContent=label;button.dataset.expMenuShortcut=label.toLowerCase();button.addEventListener('click',()=>reveal(label));shortcuts.append(button);
+    }
     function place() {
-      const parent = entries[0].section.parentElement; if (!parent) return;
-      const first = [...parent.children].find(node => entries.some(entry => entry.section === node));
-      if (first && list.nextElementSibling !== first) parent.insertBefore(list, first);
+      if(workspace.parentNode)return;
+      const parent=entries[0].section.parentElement;if(!parent)return;
+      parent.insertBefore(workspace,entries[0].section);rail.append(list,shortcuts);content.append(...entries.map(entry=>entry.section));workspace.append(rail,content);
     }
     function flatten() {
       for (const entry of entries) for (const details of entry.body.querySelectorAll('details')) {
@@ -146,7 +164,7 @@ const ExpMenuTabs = (() => {
     const keydown = event => {
       const current = tabs.indexOf(event.target); if (current < 0) return;
       const last = tabs.length - 1;
-      const index = event.key === 'ArrowRight' ? (current + 1) % tabs.length : event.key === 'ArrowLeft' ? (current + last) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? last : -1;
+      const index = ['ArrowRight','ArrowDown'].includes(event.key) ? (current + 1) % tabs.length : ['ArrowLeft','ArrowUp'].includes(event.key) ? (current + last) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? last : -1;
       if (index < 0) return;
       event.preventDefault(); select(index, true);
     };
@@ -160,7 +178,7 @@ const ExpMenuTabs = (() => {
       select: key => select(entries.findIndex(entry => entry.key === key)),
       destroy() {
         disposed = true; observer.disconnect(); resize.disconnect();
-        list.removeEventListener('click', click); list.removeEventListener('keydown', keydown); panel.removeEventListener('click', guard, true); list.remove(); style.remove();
+        list.removeEventListener('click', click); list.removeEventListener('keydown', keydown); panel.removeEventListener('click', guard, true);for(const entry of entries)workspace.before(entry.section);workspace.remove();list.remove();style.remove();
         for (const [node] of tabStops) retab(node);
         delete panel.dataset.expSectionTabs;
         for (const [entry, before] of saved) {
@@ -174,3 +192,5 @@ const ExpMenuTabs = (() => {
   }
   return Object.freeze({ mount });
 })();
+
+

@@ -9,7 +9,7 @@ exp-core is the one implementation of shared behaviour: the launcher and its fly
 - **Build.** `npm run build` writes `dist/exp-core.js`. Products never import Core at runtime: each one vendors a released copy in `vendor/exp-core/` (`exp-core.js`, `manifest.json`, `PIN`) and its build bundles it into the single `*.user.js` file.
 - **Suite contract.** `src/suite-contract.json` defines each product's role, priorities, capabilities, state events, menu sections and repository. Products cannot override these at runtime; registration only supplies identity, version and product state.
 - **Launcher.** When two or more products are on a page and every Core copy speaks the flyout protocol, they share one launcher: a hub that opens a row of product tiles. `src/launcher-flyout.js` holds the order (`SUITE_ORDER`) and the site products that lead on their own sites (`SITE_PRODUCTS`: Dropper on Twitch, WARD on retailers). A Core copy without the protocol keeps everyone on the older grid. Sites listed in `SITE_SLOTS` (`src/runtime.js`) give the hub a place in the page; today that is Twitch's top bar. Everywhere else, and when the slot is hidden or too narrow, the hub sits in the bottom-right corner.
-- **Menus.** Every product menu is tabs over sections. Menu size lives at Look > Menu. Support and diagnostics live under System. Custom product surfaces use `createMenuController` and take their width from `menuWidth()`.
+- **Menus.** Product menus use a compact sidebar over their existing sections, with inline secondary settings and direct Look, Support and Reset routes. Menu Size is directly in Look (or the Look disclosure in Dropper Settings). System keeps status, diagnostics and recovery. Custom product surfaces use `createMenuController` and take their width from `menuWidth()`.
 - **Placement rules worth knowing before changing geometry:**
   - Corner positions use the viewport width without the page scrollbar (`viewWidth()` in `src/runtime.js`), not `innerWidth`.
   - A product marks a surface that notices must not cover with `data-exp-reserved` (Dropper's progress strip and page card). Update and changelog cards are placed clear of reserved surfaces.
@@ -115,3 +115,4 @@ For a new product, choose integration and coexistence checks that exercise it be
 ## Workspace status
 
 From the workspace root, `pwsh -NoProfile -File .release-tools/Status-ExtraPotions.ps1` reads ownership, repository state and release information without modifying files. Network failures are unavailable results.
+

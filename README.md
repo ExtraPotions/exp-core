@@ -11,10 +11,10 @@ exp-core is the shared menu included with every ExtraPotions product. There's no
 
 ## What you get
 
-- **One layout everywhere:** every product groups its settings into the same sections with compact tabs, in the product's own colors.
-- **Readable at any size:** choose Standard, Large, or Extra Large text in Look > Menu.
+- **Compact navigation:** each product keeps its own sections and colors, with a sidebar and secondary settings that expand in place.
+- **Readable at any size:** choose Standard, Compact, or Mini layouts with Menu Size in Look.
 - **Clear status:** System shows whether the product is Working, Waiting, Paused, or Needs attention, and offers a fix when there is one.
-- **Easy help:** copy diagnostics or report a problem from System > Support.
+- **Easy help:** open Support to copy diagnostics or report a problem.
 - **One launcher for all your products:** with more than one product on a page, a single launcher opens a row of them. It sits in Twitch's top bar, and in the bottom-right corner elsewhere, where you can drag it up or down. Updates and Dropper's progress show on it.
 
 ## One launcher for every product

@@ -1,6 +1,38 @@
 // Shared, local-only compatibility controls.
 const ExtraPotionsTools = (() => {
   const PRODUCT_ROOT_IDS = __EXP_SUITE_ROOT_IDS__;
+  function createPageActions({host,shadow,label,actions,visible=()=>true,preferVideo=false}){
+    const bar=document.createElement('div');bar.dataset.expPageActions='1';bar.setAttribute('role','group');bar.setAttribute('aria-label',label+' page actions');
+    const style=document.createElement('style');style.textContent=`[data-exp-page-actions]{pointer-events:auto;position:fixed;z-index:2147483500;display:flex;align-items:center;flex-wrap:wrap;gap:5px;max-width:calc(100vw - 24px);padding:5px;border:1px solid var(--theme-muted,#848494);border-radius:5px;background:var(--theme-bg,#18181b);color:var(--theme-text,#efeff1);font:12px/1.4 "Segoe UI",sans-serif;box-sizing:border-box}[data-exp-page-actions][hidden]{display:none!important}[data-exp-page-actions]>strong{font-size:11px;font-weight:600}[data-exp-page-actions]>button{min-height:30px;min-width:0;padding:4px 7px;border:1px solid var(--theme-muted,#848494);border-radius:5px;background:var(--theme-panel,#1f1f23);color:var(--theme-text,#efeff1);font:12px/1.4 "Segoe UI",sans-serif;white-space:normal;cursor:pointer}[data-exp-page-actions]>button:disabled{opacity:.6;cursor:default}[data-exp-page-actions]>button:focus-visible{outline:2px solid var(--theme-accent2,#bf94ff);outline-offset:2px}@media(pointer:coarse){[data-exp-page-actions]>button{min-height:36px}}`;
+    const title=document.createElement('strong');title.textContent=label;bar.append(title);
+    const buttons=actions.map(action=>{
+      const button=document.createElement('button');button.type='button';button.textContent=action.label;bar.append(button);
+      button.addEventListener('click',()=>{try{action.run?.();}finally{refresh();}});
+      if(action.hold){const release=()=>action.hold(false);button.addEventListener('pointerdown',()=>action.hold(true));for(const event of ['pointerup','pointercancel','pointerleave','blur'])button.addEventListener(event,release);button.addEventListener('keydown',event=>{if([' ','Enter'].includes(event.key)){event.preventDefault();action.hold(true);}});button.addEventListener('keyup',release);}
+      return button;
+    });
+    shadow.append(style);(shadow.querySelector('.exp-core-theme,.cluster')||shadow).append(bar);
+    let frame=0,disposed=false;
+    const releaseHeld=()=>actions.forEach(action=>action.hold?.(false));
+    const visibilityChanged=()=>{if(document.hidden)releaseHeld();};
+    addEventListener('blur',releaseHeld);document.addEventListener('visibilitychange',visibilityChanged);
+    function refresh(){if(!frame&&!disposed)frame=requestAnimationFrame(layout);}
+    function layout(){
+      frame=0;if(disposed)return;
+      let shown=false;try{shown=host.isConnected&&visible();}catch{}
+      if(bar.hidden===shown){if(!shown)actions.forEach(action=>action.hold?.(false));bar.hidden=!shown;document.dispatchEvent(new Event('exp-core:page-actions'));}
+      if(!shown)return;
+      actions.forEach((action,i)=>{buttons[i].disabled=action.enabled?!action.enabled():false;buttons[i].textContent=action.text?.()||action.label;});
+      const bars=Object.values(PRODUCT_ROOT_IDS).map(id=>document.getElementById(id)?.shadowRoot?.querySelector('[data-exp-page-actions]')).filter(node=>node&&!node.hidden);
+      const index=Math.max(0,bars.indexOf(bar)),previous=bars.slice(0,index).reduce((sum,node)=>sum+node.getBoundingClientRect().height+5,0);
+      const video=preferVideo?[...document.querySelectorAll('video')].map(node=>node.getBoundingClientRect()).find(r=>r.width>100&&r.height>80&&r.bottom>0&&r.bottom<innerHeight-90):null;
+      bar.style.left=(video?Math.max(12,Math.min(video.left,innerWidth-bar.getBoundingClientRect().width-12)):12)+'px';
+      bar.style.top=(video?Math.min(innerHeight-bar.getBoundingClientRect().height-12,video.bottom+5+previous):Math.max(12,innerHeight-bar.getBoundingClientRect().height-12-previous))+'px';
+    }
+    for(const event of ['resize','scroll'])addEventListener(event,refresh,{passive:true,capture:event==='scroll'});
+    document.addEventListener('exp-core:page-actions',refresh);document.addEventListener('exp-core:coordination',refresh);refresh();document.dispatchEvent(new Event('exp-core:page-actions'));
+    return Object.freeze({element:bar,refresh,destroy(){disposed=true;releaseHeld();removeEventListener('blur',releaseHeld);document.removeEventListener('visibilitychange',visibilityChanged);cancelAnimationFrame(frame);for(const event of ['resize','scroll'])removeEventListener(event,refresh,event==='scroll');document.removeEventListener('exp-core:page-actions',refresh);document.removeEventListener('exp-core:coordination',refresh);bar.remove();style.remove();document.dispatchEvent(new Event('exp-core:page-actions'));}});
+  }
   function placeDonationPanel(panel, trigger){
     trigger.closest('.menu-head,header')?.after(panel);
     panel.style.cssText='position:static!important;width:100%!important;max-width:100%!important;margin:7px 0;box-shadow:none';
@@ -114,7 +146,7 @@ const ExtraPotionsTools = (() => {
       if(last&&last.key===k){last.count++;last.at=Math.max(last.at,Number(entry.at)||0);}else groups.push({...entry,key:k,count:1,at:Number(entry.at)||0});}
     return groups;
   }
-  function createProductTimeline(id,getHealth,notify=()=>{},{layout='classic'}={}) {
+  function createProductTimeline(id,getHealth,notify=()=>{},{layout='classic',showActivity=true}={}) {
     if(!Object.hasOwn(productRepositories,id))throw new Error('Unknown product');
     const rows=document.createElement('div');rows.dataset.expProductTimeline='1';
     let disposed=false;
@@ -122,7 +154,7 @@ const ExtraPotionsTools = (() => {
       const line=document.createElement('p');line.textContent=new Date(entry.at).toLocaleTimeString()+' · '+entry.state+' · '+entry.reason;
       line.style.cssText='margin:6px 0;overflow-wrap:anywhere';rows.append(line);
     }}
-    async function observedHealth(){const value=await getHealth();if(!disposed){
+    async function observedHealth(){const value=await getHealth();if(!disposed&&showActivity){
       const history=productTimelines.get(id)||[];
       const state=String(value?.state||'waiting').slice(0,30),reason=String(value?.reason||'Status unavailable.').replace(/https?:\/\/\S+/gi,'[page]').slice(0,500),last=history.at(-1);
       if(!last||last.state!==state||last.reason!==reason){history.push({at:Date.now(),state,reason});if(history.length>30)history.shift();productTimelines.set(id,history);}
@@ -130,6 +162,11 @@ const ExtraPotionsTools = (() => {
     }return value;}
     const health=ExtraPotionsCore.createHealthControls(observedHealth,notify);
     if(layout==='grouped'){
+      if(!showActivity){
+        const status=ExtraPotionsCore.createDisclosure('Status',health.element);status.open=true;
+        status.addEventListener('toggle',()=>{if(status.open)health.refresh();});
+        return {element:status,dispose(){disposed=true;health.dispose();},refresh:health.refresh};
+      }
       // Status stays open so its recovery action is visible; history is one tap away.
       const activity=document.createElement('div');activity.dataset.expProductActivity='1';
       const log=ExtraPotionsCore.createDisclosure('Recent activity',activity,rows);log.dataset.expSystemActivity='1';
@@ -152,7 +189,7 @@ const ExtraPotionsTools = (() => {
     // Support: Copy is the everyday action; Show stays available for review.
     const pair=diagnostics.querySelector?.('.action-pair'),buttons=pair?[...pair.querySelectorAll(':scope > button')]:[];
     const copy=buttons.find(b=>/^Copy/.test(b.textContent)),show=buttons.find(b=>/^(Show|Hide)/.test(b.textContent));
-    if(copy&&show&&show.compareDocumentPosition(copy)&Node.DOCUMENT_POSITION_FOLLOWING)pair.insertBefore(copy,show);
+    if(copy&&show){pair.insertBefore(show,copy);pair.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px';ExpMenuHelp.setMenuHelp(copy,'Copy a fresh diagnostic snapshot for troubleshooting. Review it for private data before sharing.');ExpMenuHelp.setMenuHelp(show,'Show or hide the diagnostic snapshot used for troubleshooting.');}
     const output=diagnostics.querySelector?.('pre');if(output)output.style.cssText+=';max-height:240px;overflow:auto';
     const health=()=>({label:timeline.querySelector?.('[data-exp-health-state]')?.textContent||'',reason:timeline.querySelector?.('[data-exp-health-reason]')?.textContent||''});
     // Each report takes a fresh diagnostics report, copies it, and attaches it to the issue when it fits.
@@ -169,7 +206,8 @@ const ExtraPotionsTools = (() => {
       finally{report.disabled=false;}
     }));
     report.dataset.expSystemReport='1';
-    const support=ExtraPotionsCore.createDisclosure('Support',diagnostics,report,note('Report a Problem attaches diagnostics from that moment. GitHub issues are public, so remove anything private before submitting.'));
+    ExpMenuHelp.setMenuHelp(report,'Attaches fresh diagnostics to a GitHub issue. GitHub issues are public; remove private data before submitting.');
+    const support=ExtraPotionsCore.createDisclosure('Support',diagnostics,report);
     // Reset: one tap arms, a second tap within a few seconds confirms. No browser dialogs.
     const resetStatus=note('');resetStatus.setAttribute('role','status');resetStatus.setAttribute('aria-live','polite');
     let armedUntil=0,armTimer=0;
@@ -186,7 +224,8 @@ const ExtraPotionsTools = (() => {
     reset.dataset.expDestructive='1';
     function disarm(){clearTimeout(armTimer);armedUntil=0;reset.textContent='Reset All Settings';delete reset.dataset.expResetArmed;resetStatus.textContent='';}
     reset.style.cssText+=';border:1px solid #ff2438;background:#e11428;color:#fff;font-weight:700';
-    const resetCard=ExtraPotionsCore.createDisclosure('Reset',note(`Clears ${product} settings and stored data on this browser. This cannot be undone.`),reset,resetStatus);
+    ExpMenuHelp.setMenuHelp(reset,`Clears ${product} settings and stored data on this browser. This cannot be undone. Tap twice within 4 seconds to confirm.`);
+    const resetCard=ExtraPotionsCore.createDisclosure('Reset',reset,resetStatus);
     resetCard.addEventListener('toggle',()=>{if(!resetCard.open)disarm();});
     for(const [key,node] of [['status',timeline],['support',support],['preferences',preferences],['reset',resetCard]]){
       if(!node)continue;node.dataset.expSystemItem=key;node.style.minWidth='0';node.style.maxWidth='100%';
@@ -211,5 +250,8 @@ const ExtraPotionsTools = (() => {
     for(const [key,node] of [['timeline',timeline],['diagnostics',diagnostics],['issue',issue],['preferences',preferences],['reset',reset]]){node.dataset.expSystemItem=key;node.style.minWidth='0';node.style.maxWidth='100%';const summary=node.tagName==='DETAILS'?node.querySelector(':scope > summary'):null;if(summary)summary.style.cssText+=';min-height:28px;padding:4px 0;box-sizing:border-box;cursor:pointer';system.append(node);}
     return system;
   }
-  return Object.freeze({issueSummary,productIssueUrl,productDataResetting,clearProductData,groupTimelineEntries,createProductTimeline,createProductSystem,placeDonationPanel,createBitcoinDonation,compatibilitySnapshot,createCompatibilityControls,createSuiteSiteControls});
+  return Object.freeze({createPageActions,issueSummary,productIssueUrl,productDataResetting,clearProductData,groupTimelineEntries,createProductTimeline,createProductSystem,placeDonationPanel,createBitcoinDonation,compatibilitySnapshot,createCompatibilityControls,createSuiteSiteControls});
 })();
+
+
+

@@ -12,7 +12,8 @@ test('Dropper progress stays above home and every detail view, and restores its 
  await page.evaluate(()=>{const panel=document.querySelector('#menu');panel.innerHTML='<div class="fl-tool-body" id="tdh-drops-body"><div class="badge-only-progress-slot"><button id="pause">Pause</button></div><button id="claim">Claim</button><details class="campaign-manager" id="tdh-open-campaigns"><summary><span class="campaign-manager-title">Open Campaigns</span></summary><p>Games</p></details><details id="tdh-claim-history-panel"><summary>History</summary><p>Recent claims</p></details></div>';window.pauses=0;panel.querySelector('#pause').onclick=()=>pauses++;window.tabs=ExtraPotionsCore.mountSubmenuTabs({panel,id:'dropper'});});
  assert.equal(await page.locator('#claim').isVisible(),true,'loose controls stay on the home view');
  assert.equal(await page.getByRole('tab').count(),0,'no second tab row');
- for(const label of ['Campaigns','History']){
+ assert.equal(await page.locator('#tdh-open-campaigns').isVisible(),true,'campaign ordering remains on home');
+ for(const label of ['History']){
   await row(page,label).click();
   assert.equal(await page.locator('#pause').isVisible(),true);
   assert.equal(await page.locator('#claim').isVisible(),false);
@@ -91,9 +92,9 @@ test('closed menus do not populate lazy detail views or open unrelated eligibili
  assert.equal(await page.locator('.eligibility-chip').evaluate(n=>n.open),false);
 });
 
-test('System status stays open on the home view while Support and Reset become rows',async t=>{
+test('non-Dropper System status stays on home while Support and Reset become rows',async t=>{
  const page=await setup(t);
- await page.evaluate(()=>{const panel=document.querySelector('#menu');panel.innerHTML='<div data-exp-product-system="dropper"><details data-exp-system-item="status"><summary>Status</summary><button id="resume">Resume</button></details><details data-exp-system-item="support"><summary>Support</summary><button>Show Diagnostics</button></details><details data-exp-system-item="reset"><summary>Reset</summary><button>Reset All Settings</button></details></div>';window.tabs=ExtraPotionsCore.mountSubmenuTabs({panel,id:'dropper'});});
+ await page.evaluate(()=>{const panel=document.querySelector('#menu');panel.innerHTML='<div data-exp-product-system="shift"><details data-exp-system-item="status"><summary>Status</summary><button id="resume">Resume</button></details><details data-exp-system-item="support"><summary>Support</summary><button>Show Diagnostics</button></details><details data-exp-system-item="reset"><summary>Reset</summary><button>Reset All Settings</button></details></div>';window.tabs=ExtraPotionsCore.mountSubmenuTabs({panel,id:'shift'});});
  assert.deepEqual(await page.locator('.exp-submenu-row').allTextContents(),['Support','Reset']);
  assert.equal(await page.locator('[data-exp-system-item="status"]').evaluate(n=>n.open),true);
  assert.equal(await page.getByRole('button',{name:'Resume'}).isVisible(),true);

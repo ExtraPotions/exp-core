@@ -33,7 +33,8 @@ const ExpMenuTypography = (() => {
     panel.dataset.expMenuTypography='1';
     const style=document.createElement('style');style.dataset.expMenuTypography='1';style.textContent=css;shadow.append(style);
     const disposeLean=ExpLeanMenu.mount({shadow,panel});
-    return ()=>{disposeLean();style.remove();delete panel.dataset.expMenuTypography;};
+    const disposeHelp=ExpMenuHelp.mount({shadow,panel});
+    return ()=>{disposeHelp();disposeLean();style.remove();delete panel.dataset.expMenuTypography;};
   }
   return Object.freeze({mount});
 })();

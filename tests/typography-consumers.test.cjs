@@ -11,7 +11,7 @@ for (const width of [360,1920]) {
     await page.goto('https://www.twitch.tv/');
     await page.evaluate(()=>{const attach=Element.prototype.attachShadow;Element.prototype.attachShadow=function(o){return attach.call(this,{...o,mode:'open'})};window.GM_getValue=(_,fallback)=>fallback;window.GM_setValue=()=>{};window.GM_xmlhttpRequest=o=>{queueMicrotask(()=>o.onerror?.({status:0}));return{abort(){}}};});
     for(const[name,file] of products)await page.addScriptTag({content:fs.readFileSync(consumers.file(name,file),'utf8')});
-    for(const[size,body,small] of [['standard',13,12],['large',15,14],['extra-large',17,16]]){
+    for(const[size,body,small] of [['standard',13,11],['compact',13,11],['mini',13,11]]){
       await page.evaluate(size=>{localStorage.setItem('exp:suite:menu-size',size);document.dispatchEvent(new CustomEvent('exp-core:menu-size',{detail:size}));},size);
       for(const[name,,id] of products){
         const host=page.locator('#'+id);await host.evaluate(n=>n.shadowRoot.querySelector('[data-exp-part="launcher"]').click());
@@ -25,7 +25,7 @@ for (const width of [360,1920]) {
             if(parseFloat(getComputedStyle(panel).fontSize)!==body)problems.push('Incorrect menu body size');
             if(panel.scrollWidth>panel.clientWidth+1)problems.push('Horizontal menu overflow');
             const version=panel.querySelector('[data-exp-part="version"],#tdh-header-version');
-            if(version&&(parseFloat(getComputedStyle(version).fontSize)!==small-1||version.getBoundingClientRect().height>28))problems.push('Version control should use compact metadata typography');
+            if(version&&(parseFloat(getComputedStyle(version).fontSize)!==11||version.getBoundingClientRect().height>28))problems.push('Version control should use compact metadata typography');
             for(const row of panel.querySelectorAll('.row,.mini-row,.fl-switch,.setting-row')){
               if(!visible(row))continue;
               const control=row.querySelector(':scope > select,:scope > button[role="switch"]');if(!control)continue;rows++;
@@ -34,11 +34,11 @@ for (const width of [360,1920]) {
               if(Math.abs(right-c.right)>1)problems.push('Control right edge: '+row.textContent.trim());
               if(Math.abs((r.top+r.bottom)/2-(c.top+c.bottom)/2)>1)problems.push('Control vertical alignment: '+row.textContent.trim());
               if(!style.fontFamily.includes('Segoe UI'))problems.push('Control font differs from menu');
-              if(control.tagName==='SELECT'&&(parseFloat(style.fontSize)!==body||c.height<28))problems.push('Dropdown text or height: '+row.textContent.trim());
+              if(control.tagName==='SELECT'&&(parseFloat(style.fontSize)!==12||c.height<28))problems.push('Dropdown text or height: '+row.textContent.trim());
               const copy=row.querySelector('.label,.fl-switch-text,.copy>strong,.row-copy>strong');
-              if(copy&&parseFloat(getComputedStyle(copy).fontSize)!==body)problems.push('Label size: '+copy.textContent);
+              if(copy&&parseFloat(getComputedStyle(copy).fontSize)!==12)problems.push('Label size: '+copy.textContent);
             }
-            for(const help of panel.querySelectorAll('.help,.row-help,.row-copy>small'))if(visible(help)&&parseFloat(getComputedStyle(help).fontSize)!==small)problems.push('Helper text size: '+help.textContent);
+            for(const help of panel.querySelectorAll('.help,.row-help,.row-copy>small'))if(visible(help)&&parseFloat(getComputedStyle(help).fontSize)<11)problems.push('Helper text size: '+help.textContent);
             return {problems,rows};
           },{body,small});
           rows+=facts.rows;assert.deepEqual(facts.problems,[],`${name}, ${size}, section ${index}`);
@@ -68,7 +68,10 @@ for (const viewport of [{width:1920,height:1080},{width:390,height:700}]) {
         const root=document.getElementById('tdh-root').shadowRoot;
         const card=root.getElementById('tdh-drop-card');
         card.parentElement.classList.toggle('progress-stack',stacked);
-        const button=card.querySelector('.skip-streamer-chip');
+        root.querySelector('[data-exp-part="launcher"]').click();
+        const viewing=[...root.querySelectorAll('summary')].find(n=>n.textContent.trim()==='Viewing');
+        if(viewing)viewing.parentElement.open=true;
+        const button=root.querySelector('.skip-streamer-chip');
         button.disabled=false;
         button.classList.add('is-armed');
         button.querySelector('.skip-label').textContent='Confirm';

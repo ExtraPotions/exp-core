@@ -1279,7 +1279,7 @@ const ExtraPotionsCore = (() => {
   // Restores the default launcher order and group position for every product.
   // Shared geometry for menus and notices: the launcher that owns them, the left edge of the launcher grid,
   // and any visible surface a product marks with data-exp-reserved (Dropper's progress card).
-  function surfaceGeometry(host) {
+  function surfaceGeometry(host, ignoredSurface = null) {
     const launcherOf = node => node?.shadowRoot?.querySelector('[data-exp-part="launcher"],.launcher');
     const own = launcherOf(host)?.getBoundingClientRect();
     if (!own || !own.width) return null;
@@ -1288,7 +1288,7 @@ const ExtraPotionsCore = (() => {
     // A reserved surface never reaches into the launcher column: a product that marks a whole row holding
     // its launcher gets the same geometry as one that marks only the card beside it.
     const columnLeft = Math.min(...launchers.map(box => box.left));
-    const reservedBoxes = hosts.flatMap(node => [...(node.shadowRoot?.querySelectorAll('[data-exp-reserved]') || [])])
+    const reservedBoxes = hosts.flatMap(node => [...(node.shadowRoot?.querySelectorAll('[data-exp-reserved]') || [])]).filter(node=>node!==ignoredSurface)
       .map(node => node.getBoundingClientRect()).filter(box => box.width && box.height)
       .map(box => ({ top:box.top, bottom:box.bottom, left:box.left, right:box.left < columnLeft ? Math.min(box.right, columnLeft - 8) : box.right }))
       .filter(box => box.right > box.left);
@@ -1319,11 +1319,15 @@ const ExtraPotionsCore = (() => {
     const slot = slotBand();
     if (slot) {
       // From the flyout or a site slot: right-aligned 8px from the window edge, beyond the launcher and its open flyout.
-      const room = slot.down ? innerHeight - slot.bottom - 16 : slot.top - 16;
+      const blocks=reserved&&reserved.left<innerWidth-8&&reserved.right>innerWidth-8-width;
+      const edge=blocks?(slot.down?Math.max(slot.bottom,reserved.bottom):Math.min(slot.top,reserved.top)):(slot.down?slot.bottom:slot.top);
+      const room = slot.down ? innerHeight - edge - 16 : edge - 16;
+      // In very short windows the open menu takes the viewport; Close/Escape restores the card and flyout.
+      if(room<160){panel.style.maxHeight=Math.max(0,innerHeight-16)+'px';return finish('viewport',8,8,panel.offsetHeight);}
       panel.style.maxHeight = Math.max(0, room) + 'px';
       const h = panel.offsetHeight;
       host.dataset.openDirection = slot.down ? 'down' : 'up';
-      return finish('flyout', 8, slot.down ? slot.bottom + 8 : slot.top - 8 - h, h);
+      return finish('flyout', 8, slot.down ? edge + 8 : edge - 8 - h, h);
     }
     if (reserved) {
       const blockers=geometry.launchers.filter(box=>box.left<reserved.right&&box.right>reserved.right-width);
@@ -1357,7 +1361,7 @@ const ExtraPotionsCore = (() => {
   // window is too short for that, it sits beside the menu, on its left, instead of overlapping it. With no
   // menu open it takes the menu's place: above a reserved surface, or beside the launcher grid.
   function placeNotice(host, notice, panel = null) {
-    const geometry = surfaceGeometry(host);
+    const geometry = surfaceGeometry(host, notice);
     if (!geometry) return null;
     const { own, reserved, gridLeft, anchorTop } = geometry;
     const width = notice.offsetWidth || 260;
@@ -1382,7 +1386,7 @@ const ExtraPotionsCore = (() => {
     } else if (slotBand()) {
       const band = slotBand();
       right = viewWidth() - 8;
-      top = clearReserved(band.down ? band.bottom + 8 : band.top - height - 8, height, right - width, right, band.down);
+      top = clearReserved(band.down ? band.bottom + 8 : band.top - height - 8, height, right - width, right, band.down, notice);
     } else if (reserved && reserved.right - 8 >= width) {
       right = reserved.right;
       top = anchorTop ? reserved.bottom + 8 : reserved.top - height - 8;
@@ -1441,10 +1445,10 @@ const ExtraPotionsCore = (() => {
   }
   // Visible surfaces a product marks reserved (Dropper's progress strip under the top bar): a notice in the
   // slot's column moves past them instead of covering them. A hidden strip takes no room.
-  function clearReserved(top, height, left, right, down) {
+  function clearReserved(top, height, left, right, down, ignoredSurface = null) {
     const boxes = [...document.querySelectorAll('[data-exp-product-launcher="1"]')]
       .flatMap(host => [...(host.shadowRoot?.querySelectorAll('[data-exp-reserved]') || [])])
-      .filter(node => getComputedStyle(node).visibility !== 'hidden')
+      .filter(node => node !== ignoredSurface && getComputedStyle(node).visibility !== 'hidden')
       .map(node => node.getBoundingClientRect()).filter(box => box.width && box.height && box.left < right && box.right > left)
       .sort((a, b) => down ? a.top - b.top : b.bottom - a.bottom);
     for (const box of boxes) if (box.top < top + height && box.bottom > top) top = down ? box.bottom + 8 : box.top - height - 8;
@@ -1811,7 +1815,7 @@ const ExtraPotionsCore = (() => {
       const height = notice.offsetHeight || notice.scrollHeight || 72;
       const left = Math.max(8, Math.min(innerWidth - width - 8, gridRight - width));
       let top = anchor === 'top' ? cursor : cursor - height;
-      if (band) top = clearReserved(top, height, left, left + width, anchor === 'top');
+      if (band) top = clearReserved(top, height, left, left + width, anchor === 'top', notice);
       notice.style.setProperty('width', `${width}px`, 'important');
       notice.style.setProperty('left', `${left}px`, 'important');
       notice.style.setProperty('right', 'auto', 'important');
@@ -1973,6 +1977,7 @@ const ExtraPotionsCore = (() => {
     }
 
     const themeSource = options.themeSource instanceof Element ? options.themeSource : panel;
+    const returnFocus=options.returnFocus||versionButton;
     const syncTheme = () => syncNoticeTheme(notice, themeSource);
     function clearTimer() { clearTimeout(timer); timer = 0; }
     function queueLayout() {
@@ -1992,15 +1997,16 @@ const ExtraPotionsCore = (() => {
     function hide() {
       clearTimer();
       waiting = false;
-      notice.hidden = true;
-      versionButton?.setAttribute('aria-expanded', 'false');
+      const focused=notice.contains(shadow.activeElement);notice.hidden = true;
+      returnFocus?.setAttribute('aria-expanded', 'false');
+      if(focused)returnFocus?.focus({preventScroll:true});
       release();
     }
     function show() {
       if (!menuOpen && !takeNoticeTurn(token)) { waiting = true; return; }
       waiting = false;
       notice.hidden = false;
-      versionButton?.setAttribute('aria-expanded', 'true');
+      returnFocus?.setAttribute('aria-expanded', 'true');
       clearTimer();
       if (durationMs) timer = setTimeout(hide, durationMs);
       queueLayout();
@@ -2015,6 +2021,7 @@ const ExtraPotionsCore = (() => {
     const mutation = new MutationObserver(queueLayout);
     mutation.observe(notice, { attributes:true, attributeFilter:['hidden'], childList:true, subtree:true });
     const coordination = () => queueLayout();
+    const escape=event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();hide();}};notice.addEventListener('keydown',escape);
     dismiss.addEventListener('click', hide);
     versionButton?.addEventListener('click', versionClick);
     addEventListener('resize', queueLayout, { passive:true });
@@ -2029,7 +2036,7 @@ const ExtraPotionsCore = (() => {
         clearTimer();
         resize.disconnect();
         mutation.disconnect();
-        dismiss.removeEventListener('click', hide);
+        notice.removeEventListener('keydown',escape);dismiss.removeEventListener('click', hide);
         versionButton?.removeEventListener('click', versionClick);
         removeEventListener('resize', queueLayout);
         document.removeEventListener('exp-core:coordination', coordination);
@@ -2530,7 +2537,7 @@ const ExtraPotionsCore = (() => {
       shadow,
       panel,
       notice,
-      versionButton: null,
+      versionButton: null,returnFocus:options.returnFocus||versionButton,
       manageVersion: false,
       durationMs: options.durationMs ?? 30000,
     });
@@ -2682,7 +2689,7 @@ const ExtraPotionsCore = (() => {
   const { createRecoveryGuard } = ExpRecoveryControl;
   function createProduct({id,name,version:productVersion,subtitle='',artwork,theme,sections=[],getSettings,onSettings=()=>{},priority,supportUrl=SUPPORT_URL,keepOpen}) {
     const host=document.createElement('div');host.id='exp-'+id+'-root';host.dataset.expOwned='1';const shadow=host.attachShadow({mode:'open'});const panel=document.createElement('aside');panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-label',name+' settings');
-    const header=document.createElement('header');header.className='menu-head';const brand=document.createElement('div');brand.className='header-brand';const image=document.createElement('img');image.src=artwork;image.alt='';const copy=document.createElement('div');const titleRow=document.createElement('div');const title=document.createElement('strong');title.textContent=name;const v=document.createElement('button');v.type='button';v.className='version';v.textContent='v'+productVersion;titleRow.append(title,v);const sub=document.createElement('small');sub.textContent=subtitle;copy.append(titleRow,sub);brand.append(image,copy);const close=document.createElement('button');close.className='close';close.textContent='×';close.setAttribute('aria-label','Close '+name);const actions=document.createElement('div');actions.className='header-actions';const support=createSupportControl({url:supportUrl,label:'Support '+name});if(support)actions.append(support.element);actions.append(close);header.append(brand,actions);const divider=document.createElement('div');divider.className='header-divider';const nav=document.createElement('nav');
+    const header=document.createElement('header');header.className='menu-head';const brand=document.createElement('div');brand.className='header-brand';const image=document.createElement('img');image.src=artwork;image.alt='';const copy=document.createElement('div');const titleRow=document.createElement('div');const title=document.createElement('strong');title.textContent=name;const v=document.createElement('button');v.type='button';v.className='version';v.textContent='v'+productVersion;v.setAttribute('aria-label','View '+name+' v'+productVersion+' Changelog');titleRow.append(title,v);const sub=document.createElement('small');sub.textContent=subtitle;copy.append(titleRow,sub);brand.append(image,copy);const close=document.createElement('button');close.className='close';close.textContent='×';close.setAttribute('aria-label','Close '+name);const actions=document.createElement('div');actions.className='header-actions';const support=createSupportControl({url:supportUrl,label:'Support '+name});if(support)actions.append(support.element);actions.append(close);header.append(brand,actions);const divider=document.createElement('div');divider.className='header-divider';const nav=document.createElement('nav');
     let isOpen=false, activeId='';let chrome;
     const sectionMap=new Map();
     function renderSection(section,body){const content=section.render({core:api,onSettings});replaceMenuContent(body,content);chrome?.update();}
@@ -2737,6 +2744,7 @@ const ExtraPotionsCore = (() => {
     return Object.freeze({ lifecycle, diagnostics, updates });
   }
 
-  const api = Object.freeze({...ExtraPotionsTools,...ExpMenuPreferences,normalizeHealth,createHealthControls,createRecoveryGuard,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createMenuController,createProduct,setMenuStatus:ExpLeanMenu.setMenuStatus,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,setLauncherUpdate,setLauncherProgress,bindLauncherDrag,launcherPlacement,placeMenu,placeNotice,resetLauncherGrid,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,isOwnedSheet,menuWidth,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,publishMenuPalette,createFloatingNotice,createMenuNotice,takeNoticeTurn,releaseNoticeTurn,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,isQuietUpgrade,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,suiteSitePaused,setSuiteSitePaused,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePresentationState,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,createCompatibilityControls:createSuiteCompatibilityControls,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,mountSubmenuTabs:ExpMenuArrangement.mountTabs,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
+  const api = Object.freeze({...ExtraPotionsTools,setMenuHelp:ExpMenuHelp.setMenuHelp,...ExpMenuPreferences,normalizeHealth,createHealthControls,createRecoveryGuard,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createMenuController,createProduct,setMenuStatus:ExpLeanMenu.setMenuStatus,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,setLauncherUpdate,setLauncherProgress,bindLauncherDrag,launcherPlacement,placeMenu,placeNotice,resetLauncherGrid,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,isOwnedSheet,menuWidth,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,publishMenuPalette,createFloatingNotice,createMenuNotice,takeNoticeTurn,releaseNoticeTurn,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,isQuietUpgrade,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,suiteSitePaused,setSuiteSitePaused,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePresentationState,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,createCompatibilityControls:createSuiteCompatibilityControls,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,mountSubmenuTabs:ExpMenuArrangement.mountTabs,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
   return api;
 })();
+
