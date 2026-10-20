@@ -7,4 +7,4 @@ exp-core is distributed under a split-license model:
 
 The exp-core icon remains a creative asset licensed under CC BY-NC-SA 4.0 when distributed with Core source or documentation.
 
-Copyright 2026 ExtraPotions.
+Copyright 2026 expDARE.

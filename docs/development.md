@@ -1,6 +1,6 @@
 # Maintaining the ExtraPotions suite
 
-This is the working guide for exp-core and the four products that bundle it: Dropper, SHIFT, PRISMA and WARD. Each product repository has a short `docs/development.md` with its own commands; this page covers everything they share.
+This is the working guide for exp-core and the products that bundle it: Dropper, SHIFT, PRISMA, WARD and the local Thread implementation. Each product folder has a short `docs/development.md` with its own commands; this page covers everything they share. Thread has no public repository or install configured yet.
 
 ## How the suite fits together
 
@@ -9,7 +9,7 @@ exp-core is the one implementation of shared behaviour: the launcher and its fly
 - **Build.** `npm run build` writes `dist/exp-core.js`. Products never import Core at runtime: each one vendors a released copy in `vendor/exp-core/` (`exp-core.js`, `manifest.json`, `PIN`) and its build bundles it into the single `*.user.js` file.
 - **Suite contract.** `src/suite-contract.json` defines each product's role, priorities, capabilities, state events, menu sections and repository. Products cannot override these at runtime; registration only supplies identity, version and product state.
 - **Launcher.** When two or more products are on a page and every Core copy speaks the flyout protocol, they share one launcher: a hub that opens a row of product tiles. `src/launcher-flyout.js` holds the order (`SUITE_ORDER`) and the site products that lead on their own sites (`SITE_PRODUCTS`: Dropper on Twitch, WARD on retailers). A Core copy without the protocol keeps everyone on the older grid. Sites listed in `SITE_SLOTS` (`src/runtime.js`) give the hub a place in the page; today that is Twitch's top bar. Everywhere else, and when the slot is hidden or too narrow, the hub sits in the bottom-right corner.
-- **Menus.** Product menus use a compact sidebar over their existing sections, with inline secondary settings and direct Look, Support and Reset routes. Menu Size is directly in Look (or the Look disclosure in Dropper Settings). System keeps status, diagnostics and recovery. Custom product surfaces use `createMenuController` and take their width from `menuWidth()`.
+- **Menus.** Product menus use a compact sidebar over their existing sections, with inline secondary settings and Look/System navigation. Support and Reset live only inside System; donations stay in the header heart. Menu Size is directly in Look (or the Look disclosure in Dropper Settings). System keeps status, diagnostics and recovery. All existing and future products use the [shared menu template](menu-template.md); Dropper retains its separate progress surface. Custom product surfaces use `createMenuController` and take their width from `menuWidth()`.
 - **Placement rules worth knowing before changing geometry:**
   - Corner positions use the viewport width without the page scrollbar (`viewWidth()` in `src/runtime.js`), not `innerWidth`.
   - A product marks a surface that notices must not cover with `data-exp-reserved` (Dropper's progress strip and page card). Update and changelog cards are placed clear of reserved surfaces.
@@ -111,6 +111,10 @@ The product repository needs:
 - [ ] Badge and launcher artwork in `assets/`.
 
 For a new product, choose integration and coexistence checks that exercise it beside the existing products. `npm run suite:local` remains available as an optional broader check.
+
+Thread's modern-Reddit lane is `node scripts/check-thread.cjs`. It exercises its menu, local annotations, four content views, lifecycle and forced five-product coexistence on authored fixtures. The established four-product menu/annotation/coexistence tools invoke this lane separately, because their own fixture sites differ. `node ../THREAD/tests/browser.cjs --captures` creates Thread's local README and theme-comparison captures only after its checks pass. This is synthetic evidence; Reddit network-security blocks prevented live DOM verification. Do not interpret the provisional contract repository field as an existing public repository, or run a release against it.
+
+The Reddit slot is active only with Thread registered. It uses native rail/collapse geometry, opens menus adjacent to the left-rail gem, and keeps a top-left fallback on missing/collapsed rails. It creates no second launcher or replacement native control. Twitch and unrelated sites retain their existing slots/corner behavior. Focused coverage is `tests/reddit-site-slot.test.cjs` beside the existing Twitch slot tests; changes to this shared geometry require deliberate consumer synchronization.
 
 ## Workspace status
 

@@ -1,4 +1,16 @@
 {
+  "thread": {
+    "role": "product",
+    "priority": 0,
+    "launcherPriority": 90,
+    "themePriority": 0,
+    "capabilities": ["reddit.reading", "reddit.local-context", "reddit.local-filtering"],
+    "presentationPhases": ["visibility", "annotate"],
+    "state": {"type": "thread.state-changed", "fields": {"active": "boolean", "loaded": "count"}},
+    "menuSections": {"main": ["feed", "read"], "appearance": ["look"], "advanced": ["filters", "people"], "system": ["system"]},
+    "repository": "THREAD",
+    "rootId": "exp-thread-root"
+  },
   "dropper": {
     "role": "flagship",
     "priority": 4,
@@ -23,7 +35,9 @@
     "menuSections": {
       "main": [
         "drops",
-        "streams"
+        "streams",
+        "campaigns",
+        "settings"
       ],
       "appearance": [
         "appearance"

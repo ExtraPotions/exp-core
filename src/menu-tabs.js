@@ -90,25 +90,10 @@ const ExpMenuTabs = (() => {
     const workspace=document.createElement('div'),rail=document.createElement('div'),content=document.createElement('div');
     workspace.className='exp-menu-workspace';rail.className='exp-menu-rail';content.className='exp-menu-content';
     list.setAttribute('aria-orientation','vertical');
-    const shortcuts=document.createElement('div');shortcuts.className='exp-menu-shortcuts';
-    function reveal(label){
-      const find=()=>[...panel.querySelectorAll('details')].find(node=>node.querySelector(':scope>summary')?.textContent.trim()===label);
-      let target=find();
-      if(!target){const source=entries.findIndex(entry=>/system/i.test(entry.label))>=0?entries.findIndex(entry=>/system/i.test(entry.label)):entries.findIndex(entry=>entry.label==='Settings');if(source>=0)select(source);target=find();}
-      if(!target)return;
-      const owner=entries.findIndex(entry=>entry.section.contains(target));if(owner>=0)select(owner);
-      // Keep each existing disclosure and its handlers; the sidebar is a direct route to it.
-      for(let node=target;node&&node!==panel;node=node.parentElement)if(node.tagName==='DETAILS')node.open=true;
-      target.scrollIntoView({block:'nearest'});target.querySelector(':scope>summary')?.focus();
-    }
-    for(const label of ['Look','Support','Reset']){
-      if(entries.some(entry=>(shortLabels[entry.label.toLowerCase()]||entry.label)===label))continue;
-      const button=document.createElement('button');button.type='button';button.textContent=label;button.dataset.expMenuShortcut=label.toLowerCase();button.addEventListener('click',()=>reveal(label));shortcuts.append(button);
-    }
     function place() {
       if(workspace.parentNode)return;
       const parent=entries[0].section.parentElement;if(!parent)return;
-      parent.insertBefore(workspace,entries[0].section);rail.append(list,shortcuts);content.append(...entries.map(entry=>entry.section));workspace.append(rail,content);
+      parent.insertBefore(workspace,entries[0].section);rail.append(list);content.append(...entries.map(entry=>entry.section));workspace.append(rail,content);
     }
     function flatten() {
       for (const entry of entries) for (const details of entry.body.querySelectorAll('details')) {

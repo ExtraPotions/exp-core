@@ -1,7 +1,7 @@
 /* Same-origin preferences for product-owned menu surfaces only. */
 const ExpMenuPreferences = (() => {
   const key='exp:suite:menu-size',eventName='exp-core:menu-size';
-  const sizes=Object.freeze({standard:{body:14,small:12,width:324,cardWidth:272,padding:10,row:8,control:32},compact:{body:14,small:12,width:304,cardWidth:252,padding:8,row:6,control:30},mini:{body:14,small:12,width:280,cardWidth:232,padding:6,row:4,control:28}});
+  const sizes=Object.freeze({standard:{body:14,small:12,width:324,cardWidth:272,padding:8,row:7,control:32},compact:{body:14,small:12,width:304,cardWidth:252,padding:7,row:6,control:30},mini:{body:14,small:12,width:280,cardWidth:232,padding:6,row:4,control:28}});
   let memory='compact';
   const valid=value=>Object.hasOwn(sizes,value)?value:'compact';
   function menuSizePreference(){try {const stored=localStorage.getItem(key);memory=valid(stored);}catch {}return memory;}

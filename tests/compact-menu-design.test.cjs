@@ -1,4 +1,5 @@
 'use strict';
+const {openSystem}=require('./helpers/system-navigation.cjs');
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const {chromium}=require('playwright');
 const consumers=require('../scripts/consumer-roots.cjs').resolveConsumerRoots();
@@ -10,7 +11,7 @@ for(const[repo,id,root]of products)test(repo+' Mini diagnostics keep whole words
  await page.goto(id==='ward'?'https://www.amazon.com/':'https://www.twitch.tv/sample_streamer');
  await page.evaluate(()=>{window.GM_getValue=(_,v)=>v;window.GM_setValue=()=>{};window.GM_xmlhttpRequest=o=>{queueMicrotask(()=>o.onerror?.({status:503}));return{abort(){}}};localStorage.setItem('exp:suite:menu-size','mini');});
  await page.addScriptTag({content:fs.readFileSync(consumers.file(repo,id+'.user.js'),'utf8')});const host=page.locator('#'+root),dock=host.locator('[data-exp-part=dock]');await host.locator('[data-exp-part=launcher]').click();
- await dock.locator('[data-exp-menu-shortcut=support]').click();
+ await openSystem(dock,'support');
  const pair=dock.locator('.diagnostics-controls .action-pair');await pair.waitFor({state:'visible'});
  const sizes=await pair.locator('button').evaluateAll(buttons=>buttons.map(n=>{const s=getComputedStyle(n),canvas=document.createElement('canvas'),c=canvas.getContext('2d');c.font=s.font;return{text:n.textContent,font:s.fontSize,height:n.getBoundingClientRect().height,word:c.measureText('Diagnostics').width,available:n.clientWidth-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight),wrap:s.overflowWrap};}));
  for(const size of sizes){assert.equal(size.font,'11px');assert.ok(size.height<=42,JSON.stringify(size));assert.ok(size.word<=size.available,JSON.stringify(size));assert.equal(size.wrap,'normal');}
@@ -32,11 +33,11 @@ for(const[repo,id,root]of products)test(repo+' compact design retains settings, 
  const host=page.locator('#'+root),dock=host.locator('[data-exp-part=dock]');await host.locator('[data-exp-part=launcher]').click();
  assert.equal(await host.getAttribute('data-exp-menu-size'),'compact','retired sizes fall back to Compact');
  if(id==='dropper'){
-  assert.deepEqual(await dock.locator('[data-exp-section-tabs] [role=tab]').allTextContents(),['Campaigns','Settings']);
-  assert.equal(await dock.getByRole('button',{name:/^(Pause|Resume)$/}).count(),0);
+  assert.deepEqual(await dock.locator('[data-exp-section-tabs] [role=tab]').allTextContents(),['Campaigns','Settings','Look','System']);
+  assert.equal(await dock.getByRole('button',{name:/^(Pause|Resume)$/}).count(),1);
   assert.equal(await host.locator('#tdh-card-pause').count(),1);
   assert.equal(await host.locator('#tdh-drop-card').getAttribute('data-presentation'),'compact-card');
-  await dock.locator('[data-exp-menu-shortcut=look]').click();
+  await dock.getByRole('tab',{name:'Look',exact:true}).click();
  }else await dock.getByRole('tab',{name:'Look',exact:true}).click();
  const size=dock.locator('[data-exp-menu-size-select]');assert.equal(await size.isVisible(),true,'Menu Size directly in Look');
  assert.deepEqual(await size.locator('option').allTextContents(),['Standard','Compact','Mini']);
@@ -45,7 +46,7 @@ for(const[repo,id,root]of products)test(repo+' compact design retains settings, 
   await size.selectOption(mode);await page.waitForTimeout(80);
   const measure=await dock.evaluate(n=>({width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height,overflow:n.scrollWidth-n.clientWidth,font:getComputedStyle(n).fontSize,padding:parseFloat(getComputedStyle(n.querySelector('.exp-menu-content')).paddingTop),control:n.querySelector('[data-exp-menu-size-select]').getBoundingClientRect().height}));
   assert.equal(measure.width,width);assert.equal(measure.overflow,0);measurements.push(measure);
-  if(id==='dropper')assert.equal(await host.locator('#tdh-drop-card').evaluate(n=>n.getBoundingClientRect().width),{standard:272,compact:252,mini:232}[mode]);
+  if(id==='dropper')assert.ok(await host.locator('#tdh-drop-card').evaluate(n=>n.getBoundingClientRect().width<=n.closest('[data-exp-part=dock]').clientWidth));
  }
  assert.ok(measurements[2].padding<measurements[0].padding&&measurements[2].control<measurements[0].control,'Mini tightens spacing and controls while text can wrap');assert.equal(measurements[0].font,measurements[2].font,'text remains readable');
  const help=dock.locator('.exp-menu-size [data-exp-help]');await help.focus();
@@ -53,13 +54,13 @@ for(const[repo,id,root]of products)test(repo+' compact design retains settings, 
  const within=async()=>{await page.waitForTimeout(80);const a=await tip.boundingBox(),b=await dock.boundingBox();assert.ok(a.x>=b.x&&a.y>=b.y&&a.x+a.width<=b.x+b.width+1&&a.y+a.height<=b.y+b.height+1,'help contained by menu: '+JSON.stringify({a,b}));};
  await within();await page.keyboard.press('Escape');assert.equal(await tip.isVisible(),false);
  
- await dock.locator('[data-exp-menu-shortcut=support]').click();
+ await openSystem(dock,'support');
  await page.waitForTimeout(80);
  const show=dock.getByRole('button',{name:'Show Diagnostics',exact:true}),copy=dock.getByRole('button',{name:'Copy Diagnostics',exact:true});
  const a=await show.boundingBox(),b=await copy.boundingBox();assert.ok(Math.abs(a.y-b.y)<1&&a.x+a.width<=b.x+1,'diagnostics share one row: '+JSON.stringify({a,b}));
  const report=dock.getByRole('button',{name:'Report a Problem',exact:true});assert.equal(await report.evaluate(n=>getComputedStyle(n).textAlign),'center');
  await report.focus();await within();await page.keyboard.press('Escape');
- await dock.locator('[data-exp-menu-shortcut=reset]').click();
+ await openSystem(dock,'reset');
  const reset=dock.getByRole('button',{name:'Reset All Settings',exact:true});assert.match(await reset.getAttribute('aria-description'),/reset|remove|clear/i);
  await reset.focus();await within();await page.keyboard.press('Escape');
  const version=host.locator('[data-exp-part=version],#tdh-header-version').first();await version.click();

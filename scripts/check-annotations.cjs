@@ -1,3 +1,5 @@
+// THREAD modern-Reddit coverage uses its dedicated fixture lane.
+require('./check-thread.cjs').checkThread();
 const fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict');
 const coreRoot = path.resolve(__dirname, '..');
 const { repositories } = require('./suite-contract.cjs').loadSuiteContract(coreRoot);
@@ -9,7 +11,7 @@ const products = [
  ['SHIFT','SHIFT/shift.user.js','#exp-shift-root','.launcher'],
  ['WARD','WARD/ward.user.js','#exp-ward-root','.ward-launcher']
 ];
-assert.deepEqual(products.map(([name])=>name).sort(), [...repositories].sort(), 'annotation audit product coverage must match suite manifest');
+assert.deepEqual([...products.map(([name])=>name),'THREAD'].sort(), [...repositories].sort(), 'annotation audit product coverage must match suite manifest');
 (async () => {
  const browser=await chromium.launch({headless:true});
  const output=path.join(workspace,'outputs/annotation/verified');fs.mkdirSync(output,{recursive:true});

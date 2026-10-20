@@ -44,7 +44,7 @@ test('Core synchronization discovers downstream consumers from the suite manifes
   assert.match(sync, /repositories:discoveredProducts/u);
   assert.doesNotMatch(sync, /\['Dropper','SHIFT','PRISMA','WARD'\]/u);
   assert.deepEqual(Object.fromEntries(Object.entries(contract).map(([id, value]) => [id, value.repository])), {
-    dropper: 'Dropper', shift: 'SHIFT', ward: 'WARD', prisma: 'PRISMA'
+    thread: 'THREAD', dropper: 'Dropper', shift: 'SHIFT', ward: 'WARD', prisma: 'PRISMA'
   });
   assert.match(sync, /vendor','exp-core','PIN'/u);
   assert.match(sync, /const pin='v'\+version/u);
@@ -147,11 +147,11 @@ test('suite manifest owns launcher and theme coordination priorities', () => {
   const runtime = read('src/runtime.js');
   assert.deepEqual(
     Object.fromEntries(Object.entries(contract).map(([id, value]) => [id, value.launcherPriority])),
-    { dropper: 110, shift: 100, ward: 60, prisma: 40 }
+    { thread: 90, dropper: 110, shift: 100, ward: 60, prisma: 40 }
   );
   assert.deepEqual(
     Object.fromEntries(Object.entries(contract).map(([id, value]) => [id, value.themePriority])),
-    { dropper: 4, shift: 3, ward: 1, prisma: 2 }
+    { thread: 0, dropper: 4, shift: 3, ward: 1, prisma: 2 }
   );
   assert.match(runtime, /const LAUNCHER_PRIORITY = Object\.freeze\(Object\.fromEntries/u);
   assert.match(runtime, /const THEME_PRIORITY = Object\.freeze\(Object\.fromEntries/u);
@@ -197,6 +197,10 @@ test('manual coexistence checks retain suite coverage', () => {
   const coexistence = read('scripts/check-suite-coexistence.cjs');
   assert.match(coexistence, /coexistence coverage must match the suite manifest/u);
   assert.match(coexistence, /only one suite menu may be visible/u);
+  assert.match(coexistence, /\['compact',1280,600\]/u);
+  assert.match(coexistence, /\['mini',360,500\]/u);
+  assert.doesNotMatch(coexistence, /extra-large|Core 3\.8\.0 menu text/u);
+  assert.match(coexistence, /density geometry/u);
   assert.match(coexistence, /\['dropper', 'shift', 'ward', 'prisma'\]/u);
 });
 

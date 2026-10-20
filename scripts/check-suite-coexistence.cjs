@@ -1,3 +1,5 @@
+// THREAD modern-Reddit coverage uses its dedicated fixture lane.
+require('./check-thread.cjs').checkThread();
 'use strict';
 
 const fs = require('node:fs');
@@ -19,7 +21,7 @@ const PRODUCTS = [
 ];
 
 assert.deepEqual(
-  PRODUCTS.map(product => product.repo).sort(),
+  [...PRODUCTS.map(product => product.repo),'THREAD'].sort(),
   [...repositories].sort(),
   'coexistence coverage must match the suite manifest',
 );
@@ -149,7 +151,7 @@ function productSource(product) {
 
     // Opening each product in turn must leave at most one shared menu surface
     // visibly open. This catches competing menu coordinators across products.
-    for (const [size,width,height] of [['standard',1280,1000],['large',1280,600],['extra-large',640,500],['extra-large',360,500]]) {
+    for (const [size,width,height] of [['standard',1280,1000],['compact',1280,600],['mini',640,500],['mini',360,500]]) {
     await page.setViewportSize({width,height});
     await page.evaluate(size=>{localStorage.setItem('exp:suite:menu-size',size);document.dispatchEvent(new CustomEvent('exp-core:menu-size',{detail:size}));},size);
     for (const product of PRODUCTS) {
@@ -168,7 +170,11 @@ function productSource(product) {
       await page.evaluate(() => { if (document.documentElement.dataset.expFlyoutOpen !== '1') document.querySelector('[data-product-id="dropper"]').shadowRoot.querySelector('[data-exp-part="flyout-hub"]').click(); });
       await page.waitForFunction(root => { const l = document.querySelector(root)?.shadowRoot?.querySelector('[data-exp-part="launcher"]'); return document.documentElement.dataset.expFlyoutOpen === '1' && l && getComputedStyle(l).visibility !== 'hidden'; }, product.root);
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-      await page.locator(product.root).locator('[data-exp-part="launcher"]').click();
+      try {
+        await page.locator(product.root).locator('[data-exp-part="launcher"]').click();
+      } catch (error) {
+        throw new Error(`Launcher hit-test failed: ${product.id}, ${size}, ${width}x${height}, order ${injectionOrder.join(' > ')}`, { cause: error });
+      }
       await page.waitForFunction(root=>{const host=document.querySelector(root),dock=host?.shadowRoot?.querySelector('[data-exp-part="dock"]'),b=dock?.getBoundingClientRect();return dock&&!dock.hidden&&b.width>0&&b.height>0&&b.left>=0&&b.top>=0&&b.right<=innerWidth+.5&&b.bottom<=innerHeight+.5;},product.root);
       await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
       const visible = await page.evaluate(products => products.filter(product => {
@@ -206,12 +212,16 @@ function productSource(product) {
         return [...covering];
       }, product.id);
       assert.deepEqual(covered, [], product.id + ' menu is covered by ' + JSON.stringify(covered));
-      const dimensions=await page.locator(product.root).evaluate(host=>{const dock=host.shadowRoot.querySelector('[data-exp-part="dock"]'),b=dock.getBoundingClientRect();return {left:b.left,top:b.top,right:b.right,bottom:b.bottom,size:host.dataset.expMenuSize,body:host.style.getPropertyValue('--exp-font-size-body'),label:getComputedStyle(host.shadowRoot.querySelector('.fl-tool-title')).fontSize};});
+      const dimensions=await page.locator(product.root).evaluate(host=>{const dock=host.shadowRoot.querySelector('[data-exp-part="dock"]'),b=dock.getBoundingClientRect();return {left:b.left,top:b.top,right:b.right,bottom:b.bottom,size:host.dataset.expMenuSize,body:host.style.getPropertyValue('--exp-font-size-body'),width:host.style.getPropertyValue('--exp-menu-width'),padding:host.style.getPropertyValue('--exp-menu-padding'),control:host.style.getPropertyValue('--exp-menu-control'),label:getComputedStyle(host.shadowRoot.querySelector('.fl-tool-title')).fontSize};});
       const topMenus=await page.locator(product.root).evaluate(host=>[...host.shadowRoot.querySelectorAll('.fl-tool-header')].filter(n=>!n.closest('.fl-tool-body')).map(n=>n.querySelector('.fl-tool-title')?.textContent?.trim()).filter(Boolean));
-      assert.equal(topMenus.at(-1),'System',product.id+' System must be last');
-      assert.equal(dimensions.size,size);assert.equal(dimensions.body,({standard:'14px',large:'16px','extra-large':'18px'})[size]);assert.equal(parseFloat(dimensions.label),parseFloat(dimensions.body)-1,product.id+' rendered menu label size (Core 3.8.0 menu text is one step below body and scales with it)');
+      assert.equal(topMenus.at(-1),product.id==='dropper'?'Settings':'System',product.id+' final section matches the current product navigation');
+      assert.equal(dimensions.size,size);
+      const tokens={standard:['324px','10px','32px'],compact:['304px','8px','30px'],mini:['280px','6px','28px']}[size];
+      assert.deepEqual([dimensions.width,dimensions.padding,dimensions.control],tokens,product.id+' density geometry');
+      assert.equal(dimensions.body,'14px');assert.equal(parseFloat(dimensions.label),14,product.id+' keeps readable menu text across density sizes');
       assert.ok(dimensions.left>=0&&dimensions.top>=0&&dimensions.right<=width+.5&&dimensions.bottom<=height+.5,product.id+' '+size+' viewport: '+JSON.stringify(dimensions));
     }
+    console.log('PASS viewport:', injectionOrder.join(' > '),size,width+'x'+height);
     }
 
     // Shared launcher slot order must converge to Core's manifest priority,

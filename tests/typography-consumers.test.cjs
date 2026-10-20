@@ -69,7 +69,7 @@ for (const viewport of [{width:1920,height:1080},{width:390,height:700}]) {
         const card=root.getElementById('tdh-drop-card');
         card.parentElement.classList.toggle('progress-stack',stacked);
         root.querySelector('[data-exp-part="launcher"]').click();
-        const viewing=[...root.querySelectorAll('summary')].find(n=>n.textContent.trim()==='Viewing');
+        const viewing=[...root.querySelectorAll('summary')].find(n=>n.textContent.trim()==='Advanced');
         if(viewing)viewing.parentElement.open=true;
         const button=root.querySelector('.skip-streamer-chip');
         button.disabled=false;

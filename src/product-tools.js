@@ -73,7 +73,7 @@ const ExtraPotionsTools = (() => {
     const duration=document.createElement('select');duration.setAttribute('aria-label','Temporary suite pause duration');for(const [value,label] of [['15','15 minutes'],['60','1 hour'],['240','4 hours']]){const option=document.createElement('option');option.value=value;option.textContent=label;duration.append(option);}const temporary=button('Pause temporarily',()=>{ExtraPotionsCore.setSuiteSitePaused(true,location.hostname,Number(duration.value));refresh();});
     d.addEventListener('toggle',()=>{if(d.open)refresh();});d.append(row,duration,temporary,out);refresh();return d;
   }
-  const productRepositories = Object.freeze({dropper:'Dropper',shift:'SHIFT',prisma:'PRISMA',ward:'WARD'});
+  const productRepositories = Object.freeze({dropper:'Dropper',shift:'SHIFT',prisma:'PRISMA',ward:'WARD',thread:'THREAD'});
   // GitHub prefills an issue from the link; longer links fail, so a large report goes by clipboard.
   const ISSUE_URL_LIMIT=8000;
   const plain=(value,limit=200)=>String(value||'').replace(/https?:\/\/\S+/gi,'[link]').replace(/\S+@\S+/g,'[address]').replace(/\s+/g,' ').trim().slice(0,limit);
@@ -233,7 +233,7 @@ const ExtraPotionsTools = (() => {
     }
     return system;
   }
-  function createProductSystem({id,version,timeline,diagnostics,preferences,onReset,notify=()=>{},layout='classic',issueSettings}) {
+  function createProductSystem({id,version,timeline,diagnostics,preferences,onReset,notify=()=>{},layout='grouped',issueSettings}) {
     if(!Object.hasOwn(productRepositories,id))throw new Error('Unknown product');
     if(layout==='grouped')return groupedProductSystem({id,version,timeline,diagnostics,preferences,onReset,notify,issueSettings});
     const system=document.createElement('div');system.dataset.expProductSystem=id;

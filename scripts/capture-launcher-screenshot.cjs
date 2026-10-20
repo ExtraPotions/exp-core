@@ -2,6 +2,7 @@
 
 // Captures the README picture of the shared launcher: the four products' current builds on a neutral
 // sample page with a top bar and the launcher open.
+// THREAD's site-specific launcher/menu captures: node ../THREAD/tests/browser.cjs --captures
 //   node scripts/capture-launcher-screenshot.cjs
 // Writes docs/screenshots/shared-launcher.png. Build the products first.
 

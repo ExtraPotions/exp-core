@@ -1173,7 +1173,7 @@ const ExtraPotionsCore = (() => {
     const single = singleSlot(state);
     if (single) {
       document.documentElement.dataset.expLauncherAnchor = 'top';
-      return { top: single.hub.top, right: viewWidth() - single.hub.left - FLYOUT_TILE, anchor: 'top', delta: savedDelta(), site: true, size: FLYOUT_TILE };
+      return { top: single.hub.top, right: viewWidth() - single.hub.left - single.hub.size, anchor: 'top', delta: savedDelta(), site: true, size: single.hub.size };
     }
     const { offset, x } = launcherCell(host);
     const delta = Math.max(8-(innerHeight-60), Math.min(4, Number(read(GRID_DELTA,0)) || 0));
@@ -1288,7 +1288,7 @@ const ExtraPotionsCore = (() => {
     // A reserved surface never reaches into the launcher column: a product that marks a whole row holding
     // its launcher gets the same geometry as one that marks only the card beside it.
     const columnLeft = Math.min(...launchers.map(box => box.left));
-    const reservedBoxes = hosts.flatMap(node => [...(node.shadowRoot?.querySelectorAll('[data-exp-reserved]') || [])]).filter(node=>node!==ignoredSurface)
+    const reservedBoxes = hosts.flatMap(node => [...(node.shadowRoot?.querySelectorAll('[data-exp-reserved]') || [])]).filter(node=>node!==ignoredSurface&&!ignoredSurface?.contains(node))
       .map(node => node.getBoundingClientRect()).filter(box => box.width && box.height)
       .map(box => ({ top:box.top, bottom:box.bottom, left:box.left, right:box.left < columnLeft ? Math.min(box.right, columnLeft - 8) : box.right }))
       .filter(box => box.right > box.left);
@@ -1303,7 +1303,8 @@ const ExtraPotionsCore = (() => {
   // 2. Beside the launcher grid, lined up with the launcher that opened it.
   // 3. Above or below the grid when the window is too narrow for either.
   function placeMenu(host, panel, preferredWidth = 312) {
-    const geometry = surfaceGeometry(host);
+    // An embedded progress card moves with this menu; it is not an external obstacle.
+    const geometry = surfaceGeometry(host, panel);
     if (!geometry) return null;
     const { own, reserved, gridLeft, anchorTop } = geometry;
     // A product stylesheet may still size its menu; decide using the width the menu actually renders at.
@@ -1317,6 +1318,20 @@ const ExtraPotionsCore = (() => {
       return { top, right:Math.round(right), width, side };
     };
     const slot = slotBand();
+    if (slot?.hub?.dock === 'right') {
+      // A left-rail entry opens beside the rail, rather than at the window's right edge.
+      const viewport = viewWidth(), hub = slot.hub;
+      panel.style.width = Math.min(preferredWidth, Math.max(0, viewport - 16)) + 'px';
+      const w = panel.offsetWidth || preferredWidth;
+      const beside = hub.left + hub.size + 8;
+      const fitsBeside = beside + w <= viewport - 8;
+      const left = fitsBeside ? beside : Math.max(8, Math.min(viewport - w - 8, hub.left));
+      const top = fitsBeside ? (slot.bottom > hub.top + hub.size ? slot.bottom + 8 : hub.top) : slot.bottom + 8;
+      const room = innerHeight - top - 8;
+      panel.style.maxHeight = Math.max(0, room < 160 ? innerHeight - 16 : room) + 'px';
+      host.dataset.openDirection = 'down';
+      return finish(room < 160 ? 'rail-viewport' : fitsBeside ? 'rail-beside' : 'rail-below', viewport - left - w, room < 160 ? 8 : top, panel.offsetHeight);
+    }
     if (slot) {
       // From the flyout or a site slot: right-aligned 8px from the window edge, beyond the launcher and its open flyout.
       const blocks=reserved&&reserved.left<innerWidth-8&&reserved.right>innerWidth-8-width;
@@ -1385,8 +1400,13 @@ const ExtraPotionsCore = (() => {
       }
     } else if (slotBand()) {
       const band = slotBand();
-      right = viewWidth() - 8;
-      top = clearReserved(band.down ? band.bottom + 8 : band.top - height - 8, height, right - width, right, band.down, notice);
+      if (band.hub?.dock === 'right') {
+        const left = Math.max(8, Math.min(viewWidth() - width - 8, band.hub.left + band.hub.size + 8));
+        right = left + width; top = band.bottom + 8;
+      } else {
+        right = viewWidth() - 8;
+        top = clearReserved(band.down ? band.bottom + 8 : band.top - height - 8, height, right - width, right, band.down, notice);
+      }
     } else if (reserved && reserved.right - 8 >= width) {
       right = reserved.right;
       top = anchorTop ? reserved.bottom + 8 : reserved.top - height - 8;
@@ -1420,8 +1440,8 @@ const ExtraPotionsCore = (() => {
   // Flyout launcher: with two or more products on a page, one shared launcher (the hub, owned by the lead
   // product's host) opens a row of tiles, and each tile is that product's own launcher. Every Core copy derives
   // the same state from host attributes; the open state lives on <html> as data-exp-flyout-open.
-  const FLYOUT_ACCENTS = Object.freeze({ dropper:'#bc94f5', shift:'#80d7d2', prisma:'#91bfff', ward:'#e7bb75' });
-  const FLYOUT_NAMES = Object.freeze({ dropper:'Dropper', shift:'SHIFT', prisma:'PRISMA', ward:'WARD' });
+  const FLYOUT_ACCENTS = Object.freeze({ dropper:'#bc94f5', shift:'#80d7d2', prisma:'#91bfff', ward:'#e7bb75', thread:'#ff7636' });
+  const FLYOUT_NAMES = Object.freeze({ dropper:'Dropper', shift:'SHIFT', prisma:'PRISMA', ward:'WARD', thread:'THREAD' });
   const FLYOUT_TILE = 40, FLYOUT_GAP = 6, FLYOUT_PAD = 7;
   const launcherHosts = () => [...document.querySelectorAll('[data-exp-product-launcher="1"]')];
   const hostLauncher = host => host?.shadowRoot?.querySelector('[data-exp-part="launcher"],.launcher') || null;
@@ -1458,14 +1478,14 @@ const ExtraPotionsCore = (() => {
   // The shared launcher sits in the site's slot when it has one, otherwise in the bottom-right corner.
   function flyoutHubBox() {
     const slot = siteSlot();
-    if (slot) return { left:slot.left, top:slot.top, size:FLYOUT_TILE, anchor:'top', site:true };
+    if (slot) return { left:slot.left, top:slot.top, size:slot.size||FLYOUT_TILE, shape:slot.shape, anchor:'top', site:true, dock:slot.dock };
     const origin = innerHeight-60+savedDelta(), anchor = origin <= (innerHeight-48)/2 ? 'top' : 'bottom';
     return { left:viewWidth()-12-48, top:Math.max(8, Math.min(innerHeight-56, origin)) + siteControlShift(origin, anchor), size:48, anchor, site:false };
   }
   function flyoutPanelBox(hub, count) {
     const width = 2 + FLYOUT_PAD*2 + FLYOUT_TILE*count + FLYOUT_GAP*Math.max(0, count-1), height = 2 + FLYOUT_PAD*2 + FLYOUT_TILE;
-    const left = Math.max(8, Math.min(viewWidth() - 8 - width, hub.left + hub.size - width));
-    const top = hub.anchor === 'top' ? hub.top + hub.size + 6 : hub.top - 6 - height;
+    const left = Math.max(8, Math.min(viewWidth() - 8 - width, hub.dock === 'right' ? hub.left + hub.size + 6 : hub.left + hub.size - width));
+    const top = hub.dock === 'right' && hub.left + hub.size + 6 + width <= viewWidth() - 8 ? hub.top : hub.anchor === 'top' ? hub.top + hub.size + 6 : hub.top - 6 - height;
     return { left, top, width, height, right:left+width, bottom:top+height };
   }
   function flyoutBand(state = flyoutState()) {
@@ -1486,7 +1506,7 @@ const ExtraPotionsCore = (() => {
     if (node === watchedSlotNode || typeof ResizeObserver !== 'function') return;
     slotWatch ??= new ResizeObserver(() => { slotMemo = null; scheduleGrid(); });
     if (watchedSlotNode) slotWatch.unobserve(watchedSlotNode);
-    watchedSlotNode = node; slotWatch.observe(node);
+    watchedSlotNode = node; if (node) slotWatch.observe(node);
   }
   function twitchSlot() {
     const bar = document.querySelector('nav[data-a-target="top-nav-container"] .top-nav__menu');
@@ -1506,11 +1526,38 @@ const ExtraPotionsCore = (() => {
     if (left < searchEnd + 8) return null;
     return { left, top: Math.round(barBox.top + (barBox.height - FLYOUT_TILE) / 2) };
   }
-  const SITE_SLOTS = Object.freeze([{ host:/(^|\.)twitch\.tv$/, find:twitchSlot }]);
+  // Reddit's left-rail entry belongs to THREAD. Other products alone keep their existing placement.
+  // Native accessible controls/rail geometry supply coordinates; no enhancement-script anchor is used.
+  function redditSlot() {
+    if (!document.querySelector('[data-exp-product-launcher="1"][data-product-id="thread"]')) return null;
+    const rail = document.querySelector('#left-sidebar-container');
+    watchSlotNode(rail);
+    const box = rail && visibleBox(rail);
+    const handles = [...document.querySelectorAll('button[aria-controls="left-sidebar-container"],button[aria-label="Collapse navigation"],button[aria-label="Collapse sidebar"],button[aria-label="Expand navigation"],button[aria-label="Expand sidebar"]')]
+      .filter(node => !node.closest('[data-exp-owned]')).map(visibleBox).filter(Boolean);
+    const handle = handles.find(r => r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < Math.min(innerWidth / 2, 420)) || null;
+    const header = document.querySelector('reddit-header-large,shreddit-header,header[role="banner"]');
+    const headerBox = header && visibleBox(header);
+    const expanded = box && box.width >= 120 && box.right <= Math.min(viewWidth() - 48, 600) && box.bottom > 80;
+    const size = handle ? Math.max(24, Math.min(48, Math.min(handle.width, handle.height))) : 32;
+    let left = expanded ? box.right - size / 2 : handle ? handle.left + (handle.width - size) / 2 : 12;
+    let top = handle ? handle.bottom + 8 : expanded ? Math.max(8, box.top) + 56 : Math.max(8, headerBox?.bottom || 48) + 12;
+    // Sidebar links retain their hit targets. Slide clear of a native control in the proposed slot.
+    const controls = [...(rail?.querySelectorAll('button,a[href]') || [])].slice(0,120).map(visibleBox).filter(Boolean);
+    for (let attempt=0;attempt<8;attempt++) {
+      const blocked = controls.find(r => r.left < left + size && r.right > left && r.top < top + size && r.bottom > top);
+      if (!blocked) break;
+      top = blocked.bottom + 8;
+    }
+    left = Math.max(8, Math.min(viewWidth() - size - 8, left));
+    top = Math.max(8, Math.min(innerHeight - size - 8, top));
+    return {left:Math.round(left),top:Math.round(top),dock:'right',size,shape:'circle'};
+  }
+  const SITE_SLOTS = Object.freeze([{ host:/(^|\.)twitch\.tv$/, find:twitchSlot },{ host:/^(www|sh)\.reddit\.com$/, find:redditSlot }]);
   let slotMemo = null, frozenSlot;
   function siteSlot() {
     // While the flyout is open the launcher stays put, so the open flyout never jumps under the pointer.
-    if (frozenSlot !== undefined && document.documentElement.dataset.expFlyoutOpen === '1') return frozenSlot;
+    if (frozenSlot !== undefined && frozenSlot?.dock !== 'right' && document.documentElement.dataset.expFlyoutOpen === '1') return frozenSlot;
     const now = performance.now();
     if (!slotMemo || now - slotMemo.at > 150 || slotMemo.width !== innerWidth || slotMemo.height !== innerHeight) {
       const row = SITE_SLOTS.find(entry => entry.host.test(location.hostname));
@@ -1525,7 +1572,7 @@ const ExtraPotionsCore = (() => {
   function singleSlot(state = flyoutState()) {
     if (state.active || state.hosts.length !== 1) return null;
     const slot = siteSlot();
-    return slot ? { hub:{ ...slot, size:FLYOUT_TILE, anchor:'top', site:true }, panel:null, top:slot.top, bottom:slot.top + FLYOUT_TILE, down:true } : null;
+    return slot ? { hub:{ ...slot, size:slot.size||FLYOUT_TILE, anchor:'top', site:true }, panel:null, top:slot.top, bottom:slot.top + (slot.size||FLYOUT_TILE), down:true } : null;
   }
   function slotBand(state = flyoutState()) { return state.active ? flyoutBand(state) : singleSlot(state); }
   function setFlyoutOpen(value) {
@@ -1610,12 +1657,16 @@ const ExtraPotionsCore = (() => {
 :host([data-exp-flyout-selected="1"]) ${launcherPart}{border-color:${accent}!important;box-shadow:inset 0 0 0 1px ${accent}!important}
 .exp-flyout-hub{all:initial;position:fixed;z-index:2147483601;box-sizing:border-box;display:grid;place-items:center;width:48px;height:48px;border-radius:12px;background:radial-gradient(circle at 50% 35%,#1d1a24,#0c0b10 70%);border:1px solid color-mix(in srgb,${accent} 50%,#3f3f46);box-shadow:inset 0 1px 0 #ffffff12;cursor:pointer;pointer-events:auto}
 .exp-flyout-hub[data-size="40"]{border-radius:10px}
+.exp-flyout-hub[data-shape="circle"]{border-radius:50%;background:var(--theme-panel,#181c1f);box-shadow:none}
+:host([data-exp-rail-launcher="circle"][data-exp-flyout-role="site"]) ${launcherPart}{width:var(--exp-rail-launcher-size)!important;height:var(--exp-rail-launcher-size)!important;min-width:var(--exp-rail-launcher-size)!important;min-height:var(--exp-rail-launcher-size)!important;max-width:var(--exp-rail-launcher-size)!important;max-height:var(--exp-rail-launcher-size)!important;border-radius:50%!important}
+:host([data-exp-rail-launcher="circle"][data-exp-flyout-role="site"]) ${launcherPart}>:is(img,svg,.icon):not(.launcher-ring):not(.ring){width:22px!important;height:22px!important}
 .exp-flyout-hub.has-ring{border-color:transparent}
 .exp-flyout-ring{position:absolute;left:-6px;top:-6px;pointer-events:none;overflow:visible}
 .exp-flyout-ring[hidden]{display:none}
 .exp-flyout-hub:focus-visible{outline:2px solid ${accent};outline-offset:3px}
 .exp-flyout-icon{display:grid;place-items:center;width:32px;height:32px;pointer-events:none}
 .exp-flyout-hub[data-size="40"] .exp-flyout-icon{width:26px;height:26px}
+.exp-flyout-hub[data-shape="circle"] .exp-flyout-icon{width:22px;height:22px}
 .exp-flyout-icon>*{display:block!important;position:static!important;width:100%!important;height:100%!important;margin:0!important}
 .exp-flyout-count{position:absolute;right:-6px;bottom:-6px;box-sizing:border-box;min-width:20px;height:16px;padding:0 4px;border-radius:4px;background:#27272a;border:1px solid #3f3f46;outline:2px solid #0e0e10;color:#fafafa;font:600 10px/14px Inter,"Segoe UI",system-ui,sans-serif;text-align:center;pointer-events:none}
 .exp-flyout-mark{position:absolute;top:-5px;right:-5px;width:10px;height:10px;box-sizing:border-box;border-radius:3px;background:var(--exp-flyout-mark,#a1a1aa);outline:2px solid #0e0e10;pointer-events:none}
@@ -1698,8 +1749,9 @@ const ExtraPotionsCore = (() => {
     mark.hidden = !updating;
     if (updating) mark.style.setProperty('--exp-flyout-mark', FLYOUT_ACCENTS[updating] || '#a1a1aa');
     const progressHost = state.order.map(id => state.hosts.find(node => node.dataset.productId === id)).find(node => node?.dataset.expProgress !== undefined);
-    renderRing(hub, box.size, box.size === FLYOUT_TILE ? 10 : 12, progressHost ? { fraction:Number(progressHost.dataset.expProgress), color:FLYOUT_ACCENTS[progressHost.dataset.productId] || '#a1a1aa' } : null, Boolean(updating));
+    renderRing(hub, box.size, box.shape === 'circle' ? box.size/2 : box.size === FLYOUT_TILE ? 10 : 12, progressHost ? { fraction:Number(progressHost.dataset.expProgress), color:FLYOUT_ACCENTS[progressHost.dataset.productId] || '#a1a1aa' } : null, Boolean(updating));
     hub.dataset.size = String(box.size);
+    hub.dataset.shape = box.shape || 'rectangle';
     hub.setAttribute('aria-expanded', String(state.open));
     // The marker and ring are visual; the name carries the same news for screen readers.
     const notes = [];
@@ -1718,6 +1770,9 @@ const ExtraPotionsCore = (() => {
     for (const host of state.hosts) {
       if (!registrations.has(host)) continue;
       const id = host.dataset.productId;
+      const slot=siteSlot();
+      if(slot?.shape==='circle'){host.dataset.expRailLauncher='circle';host.style.setProperty('--exp-rail-launcher-size',slot.size+'px');}
+      else{delete host.dataset.expRailLauncher;host.style.removeProperty('--exp-rail-launcher-size');}
       if (!state.active) {
         if (singleSlot(state)) host.dataset.expFlyoutRole = 'site'; else delete host.dataset.expFlyoutRole;
         delete host.dataset.expFlyoutSelected; removeHub(host); continue;
@@ -2717,7 +2772,7 @@ const ExtraPotionsCore = (() => {
   document.addEventListener('pointerdown', onFlyoutOutside, true);
   addEventListener('keydown', onFlyoutEscape, true);
   addEventListener('resize',scheduleGrid,{passive:true});
-  addEventListener('scroll',recheckSiteControls,{passive:true,capture:true});
+  addEventListener('scroll',()=>{recheckSiteControls();if (/^(www|sh)\.reddit\.com$/.test(location.hostname)) markSlotStale();},{passive:true,capture:true});
   // Core-owned product bootstrap for downstream consumers.
   function createProductServices(options = {}) {
     const productId = String(options.productId || '').toLowerCase();
@@ -2744,7 +2799,7 @@ const ExtraPotionsCore = (() => {
     return Object.freeze({ lifecycle, diagnostics, updates });
   }
 
-  const api = Object.freeze({...ExtraPotionsTools,setMenuHelp:ExpMenuHelp.setMenuHelp,...ExpMenuPreferences,normalizeHealth,createHealthControls,createRecoveryGuard,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createMenuController,createProduct,setMenuStatus:ExpLeanMenu.setMenuStatus,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,setLauncherUpdate,setLauncherProgress,bindLauncherDrag,launcherPlacement,placeMenu,placeNotice,resetLauncherGrid,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,isOwnedSheet,menuWidth,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,publishMenuPalette,createFloatingNotice,createMenuNotice,takeNoticeTurn,releaseNoticeTurn,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,isQuietUpgrade,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,suiteSitePaused,setSuiteSitePaused,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePresentationState,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,createCompatibilityControls:createSuiteCompatibilityControls,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,mountSubmenuTabs:ExpMenuArrangement.mountTabs,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
+  const api = Object.freeze({...ExtraPotionsTools,setMenuHelp:ExpMenuHelp.setMenuHelp,...ExpMenuPreferences,normalizeHealth,createHealthControls,createRecoveryGuard,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createMenuController,createProduct,menuTemplate:ExpLeanMenu.template,setMenuStatus:ExpLeanMenu.setMenuStatus,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,setLauncherUpdate,setLauncherProgress,bindLauncherDrag,launcherPlacement,placeMenu,placeNotice,resetLauncherGrid,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,isOwnedSheet,menuWidth,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,publishMenuPalette,createFloatingNotice,createMenuNotice,takeNoticeTurn,releaseNoticeTurn,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,isQuietUpgrade,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,suiteSitePaused,setSuiteSitePaused,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePresentationState,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,createCompatibilityControls:createSuiteCompatibilityControls,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,mountSubmenuTabs:ExpMenuArrangement.mountTabs,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
   return api;
 })();
 

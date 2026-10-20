@@ -5,7 +5,7 @@ const ExpMenuHelp = (() => {
     if(!node||!String(text||'').trim())return node;
     node.dataset.expHelp=String(text).trim();
     node.setAttribute('aria-description',node.dataset.expHelp);
-    if(!node.matches('button,input,select,a[href]')){node.tabIndex=0;node.setAttribute('role','button');}
+    if(!node.matches('button,input,select,a[href],summary')){node.tabIndex=0;node.setAttribute('role','button');}
     return node;
   }
   function mount({shadow,panel}){
@@ -25,7 +25,9 @@ const ExpMenuHelp = (() => {
       if(right<=left||bottom<=top)return hide();
       clearTimeout(timer);if(target&&target!==node)target.removeAttribute('aria-describedby');target=node;target.setAttribute('aria-describedby',tip.id);
       const colors=view.getComputedStyle(owner);for(const key of ['panel','line','text'])tip.style.setProperty('--theme-'+key,colors.getPropertyValue('--theme-'+key));
-      tip.textContent=text;tip.style.maxWidth=(right-left)+'px';tip.style.maxHeight=(bottom-top)+'px';tip.hidden=false;
+      // Fixed auto width depends on the previous left offset after resize. Measure
+      // intrinsic width first, bounded by the owner, so the final position cannot grow it.
+      tip.textContent=text;tip.style.width='max-content';tip.style.maxWidth=(right-left)+'px';tip.style.maxHeight=(bottom-top)+'px';tip.hidden=false;
       const r=node.getBoundingClientRect(),t=tip.getBoundingClientRect();
       tip.style.left=Math.max(left,Math.min(r.left,right-t.width))+'px';
       tip.style.top=Math.max(top,Math.min(r.bottom+t.height+6<=bottom?r.bottom+6:r.top-t.height-6,bottom-t.height))+'px';
@@ -39,7 +41,7 @@ const ExpMenuHelp = (() => {
     const focus=e=>{const node=help(e.target);if(node)show(node);else hide();};
     const click=e=>{const node=help(e.target);if(node){show(node);if(node.matches('[role=button]:not(button)'))e.preventDefault();}else if(!tip.contains(e.target))hide();};
     const key=e=>{if(e.key==='Escape'&&!tip.hidden){hide();e.preventDefault();e.stopImmediatePropagation();return;}const node=help(e.target);if(node?.matches('[role=button]:not(button)')&&['Enter',' '].includes(e.key)){e.preventDefault();show(node);}};
-    const layout=e=>{if(target&&!tip.contains(e?.target))show(target);};
+    const layout=e=>{if(target&&!(e?.target instanceof view.Node&&tip.contains(e.target)))show(target);};
     // Menu positioning settles on the next frame after a submenu changes its height.
     const resize=new ResizeObserver(()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>layout());});resize.observe(panel);
     for(const [name,fn,capture] of [['pointerover',over],['pointermove',move],['pointerout',out],['focusin',focus],['click',click],['keydown',key,true],['scroll',layout,true]])shadow.addEventListener(name,fn,capture);

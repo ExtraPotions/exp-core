@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-20T23:05:36Z",
+  "title": "Design System: ExtraPotions shared menu",
+  "extensions": {
+    "colorMeta": {
+      "dropper-bg": {"role": "neutral", "displayName": "Dropper background"},
+      "dropper-panel": {"role": "neutral", "displayName": "Dropper panel"},
+      "dropper-line": {"role": "neutral", "displayName": "Dropper divider"},
+      "dropper-text": {"role": "neutral", "displayName": "Dropper text"},
+      "dropper-muted": {"role": "neutral", "displayName": "Dropper supporting text and outlines"},
+      "dropper-accent": {"role": "primary", "displayName": "Dropper checked switch"},
+      "dropper-focus": {"role": "primary", "displayName": "Dropper focus and selection"}
+    },
+    "typographyMeta": {
+      "shell": {"displayName": "Shell", "purpose": "Shared lean menu base text."},
+      "title": {"displayName": "Title", "purpose": "Product name in the header."},
+      "label": {"displayName": "Label", "purpose": "Visible setting labels and controls."},
+      "help": {"displayName": "Help", "purpose": "Supporting notes and metadata."}
+    },
+    "shadows": [
+      {"name": "menu", "value": "0 4px 10px #0003", "purpose": "Outer menu and update notice; content panels remain flat."}
+    ],
+    "motion": [
+      {"name": "shell-transition", "value": "none", "purpose": "Lean shell has no animated layout transition."}
+    ],
+    "breakpoints": [
+      {"name": "diagnostics-narrow", "value": "300px"}
+    ]
+  },
+  "components": [
+    {
+      "name": "Outlined action",
+      "kind": "button",
+      "refersTo": "outlined-control",
+      "description": "Compact shared action. Dropper colors are preview fallbacks; the current product supplies theme variables.",
+      "html": "<button class=\"ds-action\" type=\"button\">Show Diagnostics</button>",
+      "css": ".ds-action{min-height:30px;padding:4px 7px;border:1px solid var(--theme-muted,#adadb8);border-radius:5px;background:var(--theme-panel,#1f1f23);color:var(--theme-text,#efeff1);font:400 12px/1.35 'Segoe UI',system-ui,sans-serif;white-space:normal}.ds-action:hover{background:var(--exp-menu-hover,color-mix(in srgb,#9146ff 12%,#1f1f23))}.ds-action:focus-visible{outline:2px solid var(--theme-focus,#bf94ff);outline-offset:2px}"
+    },
+    {
+      "name": "Search field",
+      "kind": "input",
+      "refersTo": "outlined-control",
+      "description": "Product search and text entry retain the shared outline and focus treatment.",
+      "html": "<input class=\"ds-field\" type=\"search\" aria-label=\"Search campaigns\" placeholder=\"Find a game\">",
+      "css": ".ds-field{max-width:100%;min-width:0;min-height:30px;padding:4px 7px;border:1px solid var(--theme-muted,#adadb8);border-radius:5px;background:var(--theme-panel,#1f1f23);color:var(--theme-text,#efeff1);font:400 12px/1.35 'Segoe UI',system-ui,sans-serif}.ds-field:focus-visible{outline:2px solid var(--theme-focus,#bf94ff);outline-offset:2px}"
+    },
+    {
+      "name": "Side rail",
+      "kind": "nav",
+      "refersTo": "navigation-rail",
+      "description": "A fixed-width rail with wrapping labels. This static preview illustrates selection; production owns tab keyboard handling.",
+      "html": "<nav class=\"ds-rail\" aria-label=\"Dropper sections\"><div class=\"ds-tabs\" role=\"tablist\" aria-orientation=\"vertical\"><button class=\"ds-tab\" role=\"tab\" aria-selected=\"true\">Campaigns</button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\" tabindex=\"-1\">Settings</button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\" tabindex=\"-1\">Look</button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\" tabindex=\"-1\">System</button></div></nav>",
+      "css": ".ds-rail{width:84px;padding:5px;overflow:auto;border-right:1px solid var(--theme-line,#848494);background:var(--theme-bg,#18181b)}.ds-tabs{display:flex;flex-direction:column;gap:4px}.ds-tab{width:100%;min-width:0;min-height:30px;padding:5px 3px;text-align:left;white-space:normal;overflow-wrap:anywhere;border:1px solid var(--theme-muted,#adadb8);border-radius:5px;background:var(--theme-panel,#1f1f23);color:var(--theme-text,#efeff1);font:400 12px/1.35 'Segoe UI',sans-serif}.ds-tab[aria-selected=true]{border-color:var(--theme-focus,#bf94ff);background:color-mix(in srgb,var(--theme-accent2,#bf94ff) 13%,var(--theme-panel,#1f1f23))}.ds-tab:hover{background:var(--exp-menu-hover,color-mix(in srgb,#9146ff 12%,#1f1f23))}.ds-tab:focus-visible{outline:2px solid var(--theme-focus,#bf94ff);outline-offset:2px}"
+    },
+    {
+      "name": "Rectangular switch",
+      "kind": "custom",
+      "refersTo": "switch",
+      "description": "Fixed rectangular switch and thumb. Checked and unchecked examples illustrate the real aria-checked states.",
+      "html": "<div class=\"ds-switches\"><button class=\"ds-switch\" type=\"button\" role=\"switch\" aria-checked=\"false\" aria-label=\"Unchecked example\"></button><button class=\"ds-switch\" type=\"button\" role=\"switch\" aria-checked=\"true\" aria-label=\"Checked example\"></button></div>",
+      "css": ".ds-switches{display:flex;gap:8px;padding:4px}.ds-switch{position:relative;flex:none;width:32px;min-width:32px;height:22px;min-height:22px;border:1px solid var(--theme-muted,#adadb8);border-radius:4px;background:var(--theme-panel,#1f1f23);padding:0;box-shadow:none}.ds-switch::after{content:'';position:absolute;width:12px;height:16px;top:2px;left:2px;border-radius:2px;background:var(--theme-muted,#adadb8)}.ds-switch[aria-checked=true]{background:var(--theme-accent,#9146ff)}.ds-switch[aria-checked=true]::after{transform:translateX(14px);background:var(--theme-bg,#18181b)}.ds-switch:focus-visible{outline:2px solid var(--theme-focus,#bf94ff);outline-offset:2px}"
+    },
+    {
+      "name": "In-place disclosure",
+      "kind": "custom",
+      "description": "Native summary behavior keeps infrequent controls inside the active section.",
+      "html": "<details class=\"ds-disclosure\"><summary>Advanced</summary><p class=\"ds-note\">Product-specific recovery settings stay here.</p></details>",
+      "css": ".ds-disclosure{min-width:0;border:0;border-bottom:1px solid var(--theme-line,#848494);background:var(--theme-bg,#18181b);color:var(--theme-text,#efeff1);padding:0;margin:0;font-family:'Segoe UI',system-ui,sans-serif}.ds-disclosure>summary{min-height:32px;padding:7px 0;font-size:12px;font-weight:600;cursor:pointer}.ds-disclosure>summary:focus-visible{outline:2px solid var(--theme-focus,#bf94ff);outline-offset:2px}.ds-note{color:var(--theme-muted,#adadb8);font-size:11px;line-height:1.5}"
+    },
+    {
+      "name": "Version and changelog",
+      "kind": "button",
+      "refersTo": "version",
+      "description": "Header version action remains separate from donation and Close. The version is illustrative, not release metadata.",
+      "html": "<button class=\"ds-version\" type=\"button\" aria-label=\"Changelog\">Version</button>",
+      "css": ".ds-version{padding:1px 4px;min-height:23px;border:1px solid var(--theme-muted,#adadb8);border-radius:4px;background:var(--theme-panel,#1f1f23);color:var(--theme-text,#efeff1);font:400 11px/1.2 'Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums}.ds-version:hover{background:var(--exp-menu-hover,color-mix(in srgb,#9146ff 12%,#1f1f23))}.ds-version:focus-visible{outline:2px solid var(--theme-focus,#bf94ff);outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Compact product tools",
+    "overview": "The shared menu is a dense utility surface with a stable header, one side rail and a bounded content column. Product identity comes from the current approved gem and preserved product palette; common layout and controls make settings predictable across products. This document captures the implemented template, rather than introducing a second component framework.\n\nCore owns the shell, sizing, help and System patterns. Each product owns its feature sections, data and permission decisions. The template applies to current and new consumers; product-specific controls retain their purpose and state.",
+    "keyCharacteristics": [
+      "Compact side rail with visible active selection.",
+      "Current approved product gems and product-specific color roles.",
+      "Outlined controls, rounded rectangles and in-place disclosure.",
+      "One content scroller with independently scrollable navigation in short windows."
+    ],
+    "rules": [
+      {"name": "The Product Identity Rule", "body": "Reuse the current product's palette and approved source gem. Shared structure does not authorize replacement artwork or a new suite-wide accent. A separately authorized artwork refinement may update the gem without changing menu layout.", "section": "colors"},
+      {"name": "The Facet Construction Rule", "body": "Use broad joined flat facets on a transparent canvas, with no inset symbols, lettering, strokes or gradients. Preserve each product's palette and distinct silhouette rather than forcing all products into one outline.", "section": "shapes"}
+    ],
+    "dos": [
+      "**Do** reuse the Core-owned menu template and existing product identity.",
+      "**Do** preserve feature settings, user consent and contextual recovery actions.",
+      "**Do** keep active navigation, focus and final rail items reachable in narrow and short windows.",
+      "**Do** distinguish local fixture evidence from installed-browser and live-service behavior."
+    ],
+    "donts": [
+      "**Don't** introduce pills, checkbox controls or a second runtime UI framework.",
+      "**Don't** replace product gems or palettes when changing shared layout.",
+      "**Don't** add redundant Support/Reset navigation or duplicate progress surfaces.",
+      "**Don't** treat a waiting credit state as manual pause or unknown progress as zero."
+    ]
+  }
+}

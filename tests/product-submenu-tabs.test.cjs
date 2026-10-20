@@ -1,4 +1,5 @@
 'use strict';
+const {openSystem}=require('./helpers/system-navigation.cjs');
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const {chromium}=require('playwright');
 const consumers=require('../scripts/consumer-roots.cjs').resolveConsumerRoots();
@@ -24,10 +25,10 @@ for(const [repo,id,selector,launcher,url]of products)test(repo+' built menu expa
   }
  }
  assert.ok(visited>=4,repo+' preserves secondary settings');assert.equal(await root.locator('.exp-submenu-row').count(),0);
- await root.locator('[data-exp-menu-shortcut="support"]').click();
+ await openSystem(root,'support');
  await root.getByRole('button',{name:'Show Diagnostics',exact:true}).click();
  const diagnostics=root.locator(id==='dropper'?'#tdh-diagnostics':'.diagnostics-controls pre');await diagnostics.waitFor({state:'visible'});assert.equal(JSON.parse(await diagnostics.innerText()).report,repo+' Diagnostics');
- await root.locator('[data-exp-menu-shortcut="reset"]').click();assert.equal(await root.getByRole('button',{name:'Reset All Settings',exact:true}).isVisible(),true);
+ await openSystem(root,'reset');assert.equal(await root.getByRole('button',{name:'Reset All Settings',exact:true}).isVisible(),true);
  if(id==='dropper'){
   await root.locator('[data-exp-section-tab="tdh-streams-body"]').click();
   const playback=root.locator('summary').filter({hasText:/^Playback options$/});if(!await playback.evaluate(n=>n.parentElement.open))await playback.click();assert.equal(await root.locator('#tdh-remember-content-warnings').isVisible(),true);

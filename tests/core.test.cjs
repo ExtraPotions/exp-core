@@ -100,7 +100,7 @@ test('Core owns canonical interoperability contracts for the current suite', asy
   const page = await browser.newPage(); await page.setContent('<!doctype html><html><body></body></html>');
   await page.addScriptTag({ content: source });
   const contracts = await page.evaluate(() => Object.fromEntries(
-    ['dropper', 'shift', 'ward', 'prisma'].map(id => {
+    ['thread', 'dropper', 'shift', 'ward', 'prisma'].map(id => {
       const { id: _id, ...contract } = ExtraPotionsCore.suiteContract(id);
       return [id, contract];
     })

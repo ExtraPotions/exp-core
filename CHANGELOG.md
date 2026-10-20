@@ -1,3 +1,9 @@
+## 3.9.8 — 2026-10-20
+
+- Unifies compact product menus with support and reset inside System.
+- Adds Thread to the shared suite and places its circular launcher beside Reddit’s native navigation handle.
+- Keeps setting help, diagnostics and inline options contained at narrow menu sizes.
+
 ## 3.9.7 — 2026-10-18
 
 - Adds compact sidebar menus, inline settings and keyboard-accessible help within the menu.

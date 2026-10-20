@@ -2,9 +2,9 @@
 // launcher hosts' attributes alone, so products agree on one launcher without messaging each other.
 const ExpLauncherFlyout = (() => {
   const PROTOCOL = '1';
-  const SUITE_ORDER = Object.freeze(['dropper','shift','prisma','ward']);
+  const SUITE_ORDER = Object.freeze(['dropper','shift','prisma','ward','thread']);
   // Products that only run on their own sites (Dropper on Twitch, WARD on retailers) lead there.
-  const SITE_PRODUCTS = Object.freeze(['dropper','ward']);
+  const SITE_PRODUCTS = Object.freeze(['dropper','ward','thread']);
   const idOf = host => String(host?.dataset?.productId || '');
   const rank = id => { const index = SUITE_ORDER.indexOf(id); return index < 0 ? SUITE_ORDER.length : index; };
   function isSiteProduct(productId) { return SITE_PRODUCTS.includes(String(productId || '')); }

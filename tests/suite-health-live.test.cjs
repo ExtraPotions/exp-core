@@ -1,4 +1,5 @@
 'use strict';
+const {openSystem}=require('./helpers/system-navigation.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -46,7 +47,7 @@ for (const [repo, url, root, system] of [
     await page.addScriptTag({ content: instrumentReadableSource(repo) });
     await page.locator(root).waitFor({ state: 'attached' });
     await page.locator(root).locator('[data-exp-part="launcher"]').click();
-    await page.locator(root).locator(repo==='Dropper'?'[data-exp-menu-shortcut="support"]':system).click();
+    await openSystem(page.locator(root));
     const layout = await page.locator(root).locator('[data-exp-product-system]').evaluate(n => n.dataset.expSystemLayout || 'classic');
     if (layout !== 'grouped') await page.locator(root).locator('[data-exp-system-item="timeline"] > summary').click();
     assert.deepEqual(await page.locator(root).locator('[data-exp-product-system] [data-exp-system-item]').evaluateAll(

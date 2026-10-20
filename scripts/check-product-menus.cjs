@@ -1,3 +1,5 @@
+// THREAD modern-Reddit coverage uses its dedicated fixture lane.
+require('./check-thread.cjs').checkThread();
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const coreRoot=path.resolve(__dirname,'..');
 const {repositories}=require('./suite-contract.cjs').loadSuiteContract(coreRoot);
@@ -9,7 +11,7 @@ const products=[
   {name:'WARD',file:'WARD/ward.user.js',host:'#exp-ward-root',launcher:'.ward-launcher',advanced:'[data-view="recover"]',palette:'[data-view="look"]'},
   {name:'Dropper',file:'Dropper/dropper.user.js',host:'#tdh-root',launcher:'#tdh-settings-launcher',advanced:'[data-panel="tdh-recover-body"]',palette:'[data-panel="tdh-look-body"]'}
 ];
-assert.deepEqual(products.map(product=>product.name).sort(),[...repositories].sort(),'menu audit product coverage must match suite manifest');
+assert.deepEqual([...products.map(product=>product.name),'THREAD'].sort(),[...repositories].sort(),'menu audit product coverage must match suite manifest');
 (async()=>{
   const browser=await chromium.launch({headless:true});const out=path.resolve('outputs/menu-verification');fs.mkdirSync(out,{recursive:true});
   try{

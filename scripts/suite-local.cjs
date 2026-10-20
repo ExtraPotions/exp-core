@@ -17,7 +17,7 @@ const { spawnSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '..');
 const consumers = require('./consumer-roots.cjs').resolveConsumerRoots();
-const products = ['Dropper', 'SHIFT', 'WARD', 'PRISMA'];
+const products = ['Dropper', 'SHIFT', 'WARD', 'PRISMA', 'THREAD'];
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const shell = process.platform === 'win32';
 const run = (command, args, options = {}) => spawnSync(command, args, { stdio: 'inherit', shell: command === npm && shell, ...options });
@@ -25,7 +25,7 @@ const fail = message => { console.error(message); process.exit(1); };
 
 for (const name of products) {
   if (!fs.existsSync(consumers.file(name, 'package.json'))) fail(`Missing product folder: ${consumers.root(name)}`);
-  if (!fs.existsSync(consumers.file(name, 'node_modules'))) fail(`Run npm ci in ${name} first.`);
+  if (name !== 'THREAD' && !fs.existsSync(consumers.file(name, 'node_modules'))) fail(`Run npm ci in ${name} first.`);
 }
 
 if (run(process.execPath, [path.join(root, 'scripts', 'build.cjs')]).status !== 0) fail('Core build failed.');
@@ -38,15 +38,17 @@ try {
     const source = consumers.root(name);
     const target = path.join(workspace, name);
     // Copy the files git tracks, as they are on disk now (including unsaved-to-git edits).
-    const listed = spawnSync('git', ['ls-files', '-z'], { cwd: source, encoding: 'utf8' });
+    const listed = name === 'THREAD'
+      ? {status:0,stdout:['package.json','src','scripts','tests','assets','docs','README.md','CHANGELOG.md','LICENSE-CODE.md','LICENSE-ASSETS.md','NOTICE.md'].filter(file=>fs.existsSync(path.join(source,file))).join('\0')}
+      : spawnSync('git', ['ls-files', '-z'], { cwd: source, encoding: 'utf8' });
     if (listed.status !== 0) fail(`git ls-files failed in ${name}`);
     for (const file of listed.stdout.split('\0').filter(Boolean)) {
       const from = path.join(source, file);
       if (!fs.existsSync(from)) continue;
       fs.mkdirSync(path.dirname(path.join(target, file)), { recursive: true });
-      fs.copyFileSync(from, path.join(target, file));
+      fs.cpSync(from, path.join(target, file), {recursive:true});
     }
-    fs.symlinkSync(path.join(source, 'node_modules'), path.join(target, 'node_modules'), 'junction');
+    fs.symlinkSync(path.join(name === 'THREAD' ? root : source, 'node_modules'), path.join(target, 'node_modules'), 'junction');
     // Put this Core into the copy, exactly as the real rollout does.
     const vendor = path.join(target, 'vendor', 'exp-core');
     fs.mkdirSync(vendor, { recursive: true });

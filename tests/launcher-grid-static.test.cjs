@@ -133,9 +133,11 @@ test('fresh registration order does not become a saved preference', () => {
   assert.equal(layoutGrid.storage.has('exp:v3:launcher-order'), false);
 
   peers.push(shift); layoutGrid();
-  assert.deepEqual(layoutGrid.storage.get('exp:v3:launcher-order'), ['dropper','shift','ward','prisma']);
+  assert.equal(layoutGrid.storage.has('exp:v3:launcher-order'), false);
+  peers.push(peer('thread', suiteContract.thread.launcherPriority)); layoutGrid();
+  assert.deepEqual(layoutGrid.storage.get('exp:v3:launcher-order'), ['dropper','shift','thread','ward','prisma']);
   assert.deepEqual(
     [...peers].sort((a,b)=>Number(a.dataset.launcherSlot)-Number(b.dataset.launcherSlot)).map(node=>node.dataset.productId),
-    ['dropper','shift','ward','prisma'],
+    ['dropper','shift','thread','ward','prisma'],
   );
 });

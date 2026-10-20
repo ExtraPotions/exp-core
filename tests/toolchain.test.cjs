@@ -4,8 +4,8 @@ const consumers=require('../scripts/consumer-roots.cjs').resolveConsumerRoots();
 function check(root){
  const manifest=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
  const lock=JSON.parse(fs.readFileSync(path.join(root,'package-lock.json'),'utf8'));
- assert.equal(manifest.engines.node,'>=24');assert.equal(manifest.devDependencies.playwright,'1.63.0');
- assert.equal(lock.packages[''].engines.node,'>=24');assert.equal(lock.packages['node_modules/playwright'].version,'1.63.0');
+ assert.equal(manifest.engines.node,'>=24');assert.equal(manifest.devDependencies.playwright,'1.64.1');assert.equal(manifest.author,'expDARE');
+ assert.equal(lock.packages[''].engines.node,'>=24');assert.equal(lock.packages['node_modules/playwright'].version,'1.64.1');
  const folder=path.join(root,'.github/workflows');
  for(const file of fs.readdirSync(folder).filter(name=>name.endsWith('.yml'))){
   const text=fs.readFileSync(path.join(folder,file),'utf8');
