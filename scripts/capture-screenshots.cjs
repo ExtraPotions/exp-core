@@ -221,7 +221,9 @@ function parseArgs(argv, known) {
 async function main(argv = process.argv.slice(2)) {
   const { loadSuiteContract } = require('./suite-contract.cjs');
   const { resolveConsumerRoots } = require('./consumer-roots.cjs');
-  const known = loadSuiteContract(path.resolve(__dirname, '..')).repositories;
+  const suite = loadSuiteContract(path.resolve(__dirname, '..'));
+  // Thread uses its dedicated Reddit fixture/capture command, not this cross-site config format.
+  const known = (process.env.EXP_INCLUDE_RETIRED === '1' ? suite.repositories : suite.maintainedRepositories).filter(repo => repo !== 'THREAD');
   let options;
   try {
     options = parseArgs(argv, known);

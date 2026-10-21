@@ -34,6 +34,7 @@ function validateSuiteContract(contract) {
     assert(PRODUCT_ID.test(id), 'invalid product id ' + id);
     assert(product && typeof product === 'object' && !Array.isArray(product), id + ' must be an object');
     assert(product.role === 'product' || product.role === 'flagship', id + ' has invalid role');
+    assert(product.maintenance === undefined || ['active','retired'].includes(product.maintenance), id + ' has invalid maintenance status');
     if (product.role === 'flagship') flagshipCount += 1;
 
     assert(REPOSITORY.test(String(product.repository || '')), id + ' has invalid repository');
@@ -76,6 +77,7 @@ function loadSuiteContract(root = path.resolve(__dirname, '..')) {
     text,
     productIds: Object.freeze(entries.map(([id]) => id)),
     repositories: Object.freeze(repositories),
+    maintainedRepositories: Object.freeze(entries.filter(([, product]) => product.maintenance !== 'retired').map(([, product]) => product.repository)),
     flagship,
     products: Object.freeze(repositories.filter(repository => repository !== flagship)),
   });

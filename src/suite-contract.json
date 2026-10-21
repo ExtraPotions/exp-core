@@ -90,7 +90,8 @@
       ]
     },
     "repository": "SHIFT",
-    "rootId": "exp-shift-root"
+    "rootId": "exp-shift-root",
+    "maintenance": "retired"
   },
   "ward": {
     "role": "product",

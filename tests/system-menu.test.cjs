@@ -64,6 +64,7 @@ test('grouped System opens Status, keeps diagnostic actions paired, reports stat
  await page.waitForFunction(()=>document.querySelector('[data-exp-health-reason]')?.textContent.includes('Stopped'));
  const layout=await page.evaluate(()=>({items:[...system.children].map(n=>n.dataset.expSystemItem),statusOpen:system.querySelector('[data-exp-system-item="status"]').open,activity:Boolean(control.activity&&system.querySelector('[data-exp-system-activity]')),buttons:[...system.querySelectorAll('.action-pair button')].map(b=>b.textContent)}));
  assert.deepEqual(layout,{items:['status','support','reset'],statusOpen:true,activity:true,buttons:['Show Diagnostics','Copy Diagnostics']});
+ for(const name of ['Show Diagnostics','Copy Diagnostics','Reset All Settings']){const action=page.getByRole('button',{name,exact:true});assert.equal(await action.isVisible(),true);assert.equal(await action.evaluate(n=>Boolean(n.closest('details'))),false,'System actions have no nested disclosure');}
  await page.evaluate(()=>system.querySelector('[data-exp-system-report]').click());
  const body=await page.evaluate(()=>new URL(opened[0]).searchParams.get('body'));
  assert.match(body,/Status: Needs attention - Stopped at \[link\] for \[address\]/);assert.doesNotMatch(body,/SECRET|example\.test/);
@@ -72,8 +73,8 @@ test('grouped System opens Status, keeps diagnostic actions paired, reports stat
  await page.getByRole('button',{name:'Tap Again to Reset'}).click();assert.equal(await page.evaluate(()=>resets),1);
  await page.getByRole('button',{name:'Reset All Settings'}).click();await page.waitForTimeout(4200);
  await page.getByRole('button',{name:'Reset All Settings'}).click();assert.equal(await page.evaluate(()=>resets),1,'an armed reset expires');
- await page.evaluate(()=>system.querySelector('[data-exp-system-item="reset"]').open=false);await page.waitForTimeout(50);
- assert.equal(await page.evaluate(()=>system.querySelector('[data-exp-system-item="reset"] button').textContent),'Reset All Settings','closing Reset disarms it');
+ await page.getByRole('button',{name:'Show Diagnostics',exact:true}).focus();await page.waitForTimeout(50);
+ assert.equal(await page.evaluate(()=>system.querySelector('[data-exp-system-item="reset"] button').textContent),'Reset All Settings','leaving Reset disarms it');
 });
 
 test('grouped System keeps Menu Preferences only while a product still passes it, and classic stays the default',async t=>{

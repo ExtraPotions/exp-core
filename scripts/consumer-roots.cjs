@@ -5,7 +5,7 @@ const {loadSuiteContract} = require('./suite-contract.cjs');
 
 function resolveConsumerRoots({workspace, env = process.env, listDirectories = directory => fs.readdirSync(directory, {withFileTypes:true})} = {}) {
   workspace = path.resolve(workspace || env.EXP_SUITE_ROOT || path.join(__dirname, '../..'));
-  const {repositories} = loadSuiteContract();
+  const {repositories,maintainedRepositories} = loadSuiteContract();
   let mapping = {};
   if (env.EXP_PRODUCT_ROOTS) {
     try {
@@ -27,10 +27,10 @@ function resolveConsumerRoots({workspace, env = process.env, listDirectories = d
     return roots.get(name);
   };
   const file = (name,...parts) => path.join(root(name),...parts);
-  const options = (names = repositories, required = name => name.toLowerCase()+'.user.js') => {
+  const options = (names = maintainedRepositories, required = name => name.toLowerCase()+'.user.js') => {
     const missing = names.filter(name => !fs.existsSync(file(name,typeof required === 'function' ? required(name) : required)));
     if (missing.length && env.EXP_REQUIRE_CONSUMERS === '1') throw new Error('Required consumer artifacts missing: '+missing.join(', '));
-    return {skip: missing.length ? 'Standalone Core: optional consumer checks skipped; missing '+missing.join(', ')+'. The suite release gate requires these checks.' : false};
+    return {skip: missing.length ? 'Standalone Core: optional consumer checks skipped; missing '+missing.join(', ')+'.'  : false};
   };
   return Object.freeze({workspace,root,file,options});
 }

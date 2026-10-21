@@ -1,6 +1,6 @@
 'use strict';
 
-// Captures the README picture of the shared launcher: the four products' current builds on a neutral
+// Captures the README picture of the shared launcher: eligible maintained builds on a neutral
 // sample page with a top bar and the launcher open.
 // THREAD's site-specific launcher/menu captures: node ../THREAD/tests/browser.cjs --captures
 //   node scripts/capture-launcher-screenshot.cjs
@@ -12,7 +12,7 @@ const { chromium } = require('playwright');
 
 const root = path.resolve(__dirname, '..', '..');
 const out = path.join(__dirname, '..', 'docs', 'screenshots', 'shared-launcher.png');
-const scripts = [['Dropper', 'dropper.user.js'], ['SHIFT', 'shift.user.js'], ['PRISMA', 'prisma.user.js'], ['WARD', 'ward.user.js']]
+const scripts = [['Dropper', 'dropper.user.js'], ['PRISMA', 'prisma.user.js'], ['WARD', 'ward.user.js']]
   .map(([repo, file]) => fs.readFileSync(path.join(root, repo, file), 'utf8'));
 
 // A plain top bar (search in the middle, two buttons on the right) and a chat column, with no site branding.

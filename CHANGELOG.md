@@ -1,3 +1,9 @@
+## 3.9.9 — 2026-10-20
+
+- Keep diagnostics and reset actions directly accessible in System.
+- Retire SHIFT from routine maintenance and new installation packs while preserving compatibility with existing installations.
+- Keep shared menus and themes independent of SHIFT.
+
 ## 3.9.8 — 2026-10-20
 
 - Unifies compact product menus with support and reset inside System.

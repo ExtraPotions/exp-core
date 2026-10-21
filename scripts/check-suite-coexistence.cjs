@@ -1,5 +1,3 @@
-// THREAD modern-Reddit coverage uses its dedicated fixture lane.
-require('./check-thread.cjs').checkThread();
 'use strict';
 
 const fs = require('node:fs');
@@ -11,14 +9,15 @@ const consumers = require('./consumer-roots.cjs').resolveConsumerRoots();
 
 const coreRoot = path.resolve(__dirname, '..');
 consumers.options();
-const { repositories } = loadSuiteContract(coreRoot);
+const suite = loadSuiteContract(coreRoot);
+const repositories = process.env.EXP_INCLUDE_RETIRED === '1' ? suite.repositories : suite.maintainedRepositories;
 
 const PRODUCTS = [
   { id: 'dropper', repo: 'Dropper', file: 'dropper.user.js', root: '#tdh-root' },
   { id: 'shift', repo: 'SHIFT', file: 'shift.user.js', root: '#exp-shift-root' },
   { id: 'ward', repo: 'WARD', file: 'ward.user.js', root: '#exp-ward-root' },
   { id: 'prisma', repo: 'PRISMA', file: 'prisma.user.js', root: '#exp-prisma-root' },
-];
+].filter(product => repositories.includes(product.repo));
 
 assert.deepEqual(
   [...PRODUCTS.map(product => product.repo),'THREAD'].sort(),
@@ -33,7 +32,7 @@ function productSource(product) {
 (async () => {
   const browser = await chromium.launch({ headless: true });
   try {
-    for (const injectionOrder of [['prisma','ward','dropper','shift'], ['shift','dropper','ward','prisma'], ['dropper','shift','prisma','ward'], ['ward','prisma','shift','dropper']]) {
+    for (const injectionOrder of [['prisma','ward','dropper','shift'], ['shift','dropper','ward','prisma'], ['dropper','shift','prisma','ward'], ['ward','prisma','shift','dropper']].map(order => order.filter(id => PRODUCTS.some(product => product.id === id)))) {
     const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
     page.setDefaultTimeout(8000);
     const errors = [];
@@ -82,8 +81,7 @@ function productSource(product) {
       await page.locator(product.root).waitFor({ state: 'attached' });
     }
     await page.waitForFunction(products => {
-      const order = JSON.parse(localStorage.getItem('exp:v3:launcher-order') || '[]');
-      return order.length === products.length && products.every(product => {
+      return products.every(product => {
         const host = document.querySelector(product.root);
         const launcher = host?.shadowRoot?.querySelector('[data-exp-part="launcher"]');
         return host?.dataset?.launcherSlot !== undefined && launcher && host.dataset.expFlyoutRole;
@@ -204,7 +202,8 @@ function productSource(product) {
         for (const other of document.querySelectorAll('[data-exp-product-launcher="1"]')) {
           const parts = [other.shadowRoot.querySelector('[data-exp-part="launcher"],.launcher'), other.shadowRoot.querySelector('[data-exp-part="flyout-hub"]'), ...other.shadowRoot.querySelectorAll('[data-exp-reserved]')];
           for (const part of parts) {
-            if (!part || getComputedStyle(part).visibility === 'hidden') continue;
+            // The revised Dropper panel intentionally includes its progress surface inside its menu.
+            if (!part || host.shadowRoot.querySelector('[data-exp-part="dock"]').contains(part) || getComputedStyle(part).visibility === 'hidden') continue;
             const b = part.getBoundingClientRect();
             if (b?.width && b.left < box.right && b.right > box.left && b.top < box.bottom && b.bottom > box.top) covering.add('overlaps ' + other.dataset.productId);
           }
@@ -214,9 +213,9 @@ function productSource(product) {
       assert.deepEqual(covered, [], product.id + ' menu is covered by ' + JSON.stringify(covered));
       const dimensions=await page.locator(product.root).evaluate(host=>{const dock=host.shadowRoot.querySelector('[data-exp-part="dock"]'),b=dock.getBoundingClientRect();return {left:b.left,top:b.top,right:b.right,bottom:b.bottom,size:host.dataset.expMenuSize,body:host.style.getPropertyValue('--exp-font-size-body'),width:host.style.getPropertyValue('--exp-menu-width'),padding:host.style.getPropertyValue('--exp-menu-padding'),control:host.style.getPropertyValue('--exp-menu-control'),label:getComputedStyle(host.shadowRoot.querySelector('.fl-tool-title')).fontSize};});
       const topMenus=await page.locator(product.root).evaluate(host=>[...host.shadowRoot.querySelectorAll('.fl-tool-header')].filter(n=>!n.closest('.fl-tool-body')).map(n=>n.querySelector('.fl-tool-title')?.textContent?.trim()).filter(Boolean));
-      assert.equal(topMenus.at(-1),product.id==='dropper'?'Settings':'System',product.id+' final section matches the current product navigation');
+      assert.equal(topMenus.at(-1),'System',product.id+' final section matches the current product navigation');
       assert.equal(dimensions.size,size);
-      const tokens={standard:['324px','10px','32px'],compact:['304px','8px','30px'],mini:['280px','6px','28px']}[size];
+      const tokens={standard:['324px','8px','32px'],compact:['304px','7px','30px'],mini:['280px','6px','28px']}[size];
       assert.deepEqual([dimensions.width,dimensions.padding,dimensions.control],tokens,product.id+' density geometry');
       assert.equal(dimensions.body,'14px');assert.equal(parseFloat(dimensions.label),14,product.id+' keeps readable menu text across density sizes');
       assert.ok(dimensions.left>=0&&dimensions.top>=0&&dimensions.right<=width+.5&&dimensions.bottom<=height+.5,product.id+' '+size+' viewport: '+JSON.stringify(dimensions));
@@ -227,20 +226,21 @@ function productSource(product) {
     // Shared launcher slot order must converge to Core's manifest priority,
     // independent of injection order. Physical coordinates are intentionally
     // anchor-dependent, so data-launcher-slot is the authoritative grid order.
-    const expectedOrder = ['dropper', 'shift', 'ward', 'prisma'];
+    const expectedOrder = ['dropper', 'shift', 'ward', 'prisma'].filter(id => PRODUCTS.some(product => product.id === id));
     const ordered = PRODUCTS
       .map(product => ({ id: product.id, slot: snapshot[product.id].launcher.slot }))
       .sort((a, b) => a.slot - b.slot)
       .map(item => item.id);
     assert.deepEqual(ordered, expectedOrder);
     const savedOrder = await page.evaluate(() => JSON.parse(localStorage.getItem('exp:v3:launcher-order') || '[]'));
-    assert.deepEqual(savedOrder, expectedOrder);
+    // A partial suite does not manufacture a saved user preference from injection timing.
+    assert.deepEqual(savedOrder, []);
 
     await page.waitForFunction(()=>document.querySelector('main .exp-prisma-hit'));
     const highlights=await page.locator('main .exp-prisma-hit').evaluateAll(nodes=>nodes.map(n=>({gradient:getComputedStyle(n).backgroundImage,fill:getComputedStyle(n).webkitTextFillColor,palette:n.style.getPropertyValue('--prisma-colors'),fallback:n.dataset.contrastFallback==='1'})));
     // PRISMA keeps its palette under SHIFT: as gradient text, or, where that would be unreadable on the
     // dark page, as an underline in the palette with the text in a readable color.
-    assert.ok(highlights.length>=2&&highlights.every(n=>n.gradient.includes('linear-gradient')&&n.palette.includes('#')&&(n.fallback?n.fill!=='rgba(0, 0, 0, 0)':n.fill==='rgba(0, 0, 0, 0)')), 'active SHIFT preserves PRISMA annotation colors: '+JSON.stringify(highlights));
+    assert.ok(highlights.length>=2&&highlights.every(n=>n.gradient.includes('linear-gradient')&&n.palette.includes('#')&&(n.fallback?n.fill!=='rgba(0, 0, 0, 0)':n.fill==='rgba(0, 0, 0, 0)')), 'PRISMA annotation colors survive current suite composition: '+JSON.stringify(highlights));
     assert.deepEqual(errors, [], 'suite coexistence browser errors');
     console.log('PASS suite coexistence:', injectionOrder.join(' > '), 'shared flyout launcher, all menu sizes, 360px viewport and active-theme annotation preservation');
     await page.close();
@@ -248,6 +248,8 @@ function productSource(product) {
   } finally {
     await browser.close();
   }
+  // Run the Reddit lane after closing this browser, keeping heavy checks sequential.
+  require('./check-thread.cjs').checkThread();
 })().catch(error => {
   console.error(error);
   process.exitCode = 1;

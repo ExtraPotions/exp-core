@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,'..');
 const {loadSuiteContract}=require('./suite-contract.cjs');
 const consumers=require('./consumer-roots.cjs').resolveConsumerRoots();
 const names=process.argv.filter(x=>!x.startsWith('--')).slice(2);
-const {repositories:discoveredProducts}=loadSuiteContract(root);
+const {maintainedRepositories:discoveredProducts}=loadSuiteContract(root);
 const products=names.length?names:discoveredProducts;
 for(const name of products){
   const destination=consumers.root(name);

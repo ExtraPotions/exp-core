@@ -2,15 +2,16 @@
 require('./check-thread.cjs').checkThread();
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const coreRoot=path.resolve(__dirname,'..');
-const {repositories}=require('./suite-contract.cjs').loadSuiteContract(coreRoot);
+const suite=require('./suite-contract.cjs').loadSuiteContract(coreRoot);
+const repositories=process.env.EXP_INCLUDE_RETIRED==='1'?suite.repositories:suite.maintainedRepositories;
 const workspace=path.resolve(__dirname,'../..');process.chdir(workspace);
-const {chromium}=require(path.join(workspace,'SHIFT/node_modules/playwright'));
+const {chromium}=require('playwright');
 const products=[
   {name:'PRISMA',file:'PRISMA/prisma.user.js',host:'#exp-prisma-root',launcher:'.launcher',advanced:'[data-route="recover"]',palette:'[data-route="look"]'},
   {name:'SHIFT',file:'SHIFT/shift.user.js',host:'#exp-shift-root',launcher:'.launcher',advanced:'[data-route="recover"]',palette:'[data-route="look"]'},
   {name:'WARD',file:'WARD/ward.user.js',host:'#exp-ward-root',launcher:'.ward-launcher',advanced:'[data-view="recover"]',palette:'[data-view="look"]'},
   {name:'Dropper',file:'Dropper/dropper.user.js',host:'#tdh-root',launcher:'#tdh-settings-launcher',advanced:'[data-panel="tdh-recover-body"]',palette:'[data-panel="tdh-look-body"]'}
-];
+].filter(product=>repositories.includes(Array.isArray(product)?product[0]:product.name));
 assert.deepEqual([...products.map(product=>product.name),'THREAD'].sort(),[...repositories].sort(),'menu audit product coverage must match suite manifest');
 (async()=>{
   const browser=await chromium.launch({headless:true});const out=path.resolve('outputs/menu-verification');fs.mkdirSync(out,{recursive:true});

@@ -1,13 +1,12 @@
 'use strict';
 
-// Runs Core's tests together with all four products rebuilt on this Core, the
-// same combined check CI runs before a Core release. Your product folders are
+// Runs optional Core checks with maintained products rebuilt on this Core. Your product folders are
 // never modified: they are copied to a temporary workspace first.
 //
 //   npm run suite:local
 //
 // Uses an installed Chrome or Edge (see use-installed-browser.cjs). Expects
-// Dropper, SHIFT, WARD, and PRISMA folders beside this one, each with
+// Dropper, WARD, PRISMA and THREAD folders beside this one, each with
 // node_modules installed.
 
 const fs = require('node:fs');
@@ -17,7 +16,9 @@ const { spawnSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '..');
 const consumers = require('./consumer-roots.cjs').resolveConsumerRoots();
-const products = ['Dropper', 'SHIFT', 'WARD', 'PRISMA', 'THREAD'];
+const suite = require('./suite-contract.cjs').loadSuiteContract();
+const includeRetired = process.env.EXP_INCLUDE_RETIRED === '1';
+const products = includeRetired ? suite.repositories : suite.maintainedRepositories;
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const shell = process.platform === 'win32';
 const run = (command, args, options = {}) => spawnSync(command, args, { stdio: 'inherit', shell: command === npm && shell, ...options });
@@ -59,7 +60,9 @@ try {
   }
 
   const preload = path.join(__dirname, 'use-installed-browser.cjs').replace(/\\/g, '/');
-  const result = run(process.execPath, ['scripts/run-tests.cjs'], {
+  // Active checks never require a retired repository. Full legacy consumer coverage is opt-in.
+  const checks = includeRetired ? ['scripts/run-tests.cjs'] : ['--test','--test-concurrency=2','tests/core.test.cjs','tests/architecture-contract.test.cjs','tests/shift-retirement.test.cjs'];
+  const result = run(process.execPath, checks, {
     cwd: root,
     env: { ...process.env, EXP_SUITE_ROOT: workspace, EXP_PRODUCT_ROOTS: '', EXP_REQUIRE_CONSUMERS: '1', NODE_OPTIONS: `${process.env.NODE_OPTIONS || ''} --require ${preload}`.trim() },
   });

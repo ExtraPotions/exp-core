@@ -181,3 +181,6 @@ One progress card moves into the menu header slot when open and returns to its c
 - **Don't** replace product gems or palettes when changing shared layout.
 - **Don't** add redundant Support/Reset navigation or duplicate progress surfaces.
 - **Don't** treat a waiting credit state as manual pause or unknown progress as zero.
+
+## Direct System actions
+The shared grouped System template exposes Show Diagnostics, Copy Diagnostics, Report a Problem and Reset All Settings directly. Do not hide these behind Support or Reset disclosures. Status and secondary settings transfer retain their own disclosure where appropriate. The reset button arms for four seconds on first activation and disarms on focus loss.

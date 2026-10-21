@@ -10,6 +10,10 @@ async function openSystem(root, group) {
     }
   }
   if(!group)return;
+  if(['support','reset'].includes(group.toLowerCase())){
+    const direct=root.locator('[data-exp-system-item="'+group.toLowerCase()+'"]');
+    if(await direct.count()&&!await direct.evaluate(node=>node.tagName==='DETAILS'))return;
+  }
   const summary=root.locator('summary').filter({hasText:new RegExp('^'+group+'$','i')});
   if(!await summary.evaluate(node=>node.parentElement.open))await summary.click();
 }

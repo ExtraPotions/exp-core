@@ -207,7 +207,7 @@ const ExtraPotionsTools = (() => {
     }));
     report.dataset.expSystemReport='1';
     ExpMenuHelp.setMenuHelp(report,'Attaches fresh diagnostics to a GitHub issue. GitHub issues are public; remove private data before submitting.');
-    const support=ExtraPotionsCore.createDisclosure('Support',diagnostics,report);
+    const support=document.createElement('section');support.setAttribute('aria-label','Diagnostics and support');support.append(diagnostics,report);
     // Reset: one tap arms, a second tap within a few seconds confirms. No browser dialogs.
     const resetStatus=note('');resetStatus.setAttribute('role','status');resetStatus.setAttribute('aria-live','polite');
     let armedUntil=0,armTimer=0;
@@ -225,8 +225,8 @@ const ExtraPotionsTools = (() => {
     function disarm(){clearTimeout(armTimer);armedUntil=0;reset.textContent='Reset All Settings';delete reset.dataset.expResetArmed;resetStatus.textContent='';}
     reset.style.cssText+=';border:1px solid #ff2438;background:#e11428;color:#fff;font-weight:700';
     ExpMenuHelp.setMenuHelp(reset,`Clears ${product} settings and stored data on this browser. This cannot be undone. Tap twice within 4 seconds to confirm.`);
-    const resetCard=ExtraPotionsCore.createDisclosure('Reset',reset,resetStatus);
-    resetCard.addEventListener('toggle',()=>{if(!resetCard.open)disarm();});
+    const resetCard=document.createElement('section');resetCard.setAttribute('aria-label','Reset settings');resetCard.append(reset,resetStatus);
+    reset.addEventListener('blur',disarm);
     for(const [key,node] of [['status',timeline],['support',support],['preferences',preferences],['reset',resetCard]]){
       if(!node)continue;node.dataset.expSystemItem=key;node.style.minWidth='0';node.style.maxWidth='100%';
       const summary=node.tagName==='DETAILS'?node.querySelector(':scope > summary'):null;if(summary)summary.style.cssText+=';min-height:28px;padding:4px 0;box-sizing:border-box;cursor:pointer';system.append(node);

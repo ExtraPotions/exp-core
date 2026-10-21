@@ -1,6 +1,6 @@
 # Maintaining the ExtraPotions suite
 
-This is the working guide for exp-core and the products that bundle it: Dropper, SHIFT, PRISMA, WARD and the local Thread implementation. Each product folder has a short `docs/development.md` with its own commands; this page covers everything they share. Thread has no public repository or install configured yet.
+This is the working guide for exp-core and the products that bundle it: Dropper, PRISMA, WARD and Thread. SHIFT is retired; its repository, releases, tags, history and settings are preserved. Each product folder has a short `docs/development.md` with its own commands; this page covers everything they share. Thread is published at ExtraPotions/Thread.
 
 ## How the suite fits together
 
@@ -120,3 +120,9 @@ The Reddit slot is active only with Thread registered. It uses native rail/colla
 
 From the workspace root, `pwsh -NoProfile -File .release-tools/Status-ExtraPotions.ps1` reads ownership, repository state and release information without modifying files. Network failures are unavailable results.
 
+
+System template: Diagnostics (Show/Copy), Report a Problem and Reset All Settings are direct actions in System, not nested Support/Reset disclosures. Status may disclose details; import/export may disclose secondary controls. Keep the two-tap reset confirmation and disarm it on focus loss. New products should reuse createProductSystem with the grouped layout.
+
+## Retired-product compatibility
+
+SHIFT remains in the runtime suite contract and launcher/diagnostic compatibility maps so existing installations can coexist. `maintenance: "retired"` excludes it from `maintainedRepositories`, default Core synchronization, active visual audits and suite-local builds. Explicit legacy checks can use `EXP_INCLUDE_RETIRED=1`; explicitly named sync targets remain available for deliberate recovery, not routine rollout. Core owns shared menu themes independently. Do not delete SHIFT source, settings, tags, releases or historical evidence. New update packs must not install or enable it.

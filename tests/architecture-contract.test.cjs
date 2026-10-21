@@ -41,7 +41,7 @@ test('Core synchronization discovers downstream consumers from the suite manifes
   const sync = read('scripts/sync-products.cjs');
   const contract = JSON.parse(read('src/suite-contract.json'));
   assert.match(sync, /loadSuiteContract\(root\)/u);
-  assert.match(sync, /repositories:discoveredProducts/u);
+  assert.match(sync, /maintainedRepositories:discoveredProducts/u);
   assert.doesNotMatch(sync, /\['Dropper','SHIFT','PRISMA','WARD'\]/u);
   assert.deepEqual(Object.fromEntries(Object.entries(contract).map(([id, value]) => [id, value.repository])), {
     thread: 'THREAD', dropper: 'Dropper', shift: 'SHIFT', ward: 'WARD', prisma: 'PRISMA'

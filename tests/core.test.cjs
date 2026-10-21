@@ -106,7 +106,9 @@ test('Core owns canonical interoperability contracts for the current suite', asy
     })
   ));
   const canonical = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'src', 'suite-contract.json'), 'utf8'));
-  assert.deepEqual(contracts, canonical);
+  // Maintenance status selects build-tool consumers; legacy runtime capabilities remain unchanged.
+  const runtimeContract=Object.fromEntries(Object.entries(canonical).map(([id,{maintenance,...runtime}])=>[id,runtime]));
+  assert.deepEqual(contracts, runtimeContract);
 });
 
 test('diagnostics registration bootstraps Core-owned interoperability metadata', async (t) => {
