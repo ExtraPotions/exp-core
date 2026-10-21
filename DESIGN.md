@@ -183,4 +183,5 @@ One progress card moves into the menu header slot when open and returns to its c
 - **Don't** treat a waiting credit state as manual pause or unknown progress as zero.
 
 ## Direct System actions
+Reset All Settings is the last System section, separated from the preceding controls. Product-specific additions such as API access must be inserted before Reset. Preserve the two-tap confirmation and cancellation on focus loss.
 The shared grouped System template exposes Show Diagnostics, Copy Diagnostics, Report a Problem and Reset All Settings directly. Do not hide these behind Support or Reset disclosures. Status and secondary settings transfer retain their own disclosure where appropriate. The reset button arms for four seconds on first activation and disarms on focus loss.

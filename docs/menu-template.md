@@ -74,6 +74,7 @@ install destinations before they exist.
 
 Regression expectations: the template marker is present, System remains
 keyboard/mouse reachable, redundant shortcuts are absent, diagnostics and Reset
-work inside System, product colors/badges remain intact, and desktop/narrow/short
+work inside System, Reset All Settings follows every other System section with
+extra spacing above it, product colors/badges remain intact, and desktop/narrow/short
 layouts contain their controls. Capture the built menus rather than describing
 fixture tests as installed-browser proof.

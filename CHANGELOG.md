@@ -1,3 +1,8 @@
+## 3.9.10 — 2026-10-20
+
+- Separate Reset All Settings from the other System controls.
+- Keep Reset last in the shared System menu guidance.
+
 ## 3.9.9 — 2026-10-20
 
 - Keep diagnostics and reset actions directly accessible in System.
