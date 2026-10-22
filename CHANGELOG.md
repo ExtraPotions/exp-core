@@ -1,3 +1,8 @@
+## 3.10.0 — 2026-10-22
+
+- Add optional site colours: six palettes (Default, Indigo, Blue, Green, Red and Gray) with light and dark variants, a shared Site colors control and one scoped page style per product.
+- Follow the site's own light or dark mode and remove every page change when switched off.
+
 ## 3.9.10 — 2026-10-20
 
 - Separate Reset All Settings from the other System controls.

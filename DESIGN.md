@@ -110,6 +110,10 @@ Color is supplied through the current product's `--theme-*` roles. The frontmatt
 
 **The Product Identity Rule.** Reuse the current product's palette and approved source gem. Shared structure does not authorize replacement artwork or a new suite-wide accent. A separately authorized artwork refinement may update the gem without changing menu layout.
 
+### Site colors
+
+`site-colors.js` holds the shared page palettes (Default, Indigo, Blue, Green, Red, Gray), each with light and dark surface, text, line and accent tokens. They recolor a product's own site, not its menu: menus keep their product theme. `createSiteColors` keeps one owned style per product and follows the site's light/dark state; each product maps the tokens onto its site's own variables and keeps the site's brand and status colors. `createSiteColorControl` renders the Site colors select with the site's name as the Off option. A product may add its own palette through `extra` (WARD's Obsidian).
+
 ## Typography
 
 Use the system UI stack recorded in the frontmatter. The lean template's actual visible labels and controls use the label role; the header uses title. Subtitles/version text use the smaller supporting scale. Do not mistake the underlying typography layer's body-size preference for the final lean label size: the lean CSS deliberately overrides it.
