@@ -14,7 +14,7 @@ for(const[repo,id,root]of products)test(repo+' Mini diagnostics keep whole words
  await openSystem(dock,'support');
  const pair=dock.locator('.diagnostics-controls .action-pair');await pair.waitFor({state:'visible'});
  const sizes=await pair.locator('button').evaluateAll(buttons=>buttons.map(n=>{const s=getComputedStyle(n),canvas=document.createElement('canvas'),c=canvas.getContext('2d');c.font=s.font;return{text:n.textContent,font:s.fontSize,height:n.getBoundingClientRect().height,word:c.measureText('Diagnostics').width,available:n.clientWidth-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight),wrap:s.overflowWrap};}));
- for(const size of sizes){assert.equal(size.font,'11px');assert.ok(size.height<=42,JSON.stringify(size));assert.ok(size.word<=size.available,JSON.stringify(size));assert.equal(size.wrap,'normal');}
+ for(const size of sizes){assert.equal(size.font,'13px');assert.ok(size.height<=43,JSON.stringify(size));assert.ok(size.word<=size.available,JSON.stringify(size));assert.equal(size.wrap,'normal');}
  assert.equal(await dock.locator('[data-exp-system-activity]').count(),['prisma','ward'].includes(id)?0:1);
  if(id==='shift'){
   await dock.getByRole('tab',{name:'Appearance',exact:true}).click();assert.equal(await dock.getByLabel('Saved theme',{exact:true}).count(),0);assert.equal(await dock.locator('[data-shift-theme]').count(),6);
@@ -48,7 +48,7 @@ for(const[repo,id,root]of products)test(repo+' compact design retains settings, 
   assert.equal(measure.width,width);assert.equal(measure.overflow,0);measurements.push(measure);
   if(id==='dropper')assert.ok(await host.locator('#tdh-drop-card').evaluate(n=>n.getBoundingClientRect().width<=n.closest('[data-exp-part=dock]').clientWidth));
  }
- assert.ok(measurements[2].padding<measurements[0].padding&&measurements[2].control<measurements[0].control,'Mini tightens spacing and controls while text can wrap');assert.equal(measurements[0].font,measurements[2].font,'text remains readable');
+ assert.ok(measurements.every(m=>m.padding<=6&&m.control>=26),'all original widths use the approved dense controls');assert.equal(measurements[0].font,measurements[2].font,'text remains readable');
  const help=dock.locator('.exp-menu-size [data-exp-help]');await help.focus();
  const tip=host.locator('[role=tooltip]');assert.equal(await tip.isVisible(),true);
  const within=async()=>{await page.waitForTimeout(80);const a=await tip.boundingBox(),b=await dock.boundingBox();assert.ok(a.x>=b.x&&a.y>=b.y&&a.x+a.width<=b.x+b.width+1&&a.y+a.height<=b.y+b.height+1,'help contained by menu: '+JSON.stringify({a,b}));};

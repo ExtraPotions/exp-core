@@ -15,9 +15,9 @@ const ExpHealthSummary = (() => {
     const state=document.createElement('strong'),reason=document.createElement('p'),checked=document.createElement('small'),action=document.createElement('button');
     state.dataset.expHealthState='1';reason.dataset.expHealthReason='1';reason.style.cssText='margin:5px 0;line-height:1.4';checked.style.cssText='display:block;margin-bottom:4px';
     action.type='button';action.className='life-btn action';action.hidden=true;
-    element.append(state,reason,checked,action);
+    element.append(state,reason,action);
     let generation=0,disposed=false,pending=false,current=null;
-    function render(value) {current=normalizeHealth(value);state.textContent=current.label;reason.textContent=current.reason;checked.textContent=current.checkedAt?`Checked ${new Date(current.checkedAt).toLocaleTimeString()}`:'Not checked yet';action.textContent=current.action?.label||'';action.hidden=!current.action;action.disabled=pending;}
+    function render(value) {current=normalizeHealth(value);state.textContent=current.label;reason.textContent=current.reason;reason.hidden=current.state==='working';element.dataset.state=current.state;action.textContent=current.action?.label||'';action.hidden=!current.action;action.disabled=pending;}
     async function refresh() {
       if(disposed)return;const ticket=++generation;
       try {const value=await getHealth();if(!disposed&&ticket===generation)render(value);}

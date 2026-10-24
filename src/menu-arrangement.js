@@ -125,6 +125,8 @@ const ExpMenuArrangement = (() => {
     return shortLabels[slug(label)] || label;
   }
   function mountTabs({panel,id,onChange=()=>{}}) {
+    // The approved menu keeps original disclosures inline, with no secondary navigation.
+    if(panel.matches('[data-exp-menu-layout="lean"]'))return {update(){},destroy(){}};
     const document=panel.ownerDocument,view=document.defaultView;
     const style=document.createElement('style');style.textContent=tabCss;
     const styleRoot=panel.getRootNode();
@@ -254,7 +256,9 @@ const ExpMenuArrangement = (() => {
     const style = document.createElement('style'); style.textContent = css;
     const styleRoot = panel.getRootNode();
     (styleRoot instanceof view.ShadowRoot ? styleRoot : (document.head || document.documentElement)).append(style);
-    const rank = entry => CATEGORY_ORDER.indexOf(entry.category);
+    // Keep feature sections together, followed by the shared Look/System utilities.
+    const nativeUtilities=panel.matches('[data-exp-menu-layout="lean"]')&&id!=='shift';
+    const rank = entry => nativeUtilities ? entry.category==='system'?3:/^(look|appearance)$/i.test(entry.label)?2:0 : CATEGORY_ORDER.indexOf(entry.category);
     const desired = [...entries].sort((a, b) => rank(a) - rank(b));
     function apply() {
       const present = entries.filter(entry => entry.section.parentElement === parent);

@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const source=['lean-menu.js','menu-help.js','menu-typography.js','menu-preferences.js'].map(file=>fs.readFileSync(path.join(__dirname,'../src',file),'utf8')).join('\n');
+const source=['menu-layout.js','lean-menu.js','menu-help.js','menu-typography.js','menu-preferences.js'].map(file=>fs.readFileSync(path.join(__dirname,'../src',file),'utf8')).join('\n');
 test('three sizes persist locally, update peers and keep controls focused',async t=>{
  const {chromium}=require('playwright');const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:320,height:500}});
  await page.route('**/*',r=>r.fulfill({body:'<html><body></body></html>',contentType:'text/html'}));await page.goto('https://example.test/');

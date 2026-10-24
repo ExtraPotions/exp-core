@@ -5,14 +5,15 @@ const ExpMenuHelp = (() => {
     if(!node||!String(text||'').trim())return node;
     node.dataset.expHelp=String(text).trim();
     node.setAttribute('aria-description',node.dataset.expHelp);
-    if(!node.matches('button,input,select,a[href],summary')){node.tabIndex=0;node.setAttribute('role','button');}
+    // Native labels must not become competing help buttons on touch.
+    if(!node.closest('label')&&!node.matches('button,input,select,a[href],summary')){node.tabIndex=0;node.setAttribute('role','button');}
     return node;
   }
   function mount({shadow,panel}){
     const doc=panel.ownerDocument,view=doc.defaultView;
     const tip=doc.createElement('div');tip.id='exp-menu-help-'+(++serial);tip.className='exp-menu-help';tip.role='tooltip';tip.hidden=true;
     const style=doc.createElement('style');style.dataset.expMenuHelp='1';
-    style.textContent='.exp-menu-help{position:fixed;z-index:2147483647;box-sizing:border-box;max-width:260px;padding:8px 10px;border:1px solid var(--theme-line,#938f99);border-radius:7px;background:var(--theme-panel,#211f26);color:var(--theme-text,#e6e0e9);font:400 12px/1.5 "Segoe UI",system-ui,sans-serif;overflow:auto;overflow-wrap:anywhere;pointer-events:none}.exp-menu-help[hidden]{display:none!important}.exp-menu-help[data-scrollable=true]{pointer-events:auto}[data-exp-help]:not(button):not(input):not(select){cursor:help;text-decoration:underline dotted;text-underline-offset:3px}.has-tooltip::after{display:none!important}';
+    style.textContent='.exp-menu-help{position:fixed;z-index:2147483647;box-sizing:border-box;max-width:260px;padding:8px 10px;border:1px solid var(--theme-line,#938f99);border-radius:7px;background:var(--theme-panel,#211f26);color:var(--theme-text,#e6e0e9);font:400 12px/1.5 "Segoe UI",system-ui,sans-serif;overflow:auto;overflow-wrap:anywhere;pointer-events:none}.exp-menu-help[hidden]{display:none!important}.exp-menu-help[data-scrollable=true]{pointer-events:auto}.has-tooltip::after{display:none!important}';
     shadow.append(style,tip);
     let target=null,timer=0,frame=0,pointer={x:-1,y:-1};
     const inside=()=>{if(tip.hidden)return false;const r=tip.getBoundingClientRect();return pointer.x>=r.left&&pointer.x<=r.right&&pointer.y>=r.top&&pointer.y<=r.bottom;};

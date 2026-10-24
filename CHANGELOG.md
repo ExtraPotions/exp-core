@@ -1,3 +1,8 @@
+## 3.10.3 — 2026-10-24
+
+- Use a compact sidebar with the original Standard, Compact and Mini widths.
+- Keep menu actions, themes and color modes together with less empty space.
+
 ## 3.10.2 — 2026-10-23
 
 - Make menu and launcher regression checks wait for settled layouts and tolerate subpixel rounding.

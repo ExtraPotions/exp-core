@@ -12,7 +12,7 @@ const ExpMenuPreferences = (() => {
       memory=valid(size);const value=sizes[memory];host.dataset.expMenuSize=memory;
       for(const token of ['padding','row','control'])host.style.setProperty('--exp-menu-'+token,value[token]+'px');
       host.style.setProperty('--exp-font-size-body',value.body+'px');host.style.setProperty('--exp-font-size-small',value.small+'px');host.style.setProperty('--exp-menu-width',value.width+'px');
-      for(const select of shadow.querySelectorAll('[data-exp-menu-size-select]'))select.value=memory;
+      for(const select of shadow.querySelectorAll('[data-exp-menu-size-select]')){select.value=memory;select.dispatchEvent(new Event('input',{bubbles:true}));}
       onLayout();
     }
     const changed=event=>apply(event.detail),storage=event=>{if(event.key===key||event.key===null)apply(menuSizePreference());};
@@ -21,8 +21,9 @@ const ExpMenuPreferences = (() => {
   }
   function createMenuSizeControls(){
     const row=document.createElement('label');row.className='row exp-menu-size';const copy=document.createElement('span');copy.className='copy';
-    const title=document.createElement('strong');title.textContent='Menu Size';ExpMenuHelp.setMenuHelp(title,'Standard, Compact and Mini resize menus and cards with tighter spacing and controls. All settings stay available. This preference is shared by ExtraPotions menus on this site.');copy.append(title);
+    const title=document.createElement('strong');title.textContent='Menu Size';copy.append(title);
     const select=document.createElement('select');select.setAttribute('aria-label','Menu size');select.dataset.expMenuSizeSelect='1';
+    ExpMenuHelp.setMenuHelp(select,'Menu size is shared by ExtraPotions menus on this site.');
     for(const [value,label] of [['standard','Standard'],['compact','Compact'],['mini','Mini']]){const option=document.createElement('option');option.value=value;option.textContent=label;select.append(option);}
     select.value=menuSizePreference();select.addEventListener('change',()=>setMenuSizePreference(select.value));row.append(copy,select);return row;
   }

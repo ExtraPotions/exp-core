@@ -10,7 +10,7 @@ Product-specific controls and palettes remain owned by their products.
 
 ## Shared structure
 
-- Header: the product's existing gem, name, version/changelog chip, donation heart and Close.
+- Header: the product's existing gem, name, Changelog icon with accessible version, donation heart and Close.
 - Sidebar: product feature sections, Look and System. No separate Support or Reset navigation.
 - Look: shared Standard/Compact/Mini menu sizing; product-specific appearance choices remain available.
 - System: Status, Support with paired Show/Copy Diagnostics and Report a Problem, optional settings transfer, and confirmed Reset.
@@ -35,10 +35,19 @@ the menu. Active waiting uses Pause; manual pause uses Resume. No reward means
 unknown minutes and disabled Resume/Skip. Skip preserves the campaign, credit and
 manual pause. Native chat content is restored whenever the card leaves its slot.
 
-The shared shell uses an 84px rail, 7px corners and 32x22px rectangular switches.
-Sizes adjust layout and controls while preserving readable type. Diagnostics can
+The shared shell uses an 84px rail, 12px corners and compact 34x24px rectangular switches.
+Standard, Compact and Mini remain 324, 304 and 280px wide. Labels and controls use
+13px text; everyday rows/actions/disclosures use a 26px minimum and grow with text.
+The 48px header and navigation retain 44px targets. Header actions show Changelog,
+Support and Close; the version remains in the changelog's accessible name.
+Native selects keep their original node and events under a wrapping selected-value
+face. Labels and controls share a row, with short numeric/name fields taking only
+the width they need. Native disclosures stay inline; secondary Back navigation is
+not used in the shared shell. Reset fills the last System row in red, with the
+existing confirmation preserved. Diagnostics can
 wrap between words, never within Diagnostics. In short windows the navigation
-rail scrolls independently so its last section stays keyboard reachable.
+rail scrolls independently so its last section stays keyboard reachable. Gems,
+palette tokens, theme choices and light/dark/system modes remain product-owned.
 
 ## New products
 

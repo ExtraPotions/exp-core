@@ -10,13 +10,13 @@ for(const[repo,id,hostId,background,accent]of products)test(repo+' built compact
  await page.evaluate(()=>{window.GM_getValue=(_,v)=>v;window.GM_setValue=()=>{};window.GM_xmlhttpRequest=o=>{queueMicrotask(()=>o.onerror?.({status:503}));return{abort(){}}};});await page.addScriptTag({content:fs.readFileSync(consumers.file(repo,id+'.user.js'),'utf8')});
  const host=page.locator('#'+hostId);await host.locator('[data-exp-part=launcher]').click();await host.locator('.exp-menu-workspace').waitFor();
  const dock=host.locator('[data-exp-part=dock]');const facts=await dock.evaluate(n=>{const s=getComputedStyle(n),probe=document.createElement('i');probe.style.color='var(--theme-accent)';n.append(probe);const accent=getComputedStyle(probe).color;probe.remove();return{width:n.getBoundingClientRect().width,radius:s.borderRadius,background:s.backgroundColor,gradient:s.backgroundImage,accent,overflow:n.scrollWidth-n.clientWidth};});
- assert.deepEqual(facts,{width:304,radius:'7px',background,gradient:'none',accent,overflow:0});
+ assert.deepEqual(facts,{width:304,radius:'12px',background,gradient:'none',accent,overflow:0});
  assert.equal(await host.locator('.exp-section-tabs').getAttribute('aria-orientation'),'vertical');
  for(const tab of await host.locator('.exp-section-tabs [role=tab]').all()){await tab.click();assert.equal(await tab.getAttribute('aria-selected'),'true');assert.equal(await dock.evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);}
  const probe=await dock.locator('button[role=switch]:not(:disabled)').first().evaluateHandle(n=>{const copy=n.cloneNode(true);copy.removeAttribute('id');n.parentElement.append(copy);copy.setAttribute('aria-checked','true');return copy;});
- await page.waitForFunction(({node,color})=>getComputedStyle(node).backgroundColor===color,{node:probe,color:accent});
- const toggle=await probe.evaluate(n=>{const style=getComputedStyle(n),thumb=getComputedStyle(n,'::after');return{track:style.backgroundColor,thumb:thumb.backgroundColor,width:style.width,height:style.height,child:n.firstElementChild?getComputedStyle(n.firstElementChild).display:'none'};});await probe.evaluate(n=>n.remove());
- assert.deepEqual(toggle,{track:accent,thumb:background,width:'32px',height:'22px',child:'none'},'flat switch keeps one contrasting thumb');
+ await page.waitForFunction(({node,color})=>getComputedStyle(node,'::before').backgroundColor!==getComputedStyle(node).backgroundColor,{node:probe,color:accent});
+ const toggle=await probe.evaluate(n=>{const style=getComputedStyle(n),thumb=getComputedStyle(n,'::after');return{track:getComputedStyle(n,'::before').backgroundColor,thumb:thumb.backgroundColor,width:style.width,height:style.height,child:n.firstElementChild?getComputedStyle(n.firstElementChild).display:'none'};});await probe.evaluate(n=>n.remove());
+ assert.equal(toggle.thumb,background);assert.equal(toggle.width,'34px');assert.equal(toggle.height,'24px');assert.equal(toggle.child,'none');assert.notEqual(toggle.track,background,'checked switch retains its colored track');
  assert.equal(await dock.getAttribute('data-exp-menu-template'),'extrapotions-menu-v1');
  assert.equal(await dock.locator('[data-exp-menu-shortcut="support"],[data-exp-menu-shortcut="reset"]').count(),0);
  assert.equal(await dock.getByRole('tab',{name:'System',exact:true}).count(),1);

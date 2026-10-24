@@ -23,7 +23,7 @@ typography:
     lineHeight: 1.3
   label:
     fontFamily: '"Segoe UI", system-ui, sans-serif'
-    fontSize: "12px"
+    fontSize: "13px"
     fontWeight: 400
     lineHeight: 1.4
   help:
@@ -31,19 +31,19 @@ typography:
     fontSize: "11px"
     lineHeight: 1.5
 rounded:
-  menu: "7px"
-  control: "5px"
+  menu: "12px"
+  control: "6px"
   switch: "4px"
   switch-thumb: "2px"
 spacing:
-  standard-content: "8px"
-  compact-content: "7px"
+  standard-content: "6px"
+  compact-content: "6px"
   mini-content: "6px"
-  standard-row: "7px"
-  compact-row: "6px"
-  mini-row: "4px"
-  rail-padding: "5px"
-  rail-gap: "4px"
+  standard-row: "2px"
+  compact-row: "2px"
+  mini-row: "2px"
+  rail-padding: "4px"
+  rail-gap: "0"
   viewport-margin: "8px"
 components:
   menu-standard:
@@ -63,12 +63,12 @@ components:
     padding: "4px 7px"
   switch:
     rounded: "{rounded.switch}"
-    width: "32px"
-    height: "22px"
+    width: "34px"
+    height: "24px"
   header-action:
     rounded: "{rounded.control}"
-    width: "28px"
-    height: "28px"
+    width: "44px"
+    height: "44px"
   version:
     rounded: "{rounded.switch}"
     padding: "1px 4px"
@@ -91,7 +91,7 @@ Core owns the shell, sizing, help and System patterns. Each product owns its fea
 - Outlined controls, rounded rectangles and in-place disclosure.
 - One content scroller with independently scrollable navigation in short windows.
 
-Sources: `src/lean-menu.js`, `src/menu-preferences.js`, `src/menu-typography.js`, `src/suite-contract.json` and [menu-template.md](docs/menu-template.md). The approved direction and verification captures are local evidence outside this product repository; they are not prerequisites for reading this specification.
+Sources: `src/menu-layout.js`, `src/lean-menu.js`, `src/menu-preferences.js`, `src/menu-typography.js`, `src/suite-contract.json` and [menu-template.md](docs/menu-template.md). The approved direction and verification captures are local evidence outside this product repository; they are not prerequisites for reading this specification.
 
 ## Colors
 
@@ -116,27 +116,27 @@ Color is supplied through the current product's `--theme-*` roles. The frontmatt
 
 ## Typography
 
-Use the system UI stack recorded in the frontmatter. The lean template's actual visible labels and controls use the label role; the header uses title. Subtitles/version text use the smaller supporting scale. Do not mistake the underlying typography layer's body-size preference for the final lean label size: the lean CSS deliberately overrides it.
+Use the system UI stack recorded in the frontmatter. Labels and controls use 13px text; the header uses the title role. Changelog retains the product version in its accessible name, with an icon as its visible face. Subtitles and redundant supporting copy are omitted.
 
-All three density settings keep readable text sizes. Density changes width, padding and control height, rather than scaling down the entire menu. Preserve normal case, wrapping labels and tabular numbers for numeric outputs.
+All three sizes keep the same readable type and dense row geometry, changing the outer width without scaling. Preserve normal case, wrapping labels and tabular numbers for numeric outputs.
 
 ## Layout
 
-The header contains the current approved gem, product name and tagline, version/changelog, donation heart and Close. The workspace is a fixed rail plus `minmax(0, 1fr)` content. Keep Support, diagnostics and confirmed Reset inside System; donations remain a separate header action. Look owns shared menu sizing alongside product-specific appearance settings.
+The 48px header contains the current approved gem, product name, changelog icon, donation heart and Close. The workspace is an 84px rail plus `minmax(0, 1fr)` content. Colored icons sit above visible navigation labels. Keep Support, diagnostics and confirmed Reset inside System; donations remain a separate header action. Look owns shared menu sizing alongside product-specific appearance settings.
 
 | Density | Menu width | Content padding | Row block padding | General control minimum height |
 | --- | --- | --- | --- | --- |
-| Standard | `{components.menu-standard.width}` | `{spacing.standard-content}` | `{spacing.standard-row}` | 32px |
-| Compact | `{components.menu-compact.width}` | `{spacing.compact-content}` | `{spacing.compact-row}` | 30px |
-| Mini | `{components.menu-mini.width}` | `{spacing.mini-content}` | `{spacing.mini-row}` | 28px |
+| Standard | `{components.menu-standard.width}` | `{spacing.standard-content}` | `{spacing.standard-row}` | 26px |
+| Compact | `{components.menu-compact.width}` | `{spacing.compact-content}` | `{spacing.compact-row}` | 26px |
+| Mini | `{components.menu-mini.width}` | `{spacing.mini-content}` | `{spacing.mini-row}` | 26px |
 
-Values in braces refer to normative frontmatter. `menu-preferences.js` also exposes card widths (272/252/232px); these are product-card preferences, not permission to add nested cards everywhere. The menu has viewport containment of `calc(100dvh - 16px)` and the content column has `calc(100dvh - 116px)` maximum height. Preserve the rail's own overflow so its last item remains keyboard reachable in short windows. Coarse-pointer CSS raises the named general action/navigation/select/summary controls to a 36px minimum; it does not enlarge the fixed switch geometry.
+Values in braces refer to normative frontmatter. `menu-preferences.js` also exposes card widths (272/252/232px), which remain product-card preferences. The menu has viewport containment of `calc(100dvh - 16px)` and the content column has `calc(100dvh - 72px)` maximum height. Menus fit their content until that bound; the rail and content scroll independently in short windows. Keep the approved dense controls on touch and mouse, without scaling text.
 
 Diagnostics buttons may wrap between words, never within “Diagnostics.” Product tab names and settings remain product specific; suite-contract section aliases are integration data, not a second visible navigation specification.
 
 ## Elevation & Depth
 
-Flat product-colored surfaces and simple borders carry structure. The outer menu and update notice use the single shadow recorded in the sidecar. Content panels do not add stacked shadows, gradients or nested surface frames. Selected navigation uses a 13% accent2 mix over the panel background; the menu hover variable uses a 12% accent mix. These formulas are state treatments, not new palette primitives.
+Flat product-colored surfaces, quiet group fills and simple borders carry structure. The outer menu uses one offset shadow; content groups add no shadows or gradients. Selected navigation uses a 22% accent2 mix. These formulas are state treatments, not new palette primitives. Existing notice placement and palette rules remain separate.
 
 ## Shapes
 
@@ -154,11 +154,13 @@ Read the approved source SVGs when updating artwork: `../Dropper/assets/dropper-
 
 ### Header and navigation
 
-Keep version/changelog, donation and Close separate. Rail tabs use wrapped labels, an outlined default state and a visibly selected state. Native tab keyboard behavior and focus must survive open/close and content refresh. Use the exact approved taglines: Dropper “Your Drops at a glance”; SHIFT “A clearer view of the web”; PRISMA “Your identity, in focus”; WARD “Calmer pages. Clearer choices.”; THREAD “Your Reddit, refined.” Do not infer a tagline for another product.
+Keep version/changelog, donation and Close separate. Inactive rail tabs are quiet; the selected tab retains its product-colored outline. Native tab keyboard behavior and focus survive open/close and content refresh. Headers contain the gem, product name and actions without taglines. Remove visible helper prose and redundant secondary labels; retain primary setting labels, actual state and consequential confirmations.
 
 ### Buttons, fields and switches
 
 Use outlined product-panel controls with visible text and focus. The template focus treatment is recorded in the sidecar. Switches expose `role="switch"` and `aria-checked`; checked state changes both background and thumb position. Disabled actions must remain unavailable, rather than merely looking muted. Reset retains confirmation and theme-aware destructive colors.
+
+Native selectors remain real, accessible pickers under a wrapping selected-value face. They share a row with their label; long values increase the row height. Short number/name controls use 56px where applicable. Everyday rows, actions and disclosures use a 26px minimum, switches use 34×24px, and header/navigation retain 44px targets. This density follows the user's reviewed web-layout approval. Setting labels activate their native control, without competing help-button roles. Header health shows abnormal states only; detailed recovery remains in System, with full-width red Reset last and its confirmation retained.
 
 ### Disclosures and System
 
