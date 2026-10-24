@@ -1,8 +1,8 @@
 {
-  "coreVersion": "3.10.0",
+  "coreVersion": "3.10.1",
   "source": {
     "source": "ExtraPotions/exp-core",
-    "sourceVersion": "3.10.0",
+    "sourceVersion": "3.10.1",
     "architecture": "core-native"
   },
   "suiteContract": {
@@ -220,7 +220,7 @@
       "rootId": "exp-prisma-root"
     }
   },
-  "bundleSha256": "e36248ab7314440ca45e469f7b60476e078a0d0e3401e57f70a82db4b03972e9",
+  "bundleSha256": "0ca758a09ecfb4f5f53efdb8662271bb5475543a3604b78d53f789684363e097",
   "files": {
     "foundation.js": "983c32545da78bc43c5f2705eecdf25be7ea6e0a83bd2eab59833098e3505bd5",
     "diagnostic-report.js": "563d6314d8866d2655141b6d06cb3ba4dc3f964ee2c0a427dad35d3f1c81a1f6",
@@ -234,7 +234,7 @@
     "menu-help.js": "28660a64360efe74955f4a2e2d8f138c97c0cba31a999c371aee87513c2bda9a",
     "menu-typography.js": "6995f62198cd48fbf50d7951cad0a5f8c9f96d6d5d773b8edca4a06dc7400ef8",
     "menu-preferences.js": "dc3ea4dc10043357da26de3a7a5710cea5c36fb0f30b4d82a7efc3f42566ab03",
-    "site-colors.js": "26211301f58149cc396235d4dedce593e2cdd73624f5ce344eae235d1d43aa5a",
+    "site-colors.js": "ddbb5fa6b3ab8651852b297336257b3e9cfebca3d032212b85bf43f746f2d14a",
     "launcher-flyout.js": "3918f47a2a0eb51f36ad33d38b6f3a2eac4a1e6d543b2e90dea1129712064061",
     "runtime.js": "618ba4a7e7f95562d3404daeccad52adcb3986f7a78f2c7e33d2e4368f65381d",
     "suite-contract.json": "48d07c705f2c5c4e1e72bc55b549593612ae251b5c4e505d96e3ea5016820894"

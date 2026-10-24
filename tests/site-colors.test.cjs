@@ -21,3 +21,19 @@ test('one scoped style per product follows the site mode, clears completely and 
  assert.deepEqual(await page.locator('#row option').allTextContents(),['Example','Default','Indigo','Blue','Green','Red','Gray']);assert.equal(await page.locator('#row select').inputValue(),'blue');
  await page.locator('#row select').selectOption('gray');assert.equal(await page.evaluate(()=>window.chosen),'gray');
 });
+
+test('an injected stylesheet handle follows mode changes and releases its real stylesheet on Off',async t=>{
+ const {chromium}=require('playwright');const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage();
+ await page.route('**/*',r=>r.fulfill({contentType:'text/html',body:'<main>Page</main>'}));await page.goto('https://example.test/');
+ await page.evaluate(source+`;window.creations=0;window.dark=true;window.colors=ExpSiteColors.createSiteColors({product:'demo',mode:()=>dark?'dark':'light',watch:cb=>{window.repaint=cb;return ()=>{};},css:(p,scope)=>scope+' main{background:'+p.bg+'!important}',inject:(text,data)=>{
+  creations++;const sheet=new CSSStyleSheet();sheet.replaceSync(text);document.adoptedStyleSheets=[...document.adoptedStyleSheets,sheet];const node=document.createElement('style');node.type='text/plain';let current=text;
+  Object.defineProperty(node,'textContent',{get:()=>current,set:value=>{current=value;sheet.replaceSync(value);}});
+  node.remove=()=>{document.adoptedStyleSheets=document.adoptedStyleSheets.filter(s=>s!==sheet);node.parentNode?.removeChild(node);};document.head.append(node);return node;
+ }});`);
+ await page.evaluate(()=>colors.apply('red'));assert.equal(await page.locator('main').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(32, 18, 20)');
+ await page.evaluate(()=>{dark=false;repaint();});assert.equal(await page.locator('main').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(248, 234, 236)');
+ await page.evaluate(()=>colors.apply('blue'));assert.equal(await page.evaluate(()=>creations),1,'reuse the injected handle across changes');
+ await page.evaluate(()=>colors.clear());assert.equal(await page.evaluate(()=>document.adoptedStyleSheets.length),0);
+ assert.equal(await page.locator('main').evaluate(n=>getComputedStyle(n).backgroundColor),'rgba(0, 0, 0, 0)');
+ assert.equal(await page.locator('#exp-site-colors-demo').count(),0);
+});

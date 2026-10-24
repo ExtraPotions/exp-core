@@ -22,6 +22,8 @@ exp-core is the one implementation of shared behaviour: the launcher and its fly
 - Keep the five repositories side by side in one folder. The sync, coexistence and screenshot scripts look for the products beside exp-core (override with `EXP_SUITE_ROOT` or `EXP_PRODUCT_ROOTS`).
 - On a machine with few cores, run tests with `--test-concurrency=2`.
 
+Site palette controllers accept an optional `inject(text, data)` callback returning a connected, editable style handle with `textContent` and `remove()`. WARD supplies its lifecycle injector so manager style grants or constructed stylesheets can paint under retailer CSP; other consumers keep their existing injection behavior.
+
 ## Commands
 
 | Repository | Build | Tests | Extra checks |

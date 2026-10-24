@@ -2569,13 +2569,20 @@ const ExpSiteColors = (() => {
   const systemMode=()=>matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';
   function watchSystem(callback){const query=matchMedia('(prefers-color-scheme: light)');query.addEventListener('change',callback);return ()=>query.removeEventListener('change',callback);}
   // mode() reads the site's current light/dark state; watch(callback) reports changes and returns a disposer.
-  function createSiteColors({product,css,mode=systemMode,watch=watchSystem,extra=[]}){
+  // Products with manager style grants can supply their lifecycle's CSP-aware injector.
+  function createSiteColors({product,css,mode=systemMode,watch=watchSystem,extra=[],inject}){
     const attribute='data-exp-site-colors',scope=`html[${attribute}="${product}"]`,id='exp-site-colors-'+product;
     let current='off',stopWatching=null,style=null;
     function render(){
       const palette=sitePalette(current,mode(),extra);if(!palette)return clear();
-      if(!style?.isConnected){style=document.getElementById(id)||document.createElement('style');style.id=id;style.dataset.expOwned='1';style.dataset.expSiteColors=product;(document.head||document.documentElement).append(style);}
-      const text=css(palette,scope);if(style.textContent!==text)style.textContent=text;
+      const text=css(palette,scope);
+      if(!style?.isConnected){
+        style?.remove();
+        style=document.getElementById(id)||(inject?inject(text,{expSiteColors:product}):document.createElement('style'));
+        style.id=id;style.dataset.expOwned='1';style.dataset.expSiteColors=product;
+        if(!style.isConnected)(document.head||document.documentElement).append(style);
+      }
+      if(style.textContent!==text)style.textContent=text;
       if(document.documentElement.getAttribute(attribute)!==product)document.documentElement.setAttribute(attribute,product);
       document.documentElement.dataset.expSitePalette=palette.id+'-'+palette.mode;
     }
@@ -2624,7 +2631,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.10.0';
+  const version = '3.10.1';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';

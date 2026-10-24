@@ -1,3 +1,8 @@
+## 3.10.1 — 2026-10-23
+
+- Allow products to supply manager-aware stylesheet injection for Site colors under restrictive page policies.
+- Preserve the existing style path for consumers that do not supply an injector.
+
 ## 3.10.0 — 2026-10-22
 
 - Add optional site colours: six palettes (Default, Indigo, Blue, Green, Red and Gray) with light and dark variants, a shared Site colors control and one scoped page style per product.
