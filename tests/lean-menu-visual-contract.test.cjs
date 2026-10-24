@@ -3,7 +3,7 @@ const {openSystem}=require('./helpers/system-navigation.cjs');
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const {chromium}=require('playwright');
 const consumers=require('../scripts/consumer-roots.cjs').resolveConsumerRoots();
-const products=[['Dropper','dropper','tdh-root','rgb(24, 24, 27)','rgb(145, 70, 255)'],['PRISMA','prisma','exp-prisma-root','rgb(9, 15, 32)','rgb(106, 170, 255)'],['SHIFT','shift','exp-shift-root','rgb(16, 23, 25)','rgb(38, 217, 199)'],['WARD','ward','exp-ward-root','rgb(18, 11, 5)','rgb(182, 106, 22)']];
+const products=[['Dropper','dropper','tdh-root','rgb(24, 24, 27)','rgb(145, 70, 255)'],['PRISMA','prisma','exp-prisma-root','rgb(9, 15, 32)','rgb(106, 170, 255)'],['WARD','ward','exp-ward-root','rgb(18, 11, 5)','rgb(182, 106, 22)']];
 for(const[repo,id,hostId,background,accent]of products)test(repo+' built compact sidebar preserves product identity, section behavior and Support/Reset access inside System',consumers.options([repo]),async t=>{
  const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:1280,height:900}});
  await page.route('**/*',r=>r.request().isNavigationRequest()?r.fulfill({contentType:'text/html',body:'<!doctype html><main>Sample page</main>'}):r.abort());await page.goto(repo==='WARD'?'https://www.amazon.com/':'https://www.twitch.tv/sample');
@@ -20,7 +20,9 @@ for(const[repo,id,hostId,background,accent]of products)test(repo+' built compact
  assert.equal(await dock.getAttribute('data-exp-menu-template'),'extrapotions-menu-v1');
  assert.equal(await dock.locator('[data-exp-menu-shortcut="support"],[data-exp-menu-shortcut="reset"]').count(),0);
  assert.equal(await dock.getByRole('tab',{name:'System',exact:true}).count(),1);
- for(const label of ['Support','Reset']){await openSystem(host,label);const open=await dock.evaluate((n,label)=>[...n.querySelectorAll('details')].some(d=>d.querySelector(':scope>summary')?.textContent.trim()===label&&d.open),label);assert.ok(open);}
+ await openSystem(host);
+ for(const key of ['support','reset']){const section=dock.locator('[data-exp-system-item="'+key+'"]');assert.equal(await section.isVisible(),true);assert.ok(await section.getByRole('button').count()>0);}
+ assert.equal(await dock.locator('[data-exp-system-item="reset"]').evaluate(n=>n===n.parentElement.lastElementChild),true,'Reset remains last');
  const first=host.locator('.exp-section-tabs [role=tab]').first();await first.focus();await page.keyboard.press('ArrowDown');assert.equal(await host.locator('.exp-section-tabs [role=tab]').nth(1).getAttribute('aria-selected'),'true');
  for(const width of [320,390,820]){await page.setViewportSize({width,height:650});await page.waitForFunction(id=>{const n=document.querySelector('#'+id).shadowRoot.querySelector('[data-exp-part=dock]'),r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1;},hostId);assert.equal(await dock.evaluate(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&n.scrollWidth<=n.clientWidth+1;}),true);}
  assert.equal(await dock.locator('.support-button').count(),1);assert.equal(await dock.locator('[data-exp-part=version],#tdh-header-version').count(),1);

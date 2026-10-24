@@ -1,3 +1,8 @@
+## 3.10.2 — 2026-10-23
+
+- Make menu and launcher regression checks wait for settled layouts and tolerate subpixel rounding.
+- Keep routine consumer checks focused on maintained products.
+
 ## 3.10.1 — 2026-10-23
 
 - Allow products to supply manager-aware stylesheet injection for Site colors under restrictive page policies.

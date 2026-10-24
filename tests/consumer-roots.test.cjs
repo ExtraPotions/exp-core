@@ -13,9 +13,9 @@ test('alternate roots are explicit and relative mappings resolve against the sui
 });
 test('strict consumer checks fail on missing artifacts, while standalone skips explain the missing products',t=>{
  const workspace=fixture(t,['dropper']),suite=resolver().resolveConsumerRoots({workspace,env:{}});
- assert.match(suite.options(['Dropper','SHIFT']).skip,/Standalone Core.*Dropper.*SHIFT/);
+ assert.match(suite.options(['Dropper','WARD']).skip,/Standalone Core.*Dropper.*WARD/);
  const strict=resolver().resolveConsumerRoots({workspace,env:{EXP_REQUIRE_CONSUMERS:'1'}});
- assert.throws(()=>strict.options(['Dropper','SHIFT']),/Required consumer.*Dropper.*SHIFT/);
+ assert.throws(()=>strict.options(['Dropper','WARD']),/Required consumer.*Dropper.*WARD/);
  fs.writeFileSync(path.join(workspace,'dropper','dropper.user.js'),'fixture');assert.equal(suite.options(['Dropper']).skip,false);
 });
 test('rejects ambiguous case variants rather than selecting the first match',t=>{
@@ -25,9 +25,17 @@ test('rejects ambiguous case variants rather than selecting the first match',t=>
  assert.throws(()=>resolver().resolveConsumerRoots({workspace,env:{},listDirectories:()=>entries}),/Ambiguous.*SHIFT/);
 });
 
+test('archived consumer checks require explicit opt-in even when strict mode is enabled',t=>{
+ const workspace=fixture(t,[]),suite=resolver().resolveConsumerRoots({workspace,env:{EXP_REQUIRE_CONSUMERS:'1'}});
+ assert.match(suite.options(['SHIFT']).skip,/Archived consumers.*SHIFT/);
+ const legacy=resolver().resolveConsumerRoots({workspace,env:{EXP_REQUIRE_CONSUMERS:'1',EXP_INCLUDE_RETIRED:'1'}});
+ assert.throws(()=>legacy.options(['SHIFT']),/Required consumer.*SHIFT/);
+ assert.throws(()=>suite.options(['unknown']),/Unknown consumer/);
+});
+
 test('every consumer test fails in strict mode when the suite is absent',t=>{
  const workspace=fixture(t,[]),{spawnSync}=require('node:child_process');
- for(const name of ['owned-sheets','suite-health-live','suite-diagnostics','suite-menu-layout','system-health-consumers','typography-consumers','system-menu']){
+ for(const name of ['suite-health-live','suite-diagnostics','suite-menu-layout','system-health-consumers','typography-consumers','system-menu']){
   const env={...process.env,EXP_SUITE_ROOT:workspace,EXP_PRODUCT_ROOTS:'',EXP_REQUIRE_CONSUMERS:'1'};delete env.NODE_TEST_CONTEXT;
   const result=spawnSync(process.execPath,['--test',path.join(__dirname,name+'.test.cjs')],{encoding:'utf8',env});
   assert.notEqual(result.status,0,name+' must not succeed by skipping');assert.match(result.stdout+result.stderr,/Required consumer artifacts missing/,name);

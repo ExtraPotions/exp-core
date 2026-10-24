@@ -3,7 +3,7 @@ const {openSystem}=require('./helpers/system-navigation.cjs');
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const {chromium}=require('playwright');
 const consumers=require('../scripts/consumer-roots.cjs').resolveConsumerRoots();
-const products=[['PRISMA','prisma','#exp-prisma-root','.launcher','https://example.com/'],['SHIFT','shift','#exp-shift-root','.launcher','https://example.com/'],['WARD','ward','#exp-ward-root','.ward-launcher','https://www.amazon.com/'],['Dropper','dropper','#tdh-root','#tdh-settings-launcher','https://www.twitch.tv/firstchannel']];
+const products=[['PRISMA','prisma','#exp-prisma-root','.launcher','https://example.com/'],['WARD','ward','#exp-ward-root','.ward-launcher','https://www.amazon.com/'],['Dropper','dropper','#tdh-root','#tdh-settings-launcher','https://www.twitch.tv/firstchannel']];
 for(const [repo,id,selector,launcher,url]of products)test(repo+' built menu expands secondary settings inline and retains product controls/colors',consumers.options([repo]),async t=>{
  const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:360,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><main><h1>Product menu checks</h1><p>bisexual pansexual</p></main>'}));

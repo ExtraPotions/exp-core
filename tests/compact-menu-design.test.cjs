@@ -3,7 +3,7 @@ const {openSystem}=require('./helpers/system-navigation.cjs');
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const {chromium}=require('playwright');
 const consumers=require('../scripts/consumer-roots.cjs').resolveConsumerRoots();
-const products=[['Dropper','dropper','tdh-root'],['SHIFT','shift','exp-shift-root'],['PRISMA','prisma','exp-prisma-root'],['WARD','ward','exp-ward-root']];
+const products=[['Dropper','dropper','tdh-root'],['PRISMA','prisma','exp-prisma-root'],['WARD','ward','exp-ward-root']];
 
 for(const[repo,id,root]of products)test(repo+' Mini diagnostics keep whole words and omit redundant status history',consumers.options([repo]),async t=>{
  const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:320,height:740}});

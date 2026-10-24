@@ -1,4 +1,5 @@
 'use strict';
+const {near}=require('./helpers/geometry.cjs');
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {chromium}=require('playwright');
 const bundle=fs.readFileSync(path.join(__dirname,'..','dist','exp-core.js'),'utf8');
@@ -54,7 +55,7 @@ test('on Twitch the launcher sits in the top bar between search and the icons, s
     const page=await open(t,{width});
     const f=await facts(page);
     assert.deepEqual([f.hub.width,f.hub.height],[40,40],`${width}: a 40px launcher`);
-    assert.equal(f.hub.top,5,`${width}: centred in the 50px bar`);
+    assert.ok(near(f.hub.top,5),`${width}: centred in the 50px bar`);
     assert.equal(Math.round(f.firstIcon-f.hub.right),16,`${width}: 16px before Twitch's first icon`);
     assert.ok(f.hub.left>=f.searchRight+8,`${width}: clear of the search box`);
     await page.close();
@@ -66,7 +67,7 @@ test('signed in, the launcher sits before Twitch\'s first icon',async t=>{
   const f=await facts(page);
   assert.equal(Math.round(f.firstIcon-f.hub.right),16);
   assert.ok(f.hub.left>f.searchRight+8);
-  assert.equal(f.hub.top,5);
+  assert.ok(near(f.hub.top,5));
 });
 
 test('the flyout and menus drop down into the right-hand column',async t=>{
@@ -111,7 +112,7 @@ test('the bar appearing after the products load moves the launcher into it',asyn
   await page.evaluate(html=>{document.body.insertAdjacentHTML('afterbegin',html);},twitch());
   await page.waitForTimeout(600);await settle(page);
   const f=await facts(page);
-  assert.equal(f.hub.width,40);assert.equal(f.hub.top,5);
+  assert.equal(f.hub.width,40);assert.ok(near(f.hub.top,5));
 });
 
 test('Dropper alone on Twitch puts its own launcher in the top bar and opens its menu below',async t=>{
@@ -119,7 +120,7 @@ test('Dropper alone on Twitch puts its own launcher in the top bar and opens its
   let f=await facts(page);
   assert.equal(f.hub,null,'no flyout launcher for one product');
   const own=f.launchers.dropper;
-  assert.deepEqual([own.width,own.top,Math.round(f.firstIcon-own.right)],[40,5,16]);
+  assert.equal(own.width,40);assert.ok(near(own.top,5));assert.equal(Math.round(f.firstIcon-own.right),16);
   await page.mouse.click(own.left+20,own.top+20);await settle(page);
   f=await facts(page);
   assert.ok(f.menus.dropper.top>=own.bottom+8-0.5);assert.equal(Math.round(1600-f.menus.dropper.right),8);

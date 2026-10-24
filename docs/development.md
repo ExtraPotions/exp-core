@@ -30,11 +30,12 @@ Site palette controllers accept an optional `inject(text, data)` callback return
 |---|---|---|---|
 | exp-core | `npm run build` | `node --test tests/*.test.cjs` | `npm run build:check`, `npm run sync:check`, `npm run duplicates:check` |
 | Dropper | `npm run build` (assembles `src/parts/`, then minifies) | `node --test tests/*.test.cjs` | `npm run build:check` |
-| SHIFT | `npm run build` | `node --test tests/*.test.cjs` | `npm run release:check` |
 | PRISMA | `npm run build` | `node --test tests/*.test.cjs` | `npm run release:check` |
 | WARD | `npm run build` | `node --test tests-v3/*.test.cjs` | `npm run release:check`, `npm run test:fallback` |
 
 `npm test` in each repository builds and then runs its full suite.
+
+The maintained lineup is Core, Dropper, PRISMA, WARD and Thread. SHIFT is archived and excluded from routine consumer checks and releases; its retained contract entry is for legacy compatibility. Archived consumer tests require an explicit `EXP_INCLUDE_RETIRED=1` opt-in and are not part of the maintained suite.
 
 Checks are manual. Build affected products and choose the tests relevant to the change. `release:check`, `verify:release`, `suite:local`, Core-pin verification and coexistence checks remain optional diagnostic commands, not release gates. Some checks need sibling products or published Core assets; a failure there does not impose a release order.
 

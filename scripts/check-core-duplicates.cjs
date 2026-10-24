@@ -73,7 +73,7 @@ if (require.main === module) {
   const dirs = args.filter(arg => !arg.startsWith('--'));
   const products = dirs.length
     ? dirs.map(dir => path.resolve(dir))
-    : loadSuiteContract(coreRoot).repositories.map(repo => consumers.root(repo)).filter(dir => fs.existsSync(dir));
+    : loadSuiteContract(coreRoot).maintainedRepositories.map(repo => consumers.root(repo)).filter(dir => fs.existsSync(dir));
   let total = 0;
   for (const dir of products) {
     const findings = scanProduct(dir);

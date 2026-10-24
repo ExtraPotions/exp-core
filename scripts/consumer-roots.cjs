@@ -28,6 +28,8 @@ function resolveConsumerRoots({workspace, env = process.env, listDirectories = d
   };
   const file = (name,...parts) => path.join(root(name),...parts);
   const options = (names = maintainedRepositories, required = name => name.toLowerCase()+'.user.js') => {
+    const retired = names.filter(name => repositories.includes(name) && !maintainedRepositories.includes(name));
+    if (retired.length && env.EXP_INCLUDE_RETIRED !== '1') return {skip:'Archived consumers excluded from routine checks: '+retired.join(', ')+'.'};
     const missing = names.filter(name => !fs.existsSync(file(name,typeof required === 'function' ? required(name) : required)));
     if (missing.length && env.EXP_REQUIRE_CONSUMERS === '1') throw new Error('Required consumer artifacts missing: '+missing.join(', '));
     return {skip: missing.length ? 'Standalone Core: optional consumer checks skipped; missing '+missing.join(', ')+'.'  : false};

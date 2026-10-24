@@ -13,7 +13,6 @@ const products = [
   { name: 'Dropper', host: '#tdh-root' },
   { name: 'WARD', host: '#exp-ward-root' },
   { name: 'PRISMA', host: '#exp-prisma-root' },
-  { name: 'SHIFT', host: '#exp-shift-root' },
 ];
 const suiteOptions = consumers.options();
 

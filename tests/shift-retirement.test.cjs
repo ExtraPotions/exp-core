@@ -10,6 +10,12 @@ test('maintained consumers exclude SHIFT while legacy runtime identity remains c
 test('routine sync and browser packs exclude retired SHIFT, while explicit legacy tools remain available',()=>{
  const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
  assert.match(read('scripts/sync-products.cjs'),/maintainedRepositories:discoveredProducts/);
+ assert.match(read('scripts/check-core-duplicates.cjs'),/maintainedRepositories\.map/);
+ for(const name of ['approved-menu-design','compact-menu-design','lean-menu-visual-contract','product-submenu-tabs','suite-menu-layout','suite-health-live','typography-consumers']){
+  const source=read('tests/'+name+'.test.cjs');
+  assert.doesNotMatch(source,/\['SHIFT',\s*'(?:shift|exp-shift-root|shift\.user\.js|https:)/,name+' must not load the archived product');
+  assert.doesNotMatch(source,/name:\s*'SHIFT',\s*host:/,name+' excludes archived consumer');
+ }
  for(const file of ['check-annotations.cjs','check-product-menus.cjs']){
   const s=read('scripts/'+file);assert.doesNotMatch(s,/SHIFT\/node_modules/);assert.match(s,/EXP_INCLUDE_RETIRED/);
  }

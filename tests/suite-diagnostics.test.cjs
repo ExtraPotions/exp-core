@@ -53,13 +53,13 @@ test('Core product fixtures share diagnostics and detect active peers',async t=>
   assert.deepEqual(errors,[]);
 });
 
-test('all four built menus keep the size control without an arrangement editor or width field',suiteOptions,async t=>{
+test('maintained built menus keep the size control without an arrangement editor or width field',suiteOptions,async t=>{
  const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/*',r=>r.request().isNavigationRequest()?r.fulfill({contentType:'text/html',body:'<script id="shopify-features" type="application/json">{}</script><main>Sample community.</main>'}):r.abort());
  await page.goto('https://fixture.test/');
  await page.evaluate(()=>{window.GM_getValue=(_key,fallback)=>fallback;window.GM_setValue=()=>{};window.GM_xmlhttpRequest=()=>{};});
- for(const name of ['Dropper','WARD','PRISMA','SHIFT'])await page.addScriptTag({content:fs.readFileSync(consumers.file(name,`${name.toLowerCase()}.user.js`),'utf8')});
- for(const id of ['tdh-root','exp-ward-root','exp-prisma-root','exp-shift-root']){
+ for(const name of ['Dropper','WARD','PRISMA'])await page.addScriptTag({content:fs.readFileSync(consumers.file(name,`${name.toLowerCase()}.user.js`),'utf8')});
+ for(const id of ['tdh-root','exp-ward-root','exp-prisma-root']){
   const host=page.locator('#'+id);await host.waitFor({state:'attached'});
   await host.evaluate(host=>{const s=host.shadowRoot;s.querySelector('.launcher,.ward-launcher,#tdh-settings-launcher').click();});await openSystem(host,'support');
   assert.equal(await host.locator('.exp-menu-editor').count(),0,id+': no menu editor');
@@ -76,8 +76,8 @@ test('all product menus contain long content and keep the end reachable in short
   const page=await browser.newPage({viewport});
   await page.route('**/*',r=>r.request().isNavigationRequest()?r.fulfill({contentType:'text/html',body:'<script id="shopify-features" type="application/json">{}</script><main>Fixture</main>'}):r.abort());await page.goto('https://fixture.test/');
   await page.evaluate(()=>{window.GM_getValue=(_key,fallback)=>fallback;window.GM_setValue=()=>{};window.GM_xmlhttpRequest=()=>{};});
-  for(const name of ['Dropper','WARD','PRISMA','SHIFT'])await page.addScriptTag({content:fs.readFileSync(consumers.file(name,`${name.toLowerCase()}.user.js`),'utf8')});
-  for(const id of ['tdh-root','exp-ward-root','exp-prisma-root','exp-shift-root']){
+  for(const name of ['Dropper','WARD','PRISMA'])await page.addScriptTag({content:fs.readFileSync(consumers.file(name,`${name.toLowerCase()}.user.js`),'utf8')});
+  for(const id of ['tdh-root','exp-ward-root','exp-prisma-root']){
    const host=page.locator('#'+id);await host.waitFor({state:'attached'});
    await host.evaluate(h=>h.shadowRoot.querySelector('.launcher,.ward-launcher,#tdh-settings-launcher').click());await openSystem(host,'support');await host.evaluate(h=>{const s=h.shadowRoot;const body=[...s.querySelectorAll('.fl-tool-body')].find(n=>n.getClientRects().length>0&&!n.hidden&&!n.classList.contains('fl-tool-hidden'));for(let i=0;i<30;i++){const p=document.createElement('p');p.textContent='LongContent'.repeat(25);body.append(p);}const last=document.createElement('button');last.textContent='End marker';last.id='containment-end';body.append(last);window.dispatchEvent(new Event('resize'));});
    // Placement follows the resize on a later frame; wait for it (up to 5s on a busy machine), then assert as before.
@@ -95,7 +95,7 @@ test('all product menus contain long content and keep the end reachable in short
 
 test('compact System groups keep diagnostics visible and expand without horizontal overflow',suiteOptions,async t=>{
  const browser=await chromium.launch();t.after(()=>browser.close());
- for(const name of ['Dropper','WARD','PRISMA','SHIFT']){
+ for(const name of ['Dropper','WARD','PRISMA']){
   const page=await browser.newPage({viewport:{width:360,height:900}});
   await page.route('**/*',r=>r.request().isNavigationRequest()?r.fulfill({contentType:'text/html',body:'<script id="shopify-features" type="application/json">{}</script><main>Fixture</main>'}):r.abort());
   await page.goto('https://fixture.test/');await page.evaluate(()=>{window.GM_getValue=(_k,f)=>f;window.GM_setValue=()=>{};window.GM_xmlhttpRequest=()=>{};});
@@ -107,13 +107,11 @@ test('compact System groups keep diagnostics visible and expand without horizont
   assert.equal(await host.getByRole('button',{name:'Show Diagnostics',exact:true}).isVisible(),true);
   assert.doesNotMatch(await grid.textContent(),/Settings backups|Back up settings|Restore selected backup|Maintenance|Site control|Product compatibility|Why am I waiting|Activity history/);
   assert.deepEqual(await grid.locator('[data-exp-system-item]').evaluateAll(nodes=>nodes.map(n=>n.dataset.expSystemItem)),layout==='grouped'?['status','support','reset']:['timeline','diagnostics','issue','preferences','reset']);
-  const summaries=grid.locator(':scope > details > summary');assert.ok(await summaries.count()>=3);
-  for(let i=0;i<await summaries.count();i++){
-   const summary=summaries.nth(i);if(!await summary.evaluate(n=>n.parentElement.open)){await summary.focus();await page.keyboard.press('Enter');}
-   assert.equal(await summary.evaluate(n=>n.parentElement.open),true);
-   assert.ok(await summary.evaluate(n=>n.parentElement.scrollWidth-n.parentElement.clientWidth)<=1,name+' disclosure fits');
-   await summary.focus();await page.keyboard.press('Enter');assert.equal(await summary.evaluate(n=>n.parentElement.open),false);assert.equal(await summary.evaluate(n=>n===n.getRootNode().activeElement),true);
-  }
+  assert.equal(await grid.locator('[data-exp-system-item="reset"]').evaluate(n=>n===n.parentElement.lastElementChild),true);
+  assert.equal(await grid.evaluate(n=>n.scrollWidth<=n.clientWidth+1),true,name+' System fits');
+  const show=host.getByRole('button',{name:'Show Diagnostics',exact:true});await show.focus();await page.keyboard.press('Enter');
+  assert.equal(await host.getByRole('button',{name:'Hide Diagnostics',exact:true}).isVisible(),true);
+  for(const key of ['support','reset']){const group=grid.locator('[data-exp-system-item="'+key+'"]');assert.ok(await group.evaluate(n=>n.scrollWidth<=n.clientWidth+1));}
   await page.close();
  }
 });

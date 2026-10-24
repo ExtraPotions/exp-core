@@ -44,7 +44,7 @@ test('the launcher group moves clear of a fixed site control, keeps its spacing,
   const chat=await box(page,'#chat'),boxes=await launchers(page);
   for(const launcher of boxes)assert.ok(gap(launcher,chat)>=8,`${launcher.id} keeps 8px clear of the chat button: ${JSON.stringify({launcher,chat})}`);
   assert.equal(new Set(boxes.map(b=>Math.round(b.top))).size,1,'the group moves together: '+JSON.stringify(boxes));
-  assert.ok(boxes.every(b=>b.bottom<=chat.top-8&&b.bottom>=chat.top-16),'the group sits just above the chat button: '+JSON.stringify(boxes));
+  assert.ok(boxes.every(b=>b.bottom<=chat.top-8+0.125&&b.bottom>=chat.top-16),'the group sits just above the chat button: '+JSON.stringify(boxes));
   assert.equal(await page.evaluate(()=>localStorage.getItem('exp:v3:launcher-grid-delta')),null,'the avoidance is not saved as a preference');
   await page.evaluate(()=>document.getElementById('chat').remove());
   await page.waitForFunction(()=>[...document.querySelectorAll('[data-exp-product-launcher="1"]')].every(h=>Math.round(h.shadowRoot.querySelector('.launcher,[data-exp-part="launcher"]').getBoundingClientRect().bottom)===innerHeight-12),null,{timeout:3000}).catch(()=>{});
@@ -54,14 +54,14 @@ test('the launcher group moves clear of a fixed site control, keeps its spacing,
 test('header controls under a group placed at the top push it below them',async t=>{
   const page=await open(t,'<header style="height:60px;display:flex;justify-content:flex-end;gap:4px;padding:6px 40px 0 0;box-sizing:border-box"><a href="#a" id="mine" style="display:block;width:80px;height:40px">My account</a><button style="width:40px;height:40px">Alerts</button><a href="#c" style="display:block;width:40px;height:40px">Cart</a></header><main style="height:3000px">Shop</main>',{delta:-2000});
   const boxes=await launchers(page);
-  assert.ok(boxes.every(b=>b.top>=46+8),'every launcher sits below the header controls: '+JSON.stringify(boxes));
+  assert.ok(boxes.every(b=>b.top>=46+8-0.125),'every launcher sits below the header controls: '+JSON.stringify(boxes));
   assert.ok(boxes.every(b=>b.top<=46+8+8),'and no further than needed: '+JSON.stringify(boxes));
 });
 
 test('a chat button that appears after load moves the group once it is there',async t=>{
   const page=await open(t,'<main style="height:3000px">Shop</main>');
   await page.evaluate(()=>document.body.insertAdjacentHTML('beforeend','<button id="chat" style="position:fixed;right:47px;bottom:32px;width:60px;height:60px">Chat</button>'));
-  await page.waitForFunction(()=>{const chat=document.getElementById('chat').getBoundingClientRect();return [...document.querySelectorAll('[data-exp-product-launcher="1"]')].every(h=>h.shadowRoot.querySelector('.launcher,[data-exp-part="launcher"]').getBoundingClientRect().bottom<=chat.top-8);},null,{timeout:3000});
+  await page.waitForFunction(()=>{const chat=document.getElementById('chat').getBoundingClientRect();return [...document.querySelectorAll('[data-exp-product-launcher="1"]')].every(h=>h.shadowRoot.querySelector('.launcher,[data-exp-part="launcher"]').getBoundingClientRect().bottom<=chat.top-8+0.125);},null,{timeout:3000});
 });
 
 // Allbirds' "Shop Deals" agent, measured 2026-10-14: a fixed role=button inside the open shadow root of a static host.
@@ -99,7 +99,7 @@ const APP_BAR='<div style="position:absolute;inset:0;display:flex;flex-direction
 test('a button outside the scrolling content of a page that never scrolls stays put, so the launchers move clear of it',async t=>{
   const page=await open(t,APP_BAR);
   const join=await box(page,'#join'),boxes=await launchers(page);
-  for(const launcher of boxes)assert.ok(gap(launcher,join)>=8,`${launcher.id} keeps 8px clear of Sign Up: ${JSON.stringify({launcher,join})}`);
+  for(const launcher of boxes)assert.ok(gap(launcher,join)>=8-0.125,`${launcher.id} keeps 8px clear of Sign Up: ${JSON.stringify({launcher,join})}`);
   // The stream card scrolls inside the feed, which is narrower than the window: it is content, not something to avoid.
   assert.ok(boxes.every(b=>b.bottom>=join.top-16),'the group moves only as far as Sign Up needs: '+JSON.stringify({boxes,join}));
 });
@@ -113,7 +113,7 @@ test('a hidden chat button that is later shown moves the group once it is visibl
   const page=await open(t,'<main style="height:3000px">Shop</main><button id="chat" style="display:none;position:fixed;right:47px;bottom:32px;width:60px;height:60px">Chat</button>');
   assert.ok((await launchers(page)).every(b=>Math.round(b.bottom)===885-12),'nothing to avoid while it is hidden');
   await page.evaluate(()=>{document.getElementById('chat').style.display='block';});
-  await page.waitForFunction(()=>{const chat=document.getElementById('chat').getBoundingClientRect();return [...document.querySelectorAll('[data-exp-product-launcher="1"]')].every(h=>h.shadowRoot.querySelector('.launcher,[data-exp-part="launcher"]').getBoundingClientRect().bottom<=chat.top-8);},null,{timeout:1500});
+  await page.waitForFunction(()=>{const chat=document.getElementById('chat').getBoundingClientRect();return [...document.querySelectorAll('[data-exp-product-launcher="1"]')].every(h=>h.shadowRoot.querySelector('.launcher,[data-exp-part="launcher"]').getBoundingClientRect().bottom<=chat.top-8+0.125);},null,{timeout:1500});
 });
 
 // An infinite feed scrolls and changes for as long as the reader scrolls. Each site-control check hit-tests a grid
@@ -136,7 +136,7 @@ test('a feed that keeps scrolling and changing is re-checked rarely, and a chat 
     return window.__hitTests;
   });
   const chat=await box(page,'#chat');
-  assert.ok((await launchers(page)).every(b=>b.bottom<=chat.top-8),'the chat button that appeared while scrolling is avoided before scrolling stops');
+  assert.ok((await launchers(page)).every(b=>b.bottom<=chat.top-8+0.125),'the chat button that appeared while scrolling is avoided before scrolling stops');
   // Today a check samples about 160 points; ten checks in 5s was 1,620 calls. Three checks is the most this allows.
   assert.ok(calls<=600,`${calls} hit tests in 5s of scrolling`);
 });

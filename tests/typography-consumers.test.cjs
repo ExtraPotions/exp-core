@@ -2,7 +2,7 @@
 // WARD starts only on its listed stores and on pages carrying Shopify's storefront marker, so suite fixtures carry it.
 // Exercise the installed artifacts together, including inherited small text.
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');const{chromium}=require('playwright');
-const consumers=require('../scripts/consumer-roots.cjs').resolveConsumerRoots();const products=[['Dropper','dropper.user.js','tdh-root'],['SHIFT','shift.user.js','exp-shift-root'],['PRISMA','prisma.user.js','exp-prisma-root'],['WARD','ward.user.js','exp-ward-root']];
+const consumers=require('../scripts/consumer-roots.cjs').resolveConsumerRoots();const products=[['Dropper','dropper.user.js','tdh-root'],['PRISMA','prisma.user.js','exp-prisma-root'],['WARD','ward.user.js','exp-ward-root']];
 const suiteOptions=consumers.options();
 for (const width of [360,1920]) {
   test(`installed menus align controls and preserve typography across sizes at ${width}px`, suiteOptions, async t=>{
@@ -71,15 +71,15 @@ for (const viewport of [{width:1920,height:1080},{width:390,height:700}]) {
         root.querySelector('[data-exp-part="launcher"]').click();
         const viewing=[...root.querySelectorAll('summary')].find(n=>n.textContent.trim()==='Advanced');
         if(viewing)viewing.parentElement.open=true;
-        const button=root.querySelector('.skip-streamer-chip');
+        const button=root.querySelector('#tdh-skip-streamer');
         button.disabled=false;
         button.classList.add('is-armed');
         button.querySelector('.skip-label').textContent='Confirm';
         const countdown=button.querySelector('.skip-countdown');
         countdown.hidden=false; countdown.textContent='3s';
-        return [...button.querySelectorAll('.skip-label,.skip-countdown')].map(n=>({text:n.textContent,size:parseFloat(getComputedStyle(n).fontSize),fits:n.scrollWidth<=n.clientWidth}));
+        return [...button.querySelectorAll('.skip-label,.skip-countdown')].filter(n=>getComputedStyle(n).display!=='none').map(n=>({text:n.textContent,size:parseFloat(getComputedStyle(n).fontSize),fits:n.scrollWidth<=n.clientWidth}));
       },stacked);
-      assert.ok(facts.every(f=>f.size>=11&&f.fits),JSON.stringify({stacked,facts}));
+      assert.ok(facts.length>0&&facts.every(f=>f.size>=11&&f.fits),JSON.stringify({stacked,facts}));
     }
   });
 }
