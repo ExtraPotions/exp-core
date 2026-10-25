@@ -33,7 +33,7 @@ function validateConfig(config) {
   const files = new Set();
   config.shots.forEach((shot, index) => {
     const at = `shots[${index}]`;
-    if (!shot || typeof shot.file !== 'string' || !/^[\w.-]+\.png$/.test(shot.file)) fail(`${at}.file must be a .png file name`);
+    if (!shot || typeof shot.file !== 'string' || !/^[\w.-]+\.(png|gif)$/.test(shot.file)) fail(`${at}.file must be a .png or .gif file name`);
     if (files.has(shot.file)) fail(`${at}.file "${shot.file}" is repeated`);
     files.add(shot.file);
     if (typeof shot.section !== 'string' || !shot.section) fail(`${at}.section is required`);
@@ -84,6 +84,10 @@ function gmInit(storage) {
 
 // Playwright's own Chromium when installed, otherwise an installed Chrome or Edge.
 async function launchBrowser(chromium) {
+  const shell = 'C:/Users/OneDareAtHome/AppData/Local/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-win64/chrome-headless-shell.exe';
+  if (process.platform === 'win32' && fs.existsSync(shell)) {
+    return chromium.launch({ executablePath: shell });
+  }
   try {
     return await chromium.launch();
   } catch (error) {
@@ -147,6 +151,86 @@ async function openView(host, shot) {
   }
 }
 
+async function captureWalkthroughGif(page, host, shot, outputFile) {
+  const dock = host.locator('[data-exp-part="dock"], [role="dialog"]').first();
+  await dock.waitFor({ state: 'visible' });
+
+  const sectionTabs = host.locator('[data-exp-section-tabs] [role="tab"]');
+  const tabCount = await sectionTabs.count();
+  let tabNames = [];
+  if (tabCount > 0) {
+    for (let i = 0; i < tabCount; i++) {
+      tabNames.push((await sectionTabs.nth(i).textContent()).trim());
+    }
+  } else if (Array.isArray(shot.sections) && shot.sections.length > 0) {
+    tabNames = shot.sections;
+  } else {
+    tabNames = [shot.section || 'Main'];
+  }
+
+  // Pre-measure max height to eliminate jitter
+  let maxHeight = 0;
+  for (const name of tabNames) {
+    if (tabCount > 0) {
+      await sectionTabs.filter({ hasText: new RegExp(`^${name}$`) }).first().click();
+    } else {
+      await openView(host, { section: name });
+    }
+    if (shot.beforeTab) await shot.beforeTab(page, host, name);
+    else if (shot.before) await shot.before(page, host);
+    await page.waitForTimeout(100);
+    const box = await dock.boundingBox();
+    if (box && box.height > maxHeight) maxHeight = Math.ceil(box.height);
+  }
+
+  await dock.evaluate((el, h) => { el.style.minHeight = `${h}px`; }, maxHeight);
+
+  const framesDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ep-gif-frames-'));
+  try {
+    let frameIdx = 0;
+    const fps = 4;
+    const pauseSeconds = 1.5;
+    const framesPerTab = Math.round(fps * pauseSeconds); // 6 frames
+
+    for (const name of tabNames) {
+      if (tabCount > 0) {
+        await sectionTabs.filter({ hasText: new RegExp(`^${name}$`) }).first().click();
+      } else {
+        await openView(host, { section: name });
+      }
+      if (shot.beforeTab) await shot.beforeTab(page, host, name);
+      else if (shot.before) await shot.before(page, host);
+      await page.waitForTimeout(200);
+
+      await host.evaluate(node => {
+        for (const toast of node.shadowRoot?.querySelectorAll('.toast') || []) toast.hidden = true;
+      });
+
+      const frameBuf = await dock.screenshot();
+      for (let f = 0; f < framesPerTab; f++) {
+        const framePath = path.join(framesDir, `frame_${String(frameIdx++).padStart(4, '0')}.png`);
+        fs.writeFileSync(framePath, frameBuf);
+      }
+    }
+
+    fs.mkdirSync(path.dirname(outputFile), { recursive: true });
+
+    const ffmpegCmd = [
+      '-y',
+      '-framerate', String(fps),
+      '-i', path.join(framesDir, 'frame_%04d.png'),
+      '-vf', 'split[s0][s1];[s0]palettegen=stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=3',
+      outputFile
+    ];
+    const res = spawnSync('ffmpeg', ffmpegCmd, { encoding: 'utf8' });
+    if (res.status !== 0) {
+      throw new Error(`ffmpeg failed: ${res.stderr || res.stdout}`);
+    }
+  } finally {
+    fs.rmSync(framesDir, { recursive: true, force: true });
+  }
+}
+
 async function captureProduct({ name, root, browser, build = true }) {
   if (!fs.existsSync(root)) throw new Error(`product folder not found: ${root}`);
   const configPath = path.join(root, 'docs', 'screenshots.config.cjs');
@@ -182,15 +266,19 @@ async function captureProduct({ name, root, browser, build = true }) {
     for (const shot of config.shots) {
       // Each shot uses its own window size, or the shot list's when it has none.
       await page.setViewportSize(shot.viewport || config.viewport);
-      await openView(host, shot);
-      await page.mouse.move(0, 0);
-      await page.waitForTimeout(300);
-      if (shot.before) await shot.before(page, host);
-      await page.mouse.move(0, 0);
-      await host.evaluate(node => { for (const toast of node.shadowRoot?.querySelectorAll('.toast') || []) toast.hidden = true; });
       const file = path.join(work, shot.file);
-      if (shot.include === 'page') await page.screenshot({ path: file });
-      else await host.locator('[data-exp-part="dock"]').screenshot({ path: file });
+      if (shot.file.endsWith('.gif')) {
+        await captureWalkthroughGif(page, host, shot, file);
+      } else {
+        await openView(host, shot);
+        await page.mouse.move(0, 0);
+        await page.waitForTimeout(300);
+        if (shot.before) await shot.before(page, host);
+        await page.mouse.move(0, 0);
+        await host.evaluate(node => { for (const toast of node.shadowRoot?.querySelectorAll('.toast') || []) toast.hidden = true; });
+        if (shot.include === 'page') await page.screenshot({ path: file });
+        else await host.locator('[data-exp-part="dock"]').screenshot({ path: file });
+      }
     }
 
     const files = config.shots.map(shot => shot.file);
@@ -199,7 +287,7 @@ async function captureProduct({ name, root, browser, build = true }) {
     fs.mkdirSync(output, { recursive: true });
     for (const file of files) fs.copyFileSync(path.join(work, file), path.join(output, file));
     const listed = new Set(files);
-    return { count: files.length, unlisted: fs.readdirSync(output).filter(file => file.endsWith('.png') && !listed.has(file)).sort() };
+    return { count: files.length, unlisted: fs.readdirSync(output).filter(file => (file.endsWith('.png') || file.endsWith('.gif')) && !listed.has(file)).sort() };
   } finally {
     try {
       await context?.close();
@@ -252,8 +340,19 @@ async function main(argv = process.argv.slice(2)) {
   return failed ? 1 : 0;
 }
 
-module.exports = { MIN_BYTES, validateConfig, classifyRequest, checkImages, parseArgs, launchBrowser, captureProduct, main };
-
 if (require.main === module) {
-  main().then(code => { process.exitCode = code; }, error => { console.error(error); process.exitCode = 1; });
+  main().then(code => { process.exitCode = code; });
 }
+
+module.exports = {
+  validateConfig,
+  classifyRequest,
+  checkImages,
+  parseArgs,
+  launchBrowser,
+  openView,
+  captureWalkthroughGif,
+  captureProduct,
+  main,
+  MIN_BYTES,
+};

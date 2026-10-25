@@ -27,11 +27,13 @@ test('each required field is enforced by name', () => {
   }
 });
 
-test('shot files must be unique .png names', () => {
+test('shot files must be unique .png or .gif names', () => {
   const duplicate = valid(); duplicate.shots[1].file = 'one.png';
   assert.throws(() => validateConfig(duplicate), /shots\[1\]\.file "one\.png" is repeated/);
-  const notPng = valid(); notPng.shots[0].file = 'one.jpg';
-  assert.throws(() => validateConfig(notPng), /shots\[0\]\.file must be a \.png file name/);
+  const notSupported = valid(); notSupported.shots[0].file = 'one.jpg';
+  assert.throws(() => validateConfig(notSupported), /shots\[0\]\.file must be a \.png or \.gif file name/);
+  const withGif = valid(); withGif.shots[0].file = 'one.gif';
+  assert.doesNotThrow(() => validateConfig(withGif));
 });
 
 test('shot options are type-checked', () => {

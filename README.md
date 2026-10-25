@@ -35,10 +35,10 @@ Open the launcher to see every product running on the page, then choose one to o
 
 <table>
   <tr>
-    <td width="25%" valign="top" align="center"><img src="https://raw.githubusercontent.com/ExtraPotions/Dropper/main/docs/screenshots/drops-menu.png" width="200" alt="Dropper menu built on Core"><br><strong>Dropper</strong></td>
-    <td width="25%" valign="top" align="center"><img src="https://raw.githubusercontent.com/ExtraPotions/PRISMA/main/docs/screenshots/appearance.png" width="200" alt="PRISMA menu built on Core"><br><strong>PRISMA</strong></td>
-    <td width="25%" valign="top" align="center"><img src="https://raw.githubusercontent.com/ExtraPotions/WARD/main/docs/screenshots/protection.png" width="200" alt="WARD menu built on Core"><br><strong>WARD</strong></td>
-    <td width="25%" valign="top" align="center"><img src="https://raw.githubusercontent.com/ExtraPotions/Thread/main/docs/screenshots/gem-off.png" width="200" alt="Thread menu built on Core"><br><strong>Thread</strong></td>
+    <td width="25%" valign="top" align="center"><img src="https://raw.githubusercontent.com/ExtraPotions/Dropper/main/docs/screenshots/drops-menu.gif" width="200" alt="Dropper menu built on Core"><br><strong>Dropper</strong></td>
+    <td width="25%" valign="top" align="center"><img src="https://raw.githubusercontent.com/ExtraPotions/PRISMA/main/docs/screenshots/appearance.gif" width="200" alt="PRISMA menu built on Core"><br><strong>PRISMA</strong></td>
+    <td width="25%" valign="top" align="center"><img src="https://raw.githubusercontent.com/ExtraPotions/WARD/main/docs/screenshots/protection.gif" width="200" alt="WARD menu built on Core"><br><strong>WARD</strong></td>
+    <td width="25%" valign="top" align="center"><img src="https://raw.githubusercontent.com/ExtraPotions/Thread/main/docs/screenshots/menu-look-ipad.gif" width="200" alt="Thread menu built on Core"><br><strong>Thread</strong></td>
   </tr>
 </table>
 
