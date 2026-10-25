@@ -550,7 +550,8 @@ function createProductLifecycle(shared) {
 
   function focusMenuSurface(surface) { if (!(surface instanceof HTMLElement)) return false; if (!surface.hasAttribute('tabindex')) surface.setAttribute('tabindex', '-1'); surface.style.outline='none'; surface.focus({ preventScroll: true }); return true; }
 
-  addEventListener('pagehide', () => { for (const cleanup of cleanups) { try { cleanup(); } catch {} } }, { once: true });
+  // A cached document keeps its JS/DOM and resumes these same registrations on return.
+  addEventListener('pagehide', event => { if(event.persisted)return;for (const cleanup of [...cleanups]) { try { cleanup(); } catch {} } });
   return Object.freeze({
     VERSION, PROTOCOL, register, createScheduler, onNavigation, registerLauncher, announce, negotiate, safeError,
     diagnosticSnapshot, diagnostics: diagnosticSnapshot, focusMenuSurface, injectStyle,

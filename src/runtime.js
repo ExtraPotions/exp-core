@@ -481,23 +481,38 @@ const ExtraPotionsCore = (() => {
     return `${SUITE_SITE_PAUSE_PREFIX}${String(hostname || 'local-document').trim().toLowerCase()}`;
   }
 
+  // A DOM marker shares a failed persistence write across isolated Core copies on this page.
+  function suitePauseFallback(hostname = location.hostname) {
+    return [...document.querySelectorAll('meta[data-exp-suite-pause-fallback]')].find(node=>node.dataset.expSuitePauseFallback===suiteSiteKey(hostname));
+  }
+  function suitePauseValue(hostname = location.hostname) {
+    const fallback=suitePauseFallback(hostname);
+    if(fallback)return Number(fallback.dataset.until)||0;
+    try{return Number(localStorage.getItem(suiteSiteKey(hostname)))||0;}catch{return 0;}
+  }
+  function suiteSitePausePersisted(hostname = location.hostname) {return !suitePauseFallback(hostname);}
   function suiteSitePaused(hostname = location.hostname) {
-    try { const value=Number(localStorage.getItem(suiteSiteKey(hostname))||0);return value===1||value>Date.now(); } catch { return false; }
+    const value=suitePauseValue(hostname);return value===1||value>Date.now();
   }
 
   function setSuiteSitePaused(paused, hostname = location.hostname, minutes = 0) {
     const host = String(hostname || 'local-document').trim().toLowerCase();
     const value = Boolean(paused);
+    const until=value?(Number(minutes)>0?Date.now()+Math.min(1440,Number(minutes))*60000:1):0;
+    const fallback=suitePauseFallback(host)||document.createElement('meta');
+    fallback.dataset.expOwned='1';fallback.dataset.expSuitePauseFallback=suiteSiteKey(host);fallback.dataset.until=String(until);
+    if(!fallback.isConnected)(document.head||document.documentElement).append(fallback);
     try {
-      if (value) localStorage.setItem(suiteSiteKey(host),String(Number(minutes)>0?Date.now()+Math.min(1440,Number(minutes))*60000:1));
+      if (value) localStorage.setItem(suiteSiteKey(host),String(until));
       else localStorage.removeItem(suiteSiteKey(host));
+      if((Number(localStorage.getItem(suiteSiteKey(host)))||0)===until)fallback.remove();
     } catch {}
     emitSuiteEvent('core', 'suite.site-control', { hostname: host, paused: value });
     scheduleSuitePauseExpiry();
     return value;
   }
-  function scheduleSuitePauseExpiry(){clearTimeout(suitePauseTimer);let until=0;try{until=Number(localStorage.getItem(suiteSiteKey())||0);}catch{}if(until>1){suitePauseTimer=setTimeout(()=>{let current=0;try{current=Number(localStorage.getItem(suiteSiteKey())||0);}catch{}if(current===until)setSuiteSitePaused(false);else scheduleSuitePauseExpiry();},Math.max(0,until-Date.now()));}}
-  addEventListener('storage',event=>{if(event.key!==suiteSiteKey())return;emitSuiteEvent('core','suite.site-control',{hostname:String(location.hostname||'local-document').toLowerCase(),paused:suiteSitePaused()});scheduleSuitePauseExpiry();});
+  function scheduleSuitePauseExpiry(){clearTimeout(suitePauseTimer);const until=suitePauseValue();if(until>1){suitePauseTimer=setTimeout(()=>{if(suitePauseValue()===until)setSuiteSitePaused(false);else scheduleSuitePauseExpiry();},Math.max(0,until-Date.now()));}}
+  addEventListener('storage',event=>{if(event.key!==suiteSiteKey())return;suitePauseFallback()?.remove();emitSuiteEvent('core','suite.site-control',{hostname:String(location.hostname||'local-document').toLowerCase(),paused:suiteSitePaused()});scheduleSuitePauseExpiry();});
   scheduleSuitePauseExpiry();
 
   function stableSuiteValue(value) {
@@ -1311,6 +1326,9 @@ const ExtraPotionsCore = (() => {
     panel.style.width = Math.max(0, Math.min(preferredWidth, innerWidth - 24)) + 'px';
     const width = panel.offsetWidth || preferredWidth;
     Object.assign(panel.style, { left:'auto', bottom:'auto' });
+    // Shared chrome has an !important viewport cap. The available space beside
+    // the launcher can be smaller, so placement must own the winning height limit.
+    const limitHeight = height => panel.style.setProperty('max-height', Math.max(0, height) + 'px', 'important');
     const finish = (side, right, top, h) => {
       top = Math.round(Math.max(8, Math.min(innerHeight - h - 8, top)));
       Object.assign(panel.style, { right:Math.round(right)+'px', top:top+'px' });
@@ -1328,7 +1346,7 @@ const ExtraPotionsCore = (() => {
       const left = fitsBeside ? beside : Math.max(8, Math.min(viewport - w - 8, hub.left));
       const top = fitsBeside ? (slot.bottom > hub.top + hub.size ? slot.bottom + 8 : hub.top) : slot.bottom + 8;
       const room = innerHeight - top - 8;
-      panel.style.maxHeight = Math.max(0, room < 160 ? innerHeight - 16 : room) + 'px';
+      limitHeight(room < 160 ? innerHeight - 16 : room);
       host.dataset.openDirection = 'down';
       return finish(room < 160 ? 'rail-viewport' : fitsBeside ? 'rail-beside' : 'rail-below', viewport - left - w, room < 160 ? 8 : top, panel.offsetHeight);
     }
@@ -1338,8 +1356,8 @@ const ExtraPotionsCore = (() => {
       const edge=blocks?(slot.down?Math.max(slot.bottom,reserved.bottom):Math.min(slot.top,reserved.top)):(slot.down?slot.bottom:slot.top);
       const room = slot.down ? innerHeight - edge - 16 : edge - 16;
       // In very short windows the open menu takes the viewport; Close/Escape restores the card and flyout.
-      if(room<160){panel.style.maxHeight=Math.max(0,innerHeight-16)+'px';return finish('viewport',8,8,panel.offsetHeight);}
-      panel.style.maxHeight = Math.max(0, room) + 'px';
+      if(room<160){limitHeight(innerHeight-16);return finish('viewport',8,8,panel.offsetHeight);}
+      limitHeight(room);
       const h = panel.offsetHeight;
       host.dataset.openDirection = slot.down ? 'down' : 'up';
       return finish('flyout', 8, slot.down ? edge + 8 : edge - 8 - h, h);
@@ -1349,14 +1367,14 @@ const ExtraPotionsCore = (() => {
       const edge=anchorTop?Math.max(reserved.bottom,...blockers.map(box=>box.bottom)):Math.min(reserved.top,...blockers.map(box=>box.top));
       const room = anchorTop ? innerHeight - edge - 16 : edge - 16;
       if (room >= 200 && reserved.right - 8 >= width) {
-        panel.style.maxHeight = room + 'px';
+        limitHeight(room);
         const h = panel.offsetHeight;
         host.dataset.openDirection = anchorTop ? 'down' : 'up';
         return finish('reserved', innerWidth - reserved.right, anchorTop ? edge + 8 : edge - 8 - h, h);
       }
     }
     if (gridLeft - 16 >= width) {
-      panel.style.maxHeight = Math.max(0, innerHeight - 16) + 'px';
+      limitHeight(innerHeight - 16);
       const h = panel.offsetHeight;
       host.dataset.openDirection = 'down';
       return finish('beside', innerWidth - gridLeft + 8, anchorTop ? own.top : own.bottom - h, h);
@@ -1366,7 +1384,7 @@ const ExtraPotionsCore = (() => {
       .reduce((all, box) => ({ top:Math.min(all.top, box.top), bottom:Math.max(all.bottom, box.bottom) }), { top:own.top, bottom:own.bottom });
     const below = innerHeight - band.bottom - 16, above = band.top - 16;
     const up = anchorTop ? below < 160 && above > below : !(above < 160 && below > above);
-    panel.style.maxHeight = Math.max(0, up ? above : below) + 'px';
+    limitHeight(up ? above : below);
     const h = panel.offsetHeight;
     host.dataset.openDirection = up ? 'up' : 'down';
     return finish('stacked', 12, up ? band.top - h - 8 : band.bottom + 8, h);
@@ -2799,7 +2817,7 @@ const ExtraPotionsCore = (() => {
     return Object.freeze({ lifecycle, diagnostics, updates });
   }
 
-  const api = Object.freeze({...ExtraPotionsTools,setMenuHelp:ExpMenuHelp.setMenuHelp,...ExpMenuPreferences,...ExpSiteColors,normalizeHealth,createHealthControls,createRecoveryGuard,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createMenuController,createProduct,menuTemplate:ExpLeanMenu.template,setMenuStatus:ExpLeanMenu.setMenuStatus,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,setLauncherUpdate,setLauncherProgress,bindLauncherDrag,launcherPlacement,placeMenu,placeNotice,resetLauncherGrid,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,isOwnedSheet,menuWidth,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,publishMenuPalette,createFloatingNotice,createMenuNotice,takeNoticeTurn,releaseNoticeTurn,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,isQuietUpgrade,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,suiteSitePaused,setSuiteSitePaused,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePresentationState,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,createCompatibilityControls:createSuiteCompatibilityControls,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,mountSubmenuTabs:ExpMenuArrangement.mountTabs,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
+  const api = Object.freeze({...ExtraPotionsTools,setMenuHelp:ExpMenuHelp.setMenuHelp,...ExpMenuPreferences,...ExpSiteColors,normalizeHealth,createHealthControls,createRecoveryGuard,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createMenuController,createProduct,menuTemplate:ExpLeanMenu.template,setMenuStatus:ExpLeanMenu.setMenuStatus,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,setLauncherUpdate,setLauncherProgress,bindLauncherDrag,launcherPlacement,placeMenu,placeNotice,resetLauncherGrid,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,isOwnedSheet,menuWidth,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,publishMenuPalette,createFloatingNotice,createMenuNotice,takeNoticeTurn,releaseNoticeTurn,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,isQuietUpgrade,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,suiteSitePaused,suiteSitePausePersisted,setSuiteSitePaused,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePresentationState,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,createCompatibilityControls:createSuiteCompatibilityControls,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,mountSubmenuTabs:ExpMenuArrangement.mountTabs,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
   return api;
 })();
 

@@ -1,3 +1,9 @@
+## 3.10.4 — 2026-10-25
+
+- Fit dropdowns and entry fields to their contents while retaining full native choices.
+- Keep menus clear of launchers at the original three widths.
+- Keep suite pause effective when page storage fails and retain controls across cached-page returns.
+
 ## 3.10.3 — 2026-10-24
 
 - Use a compact sidebar with the original Standard, Compact and Mini widths.

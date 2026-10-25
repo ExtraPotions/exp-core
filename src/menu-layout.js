@@ -39,7 +39,7 @@ const ExpMenuLayout = (() => {
     ${C} :is(.copy,.row-copy,.fl-switch-text,.setting-row>span,.mini-row>span){flex:1;min-width:0!important}
     ${C} :is(.label,.setting-label,.fl-switch-text,.copy>strong,.row-copy>strong,.mini-row>span,.row>span){font-size:13px!important;line-height:1.4!important;font-weight:400!important;white-space:normal!important;overflow-wrap:break-word!important}
     ${C} :is(.copy>.help,.row-copy>small,.row-help,.setting-help){display:none!important}
-    ${C} :is(.row,.mini-row,.setting-row):has(>.exp-native-popup),${C} :is(.row,.mini-row,.setting-row):has(>input:not([type=range])){display:grid!important;grid-template-columns:minmax(0,1fr) minmax(80px,40%)!important;gap:4px!important}
+    ${C} :is(.row,.mini-row,.setting-row):has(>.exp-native-popup),${C} :is(.row,.mini-row,.setting-row):has(>input:not([type=range])){display:grid!important;grid-template-columns:minmax(0,1fr) fit-content(58%)!important;gap:4px!important}
     ${C} :is(button,input,select,textarea){font-family:inherit!important;font-size:13px!important;line-height:1.4!important;max-width:100%!important;min-width:0!important;color:var(--theme-text)!important;box-shadow:none!important}
     ${C} button:not([role=switch]),${C} :is(input:not([type=range]),textarea){min-height:26px!important;height:auto!important;margin:0!important;padding:2px 8px!important;border:1px solid color-mix(in srgb,var(--theme-text) 23%,transparent)!important;border-radius:6px!important;background:color-mix(in srgb,var(--theme-text) 7%,var(--theme-panel))!important;font-weight:400!important;white-space:normal!important;text-align:center!important}
     ${C} :is(input:not([type=range]),textarea){width:100%!important;text-align:start!important}
@@ -51,7 +51,7 @@ const ExpMenuLayout = (() => {
     ${C} button[role=switch]>span{display:none!important}
     ${C} .exp-native-popup{position:relative!important;display:block!important;min-width:0!important;width:100%!important;max-width:100%!important;border-radius:6px!important;flex:none!important}
     ${C} .exp-native-popup>select{position:absolute!important;inset:0!important;opacity:0!important;width:100%!important;height:100%!important;min-height:0!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:0!important;z-index:1;cursor:pointer}
-    ${C} .exp-select-face{position:relative;display:block;align-content:center;min-height:26px;width:100%;padding:2px 22px 2px 4px;font-size:13px!important;line-height:1.4!important;white-space:normal!important;overflow-wrap:anywhere!important;color:var(--theme-text)!important;pointer-events:none}
+    ${C} .exp-select-face{position:relative;display:block;align-content:center;min-height:26px;width:auto;padding:2px 22px 2px 4px;font-size:13px!important;line-height:1.4!important;white-space:normal!important;overflow-wrap:anywhere!important;color:var(--theme-text)!important;pointer-events:none}
     ${C} .exp-select-face::after{content:'';position:absolute;right:6px;top:calc(50% - 5px);width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg)}
     ${C} .exp-native-popup:focus-within{outline:2px solid var(--theme-focus,var(--theme-accent2));outline-offset:1px}
     ${C} .exp-native-popup:has(select:disabled){opacity:.45}
@@ -68,7 +68,13 @@ const ExpMenuLayout = (() => {
     ${C} :is(h2,h3){font-size:13px!important;line-height:1.4!important;margin:0!important;padding:8px 8px 2px!important;color:var(--theme-text)!important}
     ${C} :is(p,.empty,.note){font-size:13px!important;line-height:1.5!important;white-space:normal!important;overflow-wrap:anywhere!important;margin:6px 0!important;padding-inline:8px!important;color:var(--theme-text)!important}
     ${C} :is(form,.identity,.exp-health){padding:8px!important;gap:4px!important}
-    ${C} form label:has(>.exp-native-popup){display:grid!important;grid-template-columns:minmax(0,1fr) minmax(56px,42%)!important;gap:4px!important;align-items:center!important}
+    ${C} form label:has(>.exp-native-popup){display:grid!important;grid-template-columns:minmax(0,1fr) fit-content(58%)!important;gap:4px!important;align-items:center!important}
+    ${C} :is(.row,.mini-row,.setting-row):has(>input[type=number]){grid-template-columns:minmax(0,1fr) 64px!important}
+    ${C} :is(.row,.mini-row,.setting-row):has(>input:not([type=number],[type=range],[type=time],[type=color],[hidden])){grid-template-columns:minmax(0,1fr)!important}
+    ${C} .action-stack{flex-direction:column!important;align-items:stretch!important}
+    ${C} .action-stack>*{width:100%!important}
+    ${C} .exp-native-popup:has(select[data-exp-full-width]){width:100%!important}
+    ${C} .queue-switches{display:block!important}
     ${C} [data-exp-system-item=support] .action-pair{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:4px!important;padding:4px 0!important}
     ${C} [data-exp-system-item=support] .action-pair>button{padding:2px 4px!important;overflow-wrap:normal!important;word-break:normal!important}
     ${C} [data-exp-system-report]{display:block!important;width:100%!important;text-align:center!important;justify-content:center!important}
@@ -95,7 +101,7 @@ const ExpMenuLayout = (() => {
     // Dropper's original progress card contributes to chrome height instead of being moved or hidden.
     function measure(){frame=0;if(!panel.getClientRects().length)return;const workspace=panel.querySelector('.exp-menu-workspace');if(!workspace)return;const tabs=[...panel.querySelectorAll('.exp-section-tabs>[role=tab]')],natural=tabs.reduce((h,n)=>h+n.getBoundingClientRect().height,8);const children=[...panel.children].filter(n=>n.getClientRects().length&&!['absolute','fixed'].includes(view.getComputedStyle(n).position));const chrome=children.filter(n=>!n.contains(workspace)).reduce((h,n)=>{const s=view.getComputedStyle(n);return h+n.getBoundingClientRect().height+(parseFloat(s.marginTop)||0)+(parseFloat(s.marginBottom)||0);},0)+(parseFloat(view.getComputedStyle(panel).rowGap)||0)*Math.max(0,children.length-1);const value=Math.min(natural,Math.max(0,view.innerHeight-chrome-18))+'px';if(panel.style.getPropertyValue('--exp-menu-navigation-height')!==value)panel.style.setProperty('--exp-menu-navigation-height',value);}
     const queueMeasure=()=>{if(!frame)frame=view.requestAnimationFrame(measure);};
-    const updateFace=select=>{const face=wrapped.get(select)?.face;if(face){const text=select.selectedOptions[0]?.textContent||'';if(face.textContent!==text)face.textContent=text;}};
+    const updateFace=select=>{const face=wrapped.get(select)?.face;if(face){const original=select.selectedOptions[0]?.textContent||'',text=({Automatic:'Auto','Follow system':'System','Inherit global':'Global','Original text':'Original','Announce on focus':'On focus','Follow campaign order':'Campaign order','Keep an earning stream':'Keep earning','Manual stream protected':'Manual hold'})[original]||original;if(face.textContent!==text)face.textContent=text;}};
     function decorate(){
       const version=panel.querySelector('[data-exp-part=version],#tdh-header-version'),actions=panel.querySelector('.header-actions');
       if(version&&!/changelog/i.test(version.getAttribute('aria-label')||'')){const name=panel.querySelector('[data-exp-part=title],#tdh-rail-title')?.textContent.trim()||'';version.setAttribute('aria-label',('View '+name+' '+version.textContent.trim()+' Changelog').trim());}

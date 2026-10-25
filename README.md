@@ -9,6 +9,14 @@ exp-core is the shared menu included with every ExtraPotions product. There's no
 [![Code: PolyForm Noncommercial 1.0.0](docs/badges/code.svg)](LICENSE-CODE.md)
 [![Artwork and documentation: CC BY-NC-SA 4.0](docs/badges/assets.svg)](LICENSE-ASSETS.md)
 
+[![Compact controls at Standard, Compact and Mini widths](docs/screenshots/compact-controls-ipad.png)](docs/screenshots/compact-controls-ipad.png)
+
+## Latest changes
+
+- Fit dropdowns and entry fields to their contents while retaining full native choices.
+- Keep menus clear of launchers at the original three widths.
+- Keep suite pause effective when page storage fails and retain controls across cached-page returns.
+
 ## What you get
 
 - **Compact navigation:** each product keeps its own sections and colors, with a sidebar and secondary settings that expand in place.
