@@ -1,3 +1,8 @@
+## 3.10.5 — 2026-10-26
+
+- Restore separate rounded-square outlines around header buttons.
+- Simplify shared-menu documentation and remove unused repository assets.
+
 ## 3.10.4 — 2026-10-25
 
 - Fit dropdowns and entry fields to their contents while retaining full native choices.
