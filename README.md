@@ -17,6 +17,6 @@ See each product’s README for product-only Light, Dark and current-changelog s
 
 ---
 
-[Menu guide](docs/usage.md) · [Development](docs/development.md) · [Changelog](CHANGELOG.md) · [Code license](LICENSE-CODE.md) · [Artwork and documentation license](LICENSE-ASSETS.md)
+[Menu guide](docs/usage.md) · [Changelog](CHANGELOG.md) · [Code license](LICENSE-CODE.md) · [Artwork and documentation license](LICENSE-ASSETS.md)
 
 exp-core is independent and is not affiliated with or endorsed by the websites where it is used. Retired-product compatibility is covered in the [menu guide](docs/usage.md).

@@ -1,7 +1,16 @@
-.DS_Store
-Thumbs.db
-node_modules/
-*Edit conflict*
-*conflicted copy*
-*Name clash*
-test-artifacts/
+# Public distributions only. Development files stay local.
+*
+!/assets/
+!/dist/
+!/docs/
+!/.gitattributes
+!/.gitignore
+!/CHANGELOG.md
+!/LICENSE-ASSETS.md
+!/LICENSE-CODE.md
+!/NOTICE.md
+!/README.md
+!/assets/exp-core-launcher.svg
+!/dist/exp-core.js
+!/dist/manifest.json
+!/docs/usage.md

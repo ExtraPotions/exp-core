@@ -16,14 +16,4 @@ Choose Standard, Compact or Mini in **Look → Menu Size**. Product sections app
 
 **System** shows Working, Waiting, Paused or Needs attention and offers a recovery action when available. Use Show Diagnostics or Copy Diagnostics for troubleshooting, Report a Problem for support, and Reset All Settings only when you want to clear the product’s settings.
 
-## More views
-
-![Shared controls at Standard, Compact and Mini widths](screenshots/compact-controls-ipad.png)
-
-The capture uses sample pages and iPad touch emulation. Individual products maintain their own screenshots and usage guides.
-
-## Maintenance
-
-Core and products are separate repositories. See [development](development.md) for builds, synchronization, tests and explicitly authorized releases, or the [menu template](menu-template.md) for shared controls.
-
 SHIFT is retired. Its repository, releases and settings are preserved, and Core retains compatibility with installed copies. It is excluded from routine maintenance and new installation packs. No other product requires SHIFT.
