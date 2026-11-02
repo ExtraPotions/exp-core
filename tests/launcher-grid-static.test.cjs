@@ -5,8 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const runtimePath = path.join(__dirname, '..', 'src', 'runtime.js');
-const source = fs.readFileSync(runtimePath, 'utf8');
+const source = ['runtime.js', 'runtime-menus.js'].map(file => fs.readFileSync(path.join(__dirname, '..', 'src', file), 'utf8')).join('\n');
 const { chromeContract } = require('../src/chrome-contract.js');
 const suiteContract = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'src', 'suite-contract.json'), 'utf8'));
 

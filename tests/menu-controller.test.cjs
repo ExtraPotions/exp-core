@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const runtime = fs.readFileSync(path.join(__dirname, '../src/runtime.js'), 'utf8');
+const runtime = ['runtime.js', 'runtime-menus.js'].map(file => fs.readFileSync(path.join(__dirname, '../src', file), 'utf8')).join('\n');
 const begin = runtime.indexOf('  function createMenuController(options = {}) {');
 const end = runtime.indexOf('  function create(options) {', begin);
 assert.ok(begin >= 0 && end > begin);

@@ -8,10 +8,10 @@ exp-core is the one implementation of shared behaviour: the launcher and its fly
 
 - **Build.** `npm run build` writes `dist/exp-core.js`. Products never import Core at runtime: each one vendors a released copy in `vendor/exp-core/` (`exp-core.js`, `manifest.json`, `PIN`) and its build bundles it into the single `*.user.js` file.
 - **Suite contract.** `src/suite-contract.json` defines each product's role, priorities, capabilities, state events, menu sections and repository. Products cannot override these at runtime; registration only supplies identity, version and product state.
-- **Launcher.** When two or more products are on a page and every Core copy speaks the flyout protocol, they share one launcher: a hub that opens a row of product tiles. `src/launcher-flyout.js` holds the order (`SUITE_ORDER`) and the site products that lead on their own sites (`SITE_PRODUCTS`: Dropper on Twitch, WARD on retailers). A Core copy without the protocol keeps everyone on the older grid. Sites listed in `SITE_SLOTS` (`src/runtime.js`) give the hub a place in the page; today that is Twitch's top bar. Everywhere else, and when the slot is hidden or too narrow, the hub sits in the bottom-right corner.
+- **Launcher.** When two or more products are on a page and every Core copy speaks the flyout protocol, they share one launcher: a hub that opens a row of product tiles. `src/launcher-flyout.js` holds the order (`SUITE_ORDER`) and the site products that lead on their own sites (`SITE_PRODUCTS`: Dropper on Twitch, WARD on retailers). A Core copy without the protocol keeps everyone on the older grid. Sites listed in `SITE_SLOTS` (`src/runtime-menus.js`) give the hub a place in the page; today that is Twitch's top bar. Everywhere else, and when the slot is hidden or too narrow, the hub sits in the bottom-right corner.
 - **Menus.** Product menus use a compact sidebar over their existing sections, with inline secondary settings and Look/System navigation. Support and Reset live only inside System; donations stay in the header heart. Menu Size is directly in Look (or the Look disclosure in Dropper Settings). System keeps status, diagnostics and recovery. All existing and future products use the [shared menu template](menu-template.md); Dropper retains its separate progress surface. Custom product surfaces use `createMenuController` and take their width from `menuWidth()`.
 - **Placement rules worth knowing before changing geometry:**
-  - Corner positions use the viewport width without the page scrollbar (`viewWidth()` in `src/runtime.js`), not `innerWidth`.
+  - Corner positions use the viewport width without the page scrollbar (`viewWidth()` in `src/runtime-menus.js`), not `innerWidth`.
   - A product marks a surface that notices must not cover with `data-exp-reserved` (Dropper's progress strip and page card). Update and changelog cards are placed clear of reserved surfaces.
 
 ## Toolchain
@@ -93,9 +93,9 @@ These definitions take effect on GitHub only after a separately authorized push.
 A new product touches Core in several places. Work through all of them in one Core change:
 
 - [ ] `src/suite-contract.json`: role, priorities, capabilities, state, menu sections, `repository`, `rootId`.
-- [ ] `src/runtime.js` `SITE_SLOTS`, if the product's site has a better place for the launcher than the corner.
+- [ ] `src/runtime-menus.js` `SITE_SLOTS`, if the product's site has a better place for the launcher than the corner.
 - [ ] `src/launcher-flyout.js`: add the id to `SUITE_ORDER`, and to `SITE_PRODUCTS` if it only runs on its own sites.
-- [ ] `src/runtime.js`: `FLYOUT_ACCENTS` and `FLYOUT_NAMES`.
+- [ ] `src/runtime-menus.js`: `FLYOUT_ACCENTS` and `FLYOUT_NAMES`.
 - [ ] `src/lean-menu.js`: the product accent.
 - [ ] `src/product-tools.js`: `productRepositories`.
 - [ ] `scripts/check-suite-coexistence.cjs`: the injection orders and the expected order.

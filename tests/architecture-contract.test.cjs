@@ -8,6 +8,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const exists = relative => fs.existsSync(path.join(root, relative));
+const runtimeSource = () => read('src/runtime.js') + '\n' + read('src/runtime-menus.js');
 
 test('exp-core owns the shared foundation and no release path extracts from Dropper', () => {
   const pkg = JSON.parse(read('package.json'));
@@ -23,7 +24,7 @@ test('exp-core owns the shared foundation and no release path extracts from Drop
   assert.equal(manifest.source.source, 'ExtraPotions/exp-core');
   assert.equal(manifest.source.architecture, 'core-native');
   assert.equal(manifest.source.sourceVersion, manifest.coreVersion);
-  assert.doesNotMatch(read('src/runtime.js'), /source:\s*['"]Dropper['"]/u);
+  assert.doesNotMatch(runtimeSource(), /source:\s*['"]Dropper['"]/u);
 });
 
 test('legacy Dropper-to-Core generation paths are absent', () => {
@@ -74,14 +75,14 @@ test('visual audit coverage is locked to the suite manifest inventory', () => {
 });
 
 test('Core exposes shared services through the public ExtraPotionsCore API', () => {
-  const runtime = read('src/runtime.js');
+  const runtime = runtimeSource();
   assert.match(runtime, /bindDiagnosticsControls:ExtraPotionsDiagnostics\.bindControls/u);
   assert.match(runtime, /mountMenuArrangement:ExpMenuArrangement\.mount/u);
   assert.match(runtime, /createDiagnosticsReport/u);
 });
 
 test('Core owns shared product-service bootstrap', () => {
-  const runtime = read('src/runtime.js');
+  const runtime = runtimeSource();
   assert.match(runtime, /function createProductServices\(options = \{\}\)/u);
   assert.match(runtime, /const lifecycle = createProductLifecycle\(api\)/u);
   assert.match(runtime, /const diagnostics = Object\.freeze/u);
@@ -103,7 +104,7 @@ test('shared tools and diagnostics do not carry product-specific provenance alia
 
 test('Core foundation is authored against neutral shared surface selectors', () => {
   const foundation = read('src/foundation.js');
-  const runtime = read('src/runtime.js');
+  const runtime = runtimeSource();
   assert.match(foundation, /\[data-exp-part="dock"\]/u);
   assert.match(foundation, /\[data-exp-part="launcher"\]/u);
   assert.match(foundation, /\.exp-core-theme/u);
@@ -118,7 +119,7 @@ test('Core foundation is authored against neutral shared surface selectors', () 
 test('generated manifest carries the canonical suite contract from one source file', () => {
   const contract = JSON.parse(read('src/suite-contract.json'));
   const manifest = JSON.parse(read('dist/manifest.json'));
-  const runtime = read('src/runtime.js');
+  const runtime = runtimeSource();
   const build = read('scripts/build.cjs');
   assert.deepEqual(manifest.suiteContract, contract);
   assert.equal(typeof manifest.files['suite-contract.json'], 'string');
@@ -144,7 +145,7 @@ test('generated manifest carries the canonical suite contract from one source fi
 
 test('suite manifest owns launcher and theme coordination priorities', () => {
   const contract = JSON.parse(read('src/suite-contract.json'));
-  const runtime = read('src/runtime.js');
+  const runtime = runtimeSource();
   assert.deepEqual(
     Object.fromEntries(Object.entries(contract).map(([id, value]) => [id, value.launcherPriority])),
     { thread: 90, dropper: 110, shift: 100, ward: 60, prisma: 40 }

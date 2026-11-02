@@ -58,7 +58,7 @@ for (const viewportWidth of [240, 596, 1361]) {
 
 test('support styling has one Core source and the control owns its stylesheet lifecycle', () => {
   const foundation = fs.readFileSync(path.join(root, 'src/foundation.js'), 'utf8');
-  const runtime = fs.readFileSync(path.join(root, 'src/runtime.js'), 'utf8');
+  const runtime = ['src/runtime.js', 'src/runtime-menus.js'].map(file => fs.readFileSync(path.join(root, file), 'utf8')).join('\n');
   assert.equal(foundation.includes('function supportControlCss()'), true, 'dedicated Core support stylesheet exists');
   assert.equal((foundation.match(/\.support-button svg\s*\{/g) || []).length, 1);
   assert.equal(runtime.includes('style.textContent = CoreFoundation.supportControlCss();'), true);
