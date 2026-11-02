@@ -1,17 +1,17 @@
 'use strict';
 
-// Captures the README picture of the shared launcher: eligible maintained builds on a neutral
+// Captures private diagnostic evidence of the shared launcher: maintained builds on a neutral
 // sample page with a top bar and the launcher open.
-// THREAD's site-specific launcher/menu captures: node ../THREAD/tests/browser.cjs --captures
+// Public product captures: node scripts/capture-screenshots.cjs Dropper PRISMA WARD THREAD
 //   node scripts/capture-launcher-screenshot.cjs
-// Writes docs/screenshots/shared-launcher.png. Build the products first.
+// Writes local-verification/launcher-diagnostics/shared-launcher.png. Build products first.
 
 const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('playwright');
 
 const root = path.resolve(__dirname, '..', '..');
-const out = path.join(__dirname, '..', 'docs', 'screenshots', 'shared-launcher.png');
+const out = path.join(__dirname, '../..', 'local-verification', 'launcher-diagnostics', 'shared-launcher.png');
 const scripts = [['Dropper', 'dropper.user.js'], ['PRISMA', 'prisma.user.js'], ['WARD', 'ward.user.js']]
   .map(([repo, file]) => fs.readFileSync(path.join(root, repo, file), 'utf8'));
 

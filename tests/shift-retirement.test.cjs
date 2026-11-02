@@ -37,7 +37,7 @@ for(const [repo,root,url] of [['Dropper','tdh-root','https://www.twitch.tv/fixtu
  const {openSystem}=require('./helpers/system-navigation.cjs');await openSystem(host,'support');
  for(const name of ['Show Diagnostics','Copy Diagnostics','Reset All Settings'])assert.equal(await dock.getByRole('button',{name,exact:true}).isVisible(),true);
  assert.equal(await page.locator('#exp-shift-root').count(),0);
- assert.deepEqual(await page.evaluate(()=>({settings:GM_getValue('exp:v3:shift:settings'),background:getComputedStyle(document.body).backgroundColor})),{settings:{theme:'blue',retained:'retirement-fixture'},background:'rgb(18, 18, 18)'});
+ assert.deepEqual(await page.evaluate(()=>({settings:GM_getValue('exp:v3:shift:settings'),background:getComputedStyle(document.body).backgroundColor})),{settings:{theme:'blue',retained:'retirement-fixture'},background:repo==='WARD'?'rgb(244, 246, 250)':'rgb(18, 18, 18)'});
  const box=await dock.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=390.5);
  assert.deepEqual(errors,[]);
 });

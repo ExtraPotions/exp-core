@@ -47,6 +47,12 @@ test('shot options are type-checked', () => {
   assert.throws(() => validateConfig(badSetup), /"setup"/);
 });
 
+test('public product captures reject GIFs and webpage images',()=>{
+ const config=valid();config.productOnly=true;config.shots=[{file:'menu.png',section:'Alpha',mode:'light',collapsed:true}];assert.doesNotThrow(()=>validateConfig(config));
+ config.shots[0].include='page';assert.throws(()=>validateConfig(config),/cropped to the product/);delete config.shots[0].include;
+ config.shots[0].file='menu.gif';assert.throws(()=>validateConfig(config),/must be PNGs/);
+});
+
 test('requests: navigation gets the page, own assets are local, everything else is blocked', () => {
   assert.deepEqual(classifyRequest('https://www.amazon.com/dp/x', true, 'WARD'), { type: 'page' });
   assert.deepEqual(classifyRequest('https://raw.githubusercontent.com/ExtraPotions/WARD/main/assets/ward-launcher.svg', false, 'WARD'), { type: 'asset', path: 'assets/ward-launcher.svg' });

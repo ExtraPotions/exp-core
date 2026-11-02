@@ -885,31 +885,8 @@
     registrations.set(host, dispose);
     return dispose;
   }
-  function themes(productTheme) {
-    return Object.freeze([productTheme || CoreFoundation.UI_THEMES.at(-1)].map(t => { const theme = semanticTheme(t); return Object.freeze({ ...theme, vars: Object.fromEntries(tokenNames.map(k => [k, theme[k]])) }); }));
-  }
-  function createThemeSwatches({ container, themes: choices, value, label = 'Menu Theme', onChange = () => {} }) {
-    const root = resolveShadowRoot(container);
-    if (root && !root.querySelector('style[data-exp-theme-swatches]')) {
-      injectStyle(root, '.exp-theme-swatches{display:flex;align-items:center;gap:6px;min-height:28px;flex-wrap:wrap}.exp-theme-swatch{appearance:none;box-sizing:border-box!important;flex:0 0 22px!important;width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;max-width:22px!important;max-height:22px!important;padding:0!important;border:2px solid var(--theme-line,var(--line,#41434d));border-radius:5px!important;cursor:pointer}.exp-theme-swatch:hover,.exp-theme-swatch:focus-visible{outline:2px solid var(--theme-accent,var(--accent,#8b5cf6));outline-offset:2px}.exp-theme-swatch.is-on{border-color:var(--theme-text,var(--text,#fff));box-shadow:0 0 0 2px var(--theme-accent,var(--accent,#8b5cf6))}', { expThemeSwatches: '1' });
-      applyMatteToggleChrome(root);
-    }
-    container.classList.add('exp-theme-swatches'); container.setAttribute('role', 'radiogroup'); container.setAttribute('aria-label', label);
-    const buttons = choices.map(theme => {
-      const button = document.createElement('button'); button.type = 'button'; button.className = 'exp-theme-swatch';
-      for (const property of ['width','height','min-width','min-height','max-width','max-height']) button.style.setProperty(property, '22px', 'important');
-      button.style.setProperty('border-radius', '5px', 'important');
-      button.style.setProperty('padding', '0', 'important');
-      button.style.setProperty('box-sizing', 'border-box', 'important');
-      button.style.setProperty('flex', '0 0 22px', 'important');
-      button.setAttribute('role', 'radio'); button.setAttribute('aria-label', theme.name); button.title = theme.name;
-      button.dataset.theme = button.dataset.swatch = theme.id; button.style.background = theme.swatch;
-      button.addEventListener('click', () => { paint(theme.id); onChange(theme.id); }); container.append(button); return button;
-    });
-    function paint(next) { value = next; buttons.forEach((b,i) => { const on = choices[i].id === value; b.classList.toggle('is-on', on); b.setAttribute('aria-checked', String(on)); b.setAttribute('aria-pressed', String(on)); b.tabIndex = on || !choices.some(t => t.id === value) && i === 0 ? 0 : -1; }); }
-    const keyboard = event => { const current = buttons.indexOf(event.target); if (current < 0 || !['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key)) return; event.preventDefault(); const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (current + (['ArrowRight','ArrowDown'].includes(event.key) ? 1 : -1) + buttons.length) % buttons.length; buttons[next].click(); buttons[next].focus(); };
-    container.addEventListener('keydown', keyboard); paint(value);
-    return { setValue: paint, destroy() { container.removeEventListener('keydown', keyboard); buttons.forEach(b => b.remove()); } };
+  function themes() {
+    return Object.freeze(CoreFoundation.THEME_MODES.map(id => Object.freeze(semanticTheme(CoreFoundation.resolveTheme(id)))));
   }
   function focusMenuSurface(panel) { if (!(panel instanceof HTMLElement)) return false; panel.tabIndex = -1; panel.style.outline = 'none'; panel.focus({ preventScroll: true }); return true; }
   const FLOATING_NOTICE_CSS = '.exp-floating-update{position:fixed;z-index:2147483647;box-sizing:border-box;width:min(312px,calc(100vw - 24px));max-width:calc(100vw - 24px);margin:0;padding:10px 32px 10px 10px;border:1px solid var(--exp-notice-border,#6f42b4);border-radius:10px;background:linear-gradient(180deg,var(--exp-notice-top,#251a35),var(--exp-notice-bottom,#18181d) 70%);color:var(--exp-notice-text,#f4f4f6);box-shadow:0 10px 28px #0008;font:500 var(--exp-font-size-small,11px)/1.45 system-ui,sans-serif}.exp-floating-update[hidden]{display:none!important}.exp-floating-update-dismiss{position:absolute;top:7px;right:7px;width:23px;height:23px;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;color:inherit;cursor:pointer;font:15px/1 Arial,sans-serif}.exp-floating-update-dismiss:hover,.exp-floating-update-dismiss:focus-visible{border-color:var(--exp-notice-border,#6f42b4);outline:none}';
@@ -1069,7 +1046,7 @@
   }
 
   function applyTheme(host, value, choices) {
-    const controller = controllers.get(host); if (!controller) return;
+    const controller = controllers.get(host) || menuControllers.get(host); if (!controller) return;
     controller.setTheme(value, choices);
   }
   function normalizeControls(panel) {
@@ -1132,6 +1109,26 @@
       node.addEventListener(type, handler, opts);
       removers.push(() => node.removeEventListener(type, handler, opts));
     };
+    const customThemeRoot = options.themeRoot;
+    let customThemeMode = 'system';
+    function setTheme(value) {
+      if (!customThemeRoot) return;
+      customThemeMode = CoreFoundation.normalizeThemeMode(value);
+      const theme = CoreFoundation.resolveTheme(customThemeMode);
+      for (const target of [customThemeRoot,panel]) {
+        for (const key of tokenNames) target.style.setProperty('--theme-'+key,theme[key]);
+        target.style.setProperty('--theme-skin',theme.accent);
+        target.style.setProperty('--theme-skin-vertical',theme.accent);
+        target.dataset.uiTheme=theme.id;target.dataset.themeSkin='flat';target.style.colorScheme=theme.mode;
+      }
+      host.dataset.uiTheme=theme.id;
+      publishMenuPalette(host,theme);
+    }
+    if(customThemeRoot){
+      const customSystemTheme = matchMedia('(prefers-color-scheme: dark)');
+      on(customSystemTheme,'change',()=>{if(customThemeMode==='system')setTheme(customThemeMode);});
+      setTheme(getSettings().uiTheme);
+    }
     function cancelDismiss() {
       clearTimeout(timer);
       timer = 0;
@@ -1179,7 +1176,7 @@
         panel.classList.toggle('fl-rail-open', open);
         if (open) scheduleDismiss(); else cancelDismiss();
       },
-      scheduleDismiss, cancelDismiss, enforceDeadline,
+      setTheme, scheduleDismiss, cancelDismiss, enforceDeadline,
       get isOpen() { return open; },
       get dismissAt() { return deadline; },
       get timerActive() { return Boolean(timer); },
@@ -1227,7 +1224,7 @@
     const menuNotices=[...themeRoot.querySelectorAll('.update-notice,.changelog')].map(notice=>createMenuNotice({host,shadow,panel,notice,versionButton:notice.classList.contains('changelog')?versionButton:null,manageVersion:false,durationMs:30000}));
     if (launcherSrc) panel.querySelectorAll('.header-icon img').forEach(image => image.src = launcherSrc);
     host.dataset.coreVersion = version; host.dataset.coreSource = 'exp-core';
-    let choices = themes(productTheme), selected = choices.at(-1), open = false, destroyed = false, frame = 0;
+    let selected, requestedTheme = 'system', open = false, destroyed = false, frame = 0;
     const removers = [];
     const on = (node,type,fn,opts) => { node.addEventListener(type,fn,opts); removers.push(() => node.removeEventListener(type,fn,opts)); };
     let localTheme = null;
@@ -1238,28 +1235,31 @@
       themeRoot.style.setProperty('--theme-skin-vertical', selected.skinVertical || selected.skin || selected.swatch || selected.accent);
       Object.assign(themeRoot.dataset, { uiTheme:selected.id, themeSkin:selected.skinMode === 'flat' ? 'flat' : 'gradient' });
       host.dataset.uiTheme = selected.id;
+      themeRoot.style.colorScheme = selected.mode;
+      host.style.colorScheme = selected.mode;
     }
     function syncThemeOwner() {
       host.dataset.expThemeDeprioritized = '0';
       host.dataset.expThemeOwner = id;
       paintTheme(localTheme);
     }
-    function setTheme(value, supplied) {
-      if (supplied) choices = supplied.map(t => semanticTheme({ ...t, ...t.vars, skin:t.skin || t.swatch, skinVertical:t.skinVertical || t.skin || t.swatch }));
-      const alias = ({warm:'ember',discord:'glacier',pine:'verdant',obsidian:'contrast'})[value] || value;
-      localTheme = choices.find(t => t.id === alias) || choices.at(-1);
+    function setTheme(value) {
+      requestedTheme = CoreFoundation.normalizeThemeMode(value);
+      localTheme = semanticTheme(CoreFoundation.resolveTheme(requestedTheme));
       publishMenuPalette(host, localTheme);
       syncThemeOwner();
     }
+    const systemTheme = matchMedia('(prefers-color-scheme: dark)');
+    const followSystemTheme = () => { if (requestedTheme === 'system') setTheme(requestedTheme); };
+    systemTheme.addEventListener('change', followSystemTheme);
+    removers.push(() => systemTheme.removeEventListener('change', followSystemTheme));
     function layout() {
       if (destroyed || !launcher.isConnected) return;
       const state = getSettings();
       themeRoot.style.setProperty('--exp-menu-width', menuWidth() + 'px');
       const fontTokens=ExpMenuPreferences.menuSizeTokens();themeRoot.style.setProperty('--exp-font-size-body',fontTokens.body+'px');themeRoot.style.setProperty('--exp-font-size-small',fontTokens.small+'px');
       themeRoot.classList.toggle('reduce-motion', state.reduceMotion === true || state.reduceMotion === 'on' || state.reducedMotion === 'reduce' || (state.reduceMotion === 'system' || state.reducedMotion === 'system') && matchMedia('(prefers-reduced-motion:reduce)').matches);
-      const opacityValue = Number(state.opacityPercent);
-      const opacity = state.customOpacity ? (Number.isFinite(opacityValue) ? Math.max(40, Math.min(100, Math.round(opacityValue / 5) * 5)) : 85)/100 : 1;
-      themeRoot.style.setProperty('--exp-ui-opacity',String(opacity));
+      themeRoot.style.setProperty('--exp-ui-opacity','1');
       const { top, right } = launcherPlacement(host);
       Object.assign(launcher.style,{top:top+'px',right:right+'px',bottom:'auto',left:'auto',zIndex:open?'2147483647':'2147483600'});
       Object.assign(panel.style,{overflowY:'auto',overflowX:'hidden',overscrollBehavior:'contain',zIndex:open?'2147483647':'2147483599'});
@@ -1292,7 +1292,7 @@
       get dismissAt(){return menuController.dismissAt;},
       destroy(){destroyed=true;arrangement?.destroy();arrangementAnchor.remove();defaultSupport?.destroy();menuController.destroy();cancelAnimationFrame(frame);resize?.disconnect();mutation?.disconnect();menuNotices.forEach(notice=>notice.destroy());removers.forEach(f=>f());styles.dispose();controllers.delete(host);}
     };
-    controllers.set(host,controller);setTheme(id);
+    controllers.set(host,controller);setTheme(getSettings().uiTheme);
     queueLayout();return controller;
   }
   function createReleaseUpdateChecker(options = {}) {
@@ -1766,7 +1766,6 @@
     return Object.freeze({ lifecycle, diagnostics, updates });
   }
 
-  const api = Object.freeze({...ExtraPotionsTools,setMenuHelp:ExpMenuHelp.setMenuHelp,...ExpMenuPreferences,...ExpSiteColors,normalizeHealth,createHealthControls,createRecoveryGuard,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createMenuController,createProduct,menuTemplate:ExpLeanMenu.template,setMenuStatus:ExpLeanMenu.setMenuStatus,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,setLauncherUpdate,setLauncherProgress,bindLauncherDrag,launcherPlacement,placeMenu,placeNotice,resetLauncherGrid,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,isOwnedSheet,menuWidth,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,createThemeSwatches,publishMenuPalette,createFloatingNotice,createMenuNotice,takeNoticeTurn,releaseNoticeTurn,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,isQuietUpgrade,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,suiteSitePaused,suiteSitePausePersisted,setSuiteSitePaused,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePresentationState,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,createCompatibilityControls:createSuiteCompatibilityControls,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,mountSubmenuTabs:ExpMenuArrangement.mountTabs,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
+  const api = Object.freeze({...ExtraPotionsTools,setMenuHelp:ExpMenuHelp.setMenuHelp,...ExpMenuPreferences,...ExpSiteColors,normalizeHealth,createHealthControls,createRecoveryGuard,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createMenuController,createProduct,menuTemplate:ExpLeanMenu.template,setMenuStatus:ExpLeanMenu.setMenuStatus,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,setLauncherUpdate,setLauncherProgress,bindLauncherDrag,launcherPlacement,placeMenu,placeNotice,resetLauncherGrid,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,isOwnedSheet,menuWidth,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,publishMenuPalette,createFloatingNotice,createMenuNotice,takeNoticeTurn,releaseNoticeTurn,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,isQuietUpgrade,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,suiteSitePaused,suiteSitePausePersisted,setSuiteSitePaused,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePresentationState,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,createCompatibilityControls:createSuiteCompatibilityControls,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,mountSubmenuTabs:ExpMenuArrangement.mountTabs,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
   return api;
 })();
-

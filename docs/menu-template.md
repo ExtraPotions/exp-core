@@ -6,18 +6,18 @@ not a runtime framework, component library, or a second visual style.
 
 The extracted tokens and durable visual rules are in [DESIGN.md](../DESIGN.md),
 with component previews and extension metadata in `.impeccable/design.json`.
-Product-specific controls and palettes remain owned by their products.
+Products own their functional controls and artwork. Core owns the Slate Blue palette.
 
 ## Shared structure
 
 - Header: the product's existing gem, name, Changelog icon with accessible version, donation heart and Close.
 - Sidebar: product feature sections, Look and System. No separate Support or Reset navigation.
-- Look: shared Standard/Compact/Mini menu sizing; product-specific appearance choices remain available.
+- Look: shared Standard/Compact/Mini menu sizing; Menu theme and existing Site theme controls offer only Light, Dark and System.
 - System: Status, Support with paired Show/Copy Diagnostics and Report a Problem, optional settings transfer, and confirmed Reset.
 - Settings: shared outlined controls, rectangular toggles, in-place disclosures, readable text, visible focus, and selective contained hover/focus help.
 - One content scroller with a visible header, shared viewport containment and menu stacking.
 
-Products supply their colors, badge, feature controls and health/data callbacks.
+Products supply their badge, feature controls and health/data callbacks. Custom shells pass their theme root to createMenuController so Core owns mode changes.
 They do not copy the shell, help engine, diagnostic-button styling or reset UI.
 Site-specific launcher docking is owned by Core. Thread's Reddit launcher uses
 the native circular handle shape/size; other sites retain their established placement.

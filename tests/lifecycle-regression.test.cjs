@@ -43,7 +43,7 @@ test('navigation subscribers detach in either order while the shared page observ
   assert.deepEqual(result,{seen:['a','b','b'],sharedWrapper:false,markers:0,epoch:0});
 });
 
-test('Dropper and SHIFT Core fixtures coordinate distinct launcher cells and independent product themes', async t => {
+test('Dropper and SHIFT Core fixtures coordinate distinct launcher cells and independent menu modes', async t => {
   const browser=await chromium.launch();t.after(()=>browser.close());
   const page=await browser.newPage({viewport:{width:1280,height:900}});
   await page.setContent('<!doctype html><html><body><main>Fixture page</main></body></html>');
@@ -68,8 +68,8 @@ test('Dropper and SHIFT Core fixtures coordinate distinct launcher cells and ind
   });
   assert.equal(result.slots.dropper,0);
   assert.ok(result.slots.shift>=1,JSON.stringify(result.slots));
-  assert.deepEqual(result.owned,{owner:'shift',hidden:'0',theme:'shift'});
-  assert.equal(result.changed,'shift');
+  assert.deepEqual(result.owned,{owner:'shift',hidden:'0',theme:'system'});
+  assert.equal(result.changed,'system');
   assert.equal(result.warmSurface,'none');
   assert.equal(result.restored.owner,'shift');
   assert.equal(result.restored.hidden,'0');

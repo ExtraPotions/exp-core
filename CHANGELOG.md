@@ -1,3 +1,9 @@
+## 3.11.0 — 2026-11-02
+
+- Use Slate Blue Light, Dark or System across product menus and site themes.
+- Follow device appearance changes in System mode and migrate retired palettes.
+- Standardize product-only screenshots with collapsed groups and current changelog notices.
+
 ## 3.10.5 — 2026-10-26
 
 - Restore separate rounded-square outlines around header buttons.

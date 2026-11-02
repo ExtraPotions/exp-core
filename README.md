@@ -11,11 +11,9 @@ The shared launcher, menus and settings controls bundled with ExtraPotions produ
 
 ## Shared controls
 
-Products keep their own colors and sections. Core provides one launcher when products share a page, Standard/Compact/Mini menu sizes, keyboard navigation, status and diagnostics.
+Products keep their artwork and sections. Menus use Slate Blue Light, Dark or System. Core provides one launcher when products share a page, Standard/Compact/Mini menu sizes, keyboard navigation, status and diagnostics.
 
-<img src="docs/screenshots/shared-launcher.png" width="580" alt="Shared ExtraPotions launcher on a sample page">
-
-Screenshot uses sample content. See each product’s README for its menu and installation link.
+See each product’s README for product-only Light, Dark and current-changelog screenshots. Core is bundled into those products and has no separate product menu.
 
 ---
 

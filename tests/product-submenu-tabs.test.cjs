@@ -11,7 +11,7 @@ for(const [repo,id,selector,launcher,url]of products)test(repo+' built menu expa
  await page.goto(url);await page.addScriptTag({content:fs.readFileSync(consumers.file(repo,id+'.user.js'),'utf8')});
  const root=page.locator(selector);await root.waitFor({state:'attached'});await root.locator(launcher).click();
  const panel=root.locator('[data-exp-part="dock"]');
- assert.equal(await panel.evaluate(n=>getComputedStyle(n).getPropertyValue('--theme-accent').trim()),{prisma:'#6aaaff',shift:'#26d9c7',ward:'#b66a16',dropper:'#9146ff'}[id]);
+ assert.equal(await panel.evaluate(n=>getComputedStyle(n).getPropertyValue('--theme-accent').trim()),'#2459b8');
  const tabs=root.locator('[data-exp-section-tabs] [role=tab]');assert.ok(await tabs.count()>=2);
  assert.equal(await root.locator('[role=tablist]').getAttribute('aria-orientation'),'vertical');let visited=0;
  for(let i=0;i<await tabs.count();i++){

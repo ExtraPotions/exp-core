@@ -19,7 +19,7 @@ function contrast(one, two) {
   return (light + 0.05) / (dark + 0.05);
 }
 
-test('ExtraPotions themes preserve their identities and add distinct accessible semantic roles', async t => {
+test('Slate Blue modes provide distinct accessible semantic roles', async t => {
   const browser = await chromium.launch({ headless: true });
   t.after(() => browser.close());
   const page = await browser.newPage();
@@ -40,5 +40,5 @@ test('ExtraPotions themes preserve their identities and add distinct accessible 
     assert.ok(contrast(theme.focus, theme.panel) >= 3, `${theme.name} focus contrast`);
     assert.ok(contrast(theme.onAccent, theme.accent) >= 4.5, `${theme.name} accent contrast`);
   }
-  assert.ok(themes.some(theme => theme.id === 'ward' && theme.name === 'WARD'));
+  assert.deepEqual(themes.map(theme=>theme.id), ['light','dark','system']);
 });

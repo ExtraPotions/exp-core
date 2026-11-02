@@ -41,6 +41,9 @@ function validateConfig(config) {
     if (shot.include !== undefined && !['menu', 'page'].includes(shot.include)) fail(`${at}.include must be "menu" or "page"`);
     if (shot.viewport !== undefined && !isViewport(shot.viewport)) fail(`${at}.viewport must be { width, height } in pixels`);
     if (shot.before !== undefined && typeof shot.before !== 'function') fail(`${at}.before must be a function`);
+    if(shot.mode!==undefined&&!['light','dark'].includes(shot.mode))fail(`${at}.mode must be light or dark`);
+    for(const key of ['collapsed','notice'])if(shot[key]!==undefined&&typeof shot[key]!=='boolean')fail(`${at}.${key} must be boolean`);
+    if(config.productOnly&&(shot.include==='page'||!shot.file.endsWith('.png')))fail('Product screenshots must be PNGs cropped to the product');
   });
   return config;
 }
@@ -247,6 +250,7 @@ async function captureProduct({ name, root, browser, build = true }) {
     context = await browser.newContext({ viewport: config.viewport, deviceScaleFactor: 2 });
     if (config.cookies) await context.addCookies(config.cookies);
     const page = await context.newPage();
+    const proof = [];
     await page.addInitScript(gmInit, config.storage || {});
     await page.route('**/*', route => {
       const request = route.request();
@@ -266,6 +270,7 @@ async function captureProduct({ name, root, browser, build = true }) {
     for (const shot of config.shots) {
       // Each shot uses its own window size, or the shot list's when it has none.
       await page.setViewportSize(shot.viewport || config.viewport);
+      if (shot.mode) await page.emulateMedia({colorScheme:shot.mode});
       const file = path.join(work, shot.file);
       if (shot.file.endsWith('.gif')) {
         await captureWalkthroughGif(page, host, shot, file);
@@ -274,10 +279,26 @@ async function captureProduct({ name, root, browser, build = true }) {
         await page.mouse.move(0, 0);
         await page.waitForTimeout(300);
         if (shot.before) await shot.before(page, host);
+        if(shot.collapsed){
+          const groups=host.locator('details[open]:not([data-exp-flat])>summary:visible');
+          for(let i=0;i<20&&await groups.count();i++)await groups.first().click();
+          if(await host.locator('details[open]:not([data-exp-flat]):visible').count())throw new Error('Expandable groups must be closed');
+        }
         await page.mouse.move(0, 0);
         await host.evaluate(node => { for (const toast of node.shadowRoot?.querySelectorAll('.toast') || []) toast.hidden = true; });
+        let target=host.locator('[data-exp-part="dock"]');
+        let noticeText='';
+        if(shot.notice){
+          await host.locator('[data-exp-part="version"],.menu-head .version,#tdh-header-version').first().click();
+          target=host.locator('.update-notice').first();await target.waitFor({state:'visible'});
+          noticeText=await target.innerText();
+          const version=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version;
+          if(!noticeText.includes(version)||!await target.locator('.update-list li').count())throw new Error('Changelog must show its actual current version and release notes');
+        }
+        if(config.productOnly&&shot.include==='page')throw new Error('Product screenshots cannot include a webpage');
         if (shot.include === 'page') await page.screenshot({ path: file });
-        else await host.locator('[data-exp-part="dock"]').screenshot({ path: file });
+        else await target.screenshot({path:file,omitBackground:!!config.productOnly,animations:'disabled'});
+        proof.push({file:shot.file,mode:shot.mode,collapsed:!!shot.collapsed,notice:!!shot.notice,noticeText,bounds:await target.boundingBox()});
       }
     }
 
@@ -286,6 +307,10 @@ async function captureProduct({ name, root, browser, build = true }) {
     const output = path.join(root, 'docs', 'screenshots');
     fs.mkdirSync(output, { recursive: true });
     for (const file of files) fs.copyFileSync(path.join(work, file), path.join(output, file));
+    if(process.env.EXP_SCREENSHOT_EVIDENCE_DIR){
+      fs.mkdirSync(process.env.EXP_SCREENSHOT_EVIDENCE_DIR,{recursive:true});
+      fs.writeFileSync(path.join(process.env.EXP_SCREENSHOT_EVIDENCE_DIR,name+'-capture.json'),JSON.stringify({product:name,bundleSha256:crypto.createHash('sha256').update(fs.readFileSync(userscript)).digest('hex'),proof},null,2));
+    }
     const listed = new Set(files);
     return { count: files.length, unlisted: fs.readdirSync(output).filter(file => (file.endsWith('.png') || file.endsWith('.gif')) && !listed.has(file)).sort() };
   } finally {
@@ -310,8 +335,7 @@ async function main(argv = process.argv.slice(2)) {
   const { loadSuiteContract } = require('./suite-contract.cjs');
   const { resolveConsumerRoots } = require('./consumer-roots.cjs');
   const suite = loadSuiteContract(path.resolve(__dirname, '..'));
-  // Thread uses its dedicated Reddit fixture/capture command, not this cross-site config format.
-  const known = (process.env.EXP_INCLUDE_RETIRED === '1' ? suite.repositories : suite.maintainedRepositories).filter(repo => repo !== 'THREAD');
+  const known = process.env.EXP_INCLUDE_RETIRED === '1' ? suite.repositories : suite.maintainedRepositories;
   let options;
   try {
     options = parseArgs(argv, known);

@@ -1,14 +1,19 @@
 ---
 name: ExtraPotions shared menu
-description: Compact product-colored tools with one consistent side rail.
+description: Compact Slate Blue tools with one consistent side rail.
 colors:
-  dropper-bg: "#18181b"
-  dropper-panel: "#1f1f23"
-  dropper-line: "#848494"
-  dropper-text: "#efeff1"
-  dropper-muted: "#adadb8"
-  dropper-accent: "#9146ff"
-  dropper-focus: "#bf94ff"
+  light-bg: "#f4f6fa"
+  light-panel: "#ffffff"
+  light-text: "#182230"
+  light-muted: "#4c5d73"
+  light-line: "#718096"
+  light-accent: "#2459b8"
+  dark-bg: "#111720"
+  dark-panel: "#1b2430"
+  dark-text: "#edf2f8"
+  dark-muted: "#afbed1"
+  dark-line: "#8293ab"
+  dark-accent: "#8cb7ff"
 typography:
   shell:
     fontFamily: '"Segoe UI", system-ui, sans-serif'
@@ -80,14 +85,14 @@ components:
 
 **Creative North Star: "Compact product tools"**
 
-The shared menu is a dense utility surface with a stable header, one side rail and a bounded content column. Product identity comes from the current approved gem and preserved product palette; common layout and controls make settings predictable across products. This document captures the implemented template, rather than introducing a second component framework.
+The shared menu is a dense utility surface with a stable header, one side rail and a bounded content column. Product identity comes from the current approved gem; menu colors use Slate Blue; common layout and controls make settings predictable across products. This document captures the implemented template, rather than introducing a second component framework.
 
 Core owns the shell, sizing, help and System patterns. Each product owns its feature sections, data and permission decisions. The template applies to current and new consumers; product-specific controls retain their purpose and state.
 
 **Key Characteristics:**
 
 - Compact side rail with visible active selection.
-- Current approved product gems and product-specific color roles.
+- Current approved product gems and shared Slate Blue mode roles.
 - Outlined controls, rounded rectangles and in-place disclosure.
 - One content scroller with independently scrollable navigation in short windows.
 
@@ -95,12 +100,11 @@ Sources: `src/menu-layout.js`, `src/lean-menu.js`, `src/menu-preferences.js`, `s
 
 ## Colors
 
-Color is supplied through the current product's `--theme-*` roles. The frontmatter's Dropper colors are the actual Twitch palette extracted from `lean-menu.js`, useful as a concrete rendered example, not a palette imposed on other products.
+Core supplies Slate Blue through `--theme-*` roles. Menu theme and existing Site theme controls offer Light, Dark and System; System follows the device live. Product code cannot supply another palette.
 
 ### Primary
 
-- **Dropper accent:** the switch checked background. The lighter focus role marks keyboard focus and selected navigation.
-- **Product accent:** preserve each consumer's existing `--theme-accent`, `--theme-accent2` and `--theme-focus` assignments. Theme choices and contrast mode remain product controlled.
+- **Accent:** `#2459b8` in Light and `#8cb7ff` in Dark, shared across menus and site themes. Focus and selection use the same mode-specific accent.
 
 ### Neutral
 
@@ -108,11 +112,11 @@ Color is supplied through the current product's `--theme-*` roles. The frontmatt
 - **Text and muted:** distinguish primary labels from supporting copy.
 - **Line:** separates the header, rail and setting rows. Outlined controls use the muted role for their border.
 
-**The Product Identity Rule.** Reuse the current product's palette and approved source gem. Shared structure does not authorize replacement artwork or a new suite-wide accent. A separately authorized artwork refinement may update the gem without changing menu layout.
+**The Product Identity Rule.** Keep the approved product gem and its original colors. Menus and site themes use Slate Blue only; artwork colors and functional identity/status colors do not create appearance options.
 
 ### Site colors
 
-`site-colors.js` holds the shared page palettes (Default, Indigo, Blue, Green, Red, Gray), each with light and dark surface, text, line and accent tokens. They recolor a product's own site, not its menu: menus keep their product theme. `createSiteColors` keeps one owned style per product and follows the site's light/dark state; each product maps the tokens onto its site's own variables and keeps the site's brand and status colors. `createSiteColorControl` renders the Site colors select with the site's name as the Off option. A product may add its own palette through `extra` (WARD's Obsidian).
+`site-colors.js` exposes only Light, Dark and System using the same Slate Blue tokens as menus. Menu and site modes are independent. `createSiteColors` owns one scoped style per product and observes device preference changes for System. Site renderers preserve media and semantic colors; disable, Safe Mode and teardown restore owned paint. Legacy palette settings normalize to System. There is no Off, native-site palette or product-specific palette option.
 
 ## Typography
 

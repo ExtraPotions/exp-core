@@ -1017,30 +1017,19 @@ test('menus can opt into content-driven heights and width-aware columns', async 
   assert.doesNotMatch(result.columns, /\s/);
 });
 
-test('theme swatches are rounded-square radio buttons with one active choice', async (t) => {
-  const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
-  const page = await browser.newPage();
-  await page.setContent('<!doctype html><html><body><div id="host"></div></body></html>');
-  await page.addScriptTag({ content: source });
-  const result = await page.evaluate(() => {
-    const shadow = document.querySelector('#host').attachShadow({ mode: 'open' });
-    const row = document.createElement('div'); shadow.append(row);
-    let selected = '';
-    ExtraPotionsCore.createThemeSwatches({ container: row, value: 'dark', themes: [{ id: 'dark', name: 'Dark', swatch: '#111' }, { id: 'product', name: 'Product', swatch: 'linear-gradient(135deg,#a0f,#0ff)' }], onChange(value) { selected = value; } });
-    const buttons = [...row.querySelectorAll('button')]; buttons[1].click();
-    return { role: row.getAttribute('role'), count: buttons.length, selected, active: buttons[1].classList.contains('is-on'), pressed: buttons[1].getAttribute('aria-pressed'), radius: getComputedStyle(buttons[1]).borderRadius };
-  });
-  assert.deepEqual(result, { role: 'radiogroup', count: 2, selected: 'product', active: true, pressed: 'true', radius: '5px' });
+test('theme mode controls expose only Light Dark System and write the selected value', async t => {
+ const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage();await page.setContent('<body></body>');await page.addScriptTag({content:source});
+ await page.evaluate(()=>document.body.append(ExtraPotionsCore.createThemeModeControl({onChange:v=>window.chosen=v})));
+ assert.deepEqual(await page.locator('select option').allTextContents(),['Light','Dark','System']);await page.locator('select').selectOption('dark');assert.equal(await page.evaluate(()=>window.chosen),'dark');
 });
 
-test('detached swatches stay square under taller host button styles', async (t) => {
-  const browser=await chromium.launch({headless:true});t.after(()=>browser.close());
-  const page=await browser.newPage();await page.setContent('<div id="host"></div>');await page.addScriptTag({content:source});
-  const geometry=await page.evaluate(()=>{
-    const root=document.querySelector('#host').attachShadow({mode:'open'}),style=document.createElement('style');style.textContent='button:not(.switch){min-height:40px!important;border-radius:12px!important}';root.append(style);
-    const container=document.createElement('div');ExtraPotionsCore.createThemeSwatches({container,themes:[{id:'test',name:'Test',swatch:'#abc'}]});root.append(container);
-    const b=container.firstElementChild,r=b.getBoundingClientRect();return{width:r.width,height:r.height,radius:getComputedStyle(b).borderRadius};
-  });assert.deepEqual(geometry,{width:22,height:22,radius:'5px'});
+test('menu System mode follows the device while explicit modes ignore both device changes and supplied palettes',async t=>{
+ const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage({colorScheme:'light'});await page.setContent('<body></body>');await page.addScriptTag({content:source});
+ await page.evaluate(()=>{window.product=ExtraPotionsCore.createProduct({id:'ward',name:'WARD',version:'1',artwork:'data:image/svg+xml,<svg/>',getSettings:()=>({uiTheme:'system'})});});
+ const bg=()=>page.locator('#exp-ward-root').evaluate(h=>h.shadowRoot.querySelector('.exp-core-theme').style.getPropertyValue('--theme-bg'));
+ assert.equal(await bg(),'#f4f6fa');await page.emulateMedia({colorScheme:'dark'});await page.waitForFunction(()=>document.querySelector('#exp-ward-root').shadowRoot.querySelector('.exp-core-theme').style.getPropertyValue('--theme-bg')==='#111720');
+ await page.evaluate(()=>ExtraPotionsCore.applyTheme(product.host,'light',[{id:'light',bg:'#ff0000'}]));assert.equal(await bg(),'#f4f6fa');
+ await page.emulateMedia({colorScheme:'light'});await page.emulateMedia({colorScheme:'dark'});assert.equal(await bg(),'#f4f6fa');await page.evaluate(()=>product.destroy());
 });
 
 test('shared diagnostics download includes product state and closed-shadow geometry',async(t)=>{
@@ -1246,7 +1235,7 @@ test('High Contrast toggles use black tracks and white knobs', async (t) => {
   assert.match(result.onTransform, /14px|matrix/);
 });
 
-test('launcher registration and swatches apply matte chrome to product shadows', async (t) => {
+test('launcher registration applies matte chrome to product shadows', async (t) => {
   const browser = await chromium.launch({ headless: true }); t.after(() => browser.close());
   const page = await browser.newPage();
   await page.setContent('<!doctype html><html><body><div id="host"></div><div id="swatch-host"></div></body></html>');
@@ -1273,10 +1262,10 @@ test('launcher registration and swatches apply matte chrome to product shadows',
     const shadow = host.attachShadow({ mode: 'open' });
     const row = document.createElement('div');
     shadow.append(row);
-    ExtraPotionsCore.createThemeSwatches({ container: row, themes: [{ id: 'dark', name: 'Dark', swatch: '#111' }] });
+    row.append(ExtraPotionsCore.createThemeModeControl({}));
     return Boolean(shadow.querySelector('style[data-exp-matte-toggle-chrome]'));
   });
-  assert.equal(swatched, true);
+  assert.equal(swatched, false);
 });
 
 test('automatic notices are claimed once per product change across page loads', async (t) => {

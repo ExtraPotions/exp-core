@@ -163,7 +163,7 @@ test('suite manifest owns launcher and theme coordination priorities', () => {
   assert.doesNotMatch(runtime, /coreSource = 'Dropper\//u);
   assert.match(runtime, /coreSource = 'exp-core'/u);
   assert.doesNotMatch(runtime, /host\?\.dataset\.productId === 'dropper'/u);
-  assert.match(runtime, /createThemeSwatches,publishMenuPalette,createFloatingNotice/u);
+  assert.match(runtime, /publishMenuPalette,createFloatingNotice/u);
   assert.doesNotMatch(runtime, /dropperThemeObserver|observedDropper|#tdh-cluster/u);
   assert.match(runtime, /panel\.classList\.add\('exp-menu-surface'\)/u);
   assert.match(runtime, /button\.id = 'exp-support-button'/u);
@@ -173,7 +173,7 @@ test('suite manifest owns launcher and theme coordination priorities', () => {
   assert.match(runtime, /paintTheme\(localTheme\)/u);
   assert.doesNotMatch(runtime, /UI_THEMES\.filter\(t => !\['twitch', 'dropper'\]/u);
   const foundation = read('src/foundation.js');
-  assert.match(foundation, /const SHARED_UI_THEMES = Object\.freeze\(UI_THEMES\.slice\(0, 6\)\)/u);
+  assert.match(foundation, /const SHARED_UI_THEMES = UI_THEMES/);
   assert.match(foundation, /UI_THEMES, SHARED_UI_THEMES, css/u);
   assert.match(runtime, /const FLOATING_NOTICE_CSS = /u);
   assert.match(runtime, /function ensureFloatingNoticeStyle\(shadow\)/u);

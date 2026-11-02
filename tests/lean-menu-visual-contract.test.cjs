@@ -3,7 +3,7 @@ const {openSystem}=require('./helpers/system-navigation.cjs');
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const {chromium}=require('playwright');
 const consumers=require('../scripts/consumer-roots.cjs').resolveConsumerRoots();
-const products=[['Dropper','dropper','tdh-root','rgb(24, 24, 27)','rgb(145, 70, 255)'],['PRISMA','prisma','exp-prisma-root','rgb(9, 15, 32)','rgb(106, 170, 255)'],['WARD','ward','exp-ward-root','rgb(18, 11, 5)','rgb(182, 106, 22)']];
+const products=[['Dropper','dropper','tdh-root'],['PRISMA','prisma','exp-prisma-root'],['WARD','ward','exp-ward-root']].map(p=>[...p,'rgb(244, 246, 250)','rgb(36, 89, 184)']);
 for(const[repo,id,hostId,background,accent]of products)test(repo+' built compact sidebar preserves product identity, section behavior and Support/Reset access inside System',consumers.options([repo]),async t=>{
  const browser=await chromium.launch();t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:1280,height:900}});
  await page.route('**/*',r=>r.request().isNavigationRequest()?r.fulfill({contentType:'text/html',body:'<!doctype html><main>Sample page</main>'}):r.abort());await page.goto(repo==='WARD'?'https://www.amazon.com/':'https://www.twitch.tv/sample');

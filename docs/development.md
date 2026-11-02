@@ -71,9 +71,9 @@ README screenshots are generated from the current builds. Build the product firs
 | Picture | Command (from exp-core) | Config |
 |---|---|---|
 | Product menus | `node scripts/capture-screenshots.cjs <Product>` (several names allowed) | `<Product>/docs/screenshots.config.cjs` |
-| Shared launcher | `node scripts/capture-launcher-screenshot.cjs` | inside the script |
+| Shared launcher diagnostic (private) | `node scripts/capture-launcher-screenshot.cjs` | ignored local-verification output |
 
-Products can also run `npm run screenshots`. Each product's tests fix the number and names of its README screenshots, so add or rename a picture in the config, the README and the test together. Route names in a config must match current tabs (for example PRISMA's appearance picture uses `section: 'Look', tab: 'Style'`).
+Products can also run `npm run screenshots`. Public captures are exactly menu-light.png, menu-dark.png and changelog.png: product-only PNGs, all expandable groups closed in the selected section, actual current release notes. No public GIF or webpage examples. Configs, README references and screenshot tests must agree. Core has no independent product UI; its README points to consumer screenshots.
 
 ## Shipping
 
@@ -115,7 +115,7 @@ The product repository needs:
 
 For a new product, choose integration and coexistence checks that exercise it beside the existing products. `npm run suite:local` remains available as an optional broader check.
 
-Thread's modern-Reddit lane is `node scripts/check-thread.cjs`. It exercises its menu, local annotations, four content views, lifecycle and forced five-product coexistence on authored fixtures. The established four-product menu/annotation/coexistence tools invoke this lane separately, because their own fixture sites differ. `node ../THREAD/tests/browser.cjs --captures` creates Thread's local README and theme-comparison captures only after its checks pass. This is synthetic evidence; Reddit network-security blocks prevented live DOM verification. Do not interpret the provisional contract repository field as an existing public repository, or run a release against it.
+Thread's modern-Reddit lane is `node scripts/check-thread.cjs`. It exercises its menu, local annotations, four content views, lifecycle and forced five-product coexistence on authored fixtures. The established four-product menu/annotation/coexistence tools invoke this lane separately, because their own fixture sites differ. `node scripts/capture-screenshots.cjs THREAD` captures Thread's public product-only menus and actual changelog; its separate browser fixture checks remain internal diagnostic evidence. This is synthetic evidence; Reddit network-security blocks prevented live DOM verification. Do not interpret the provisional contract repository field as an existing public repository, or run a release against it.
 
 The Reddit slot is active only with Thread registered. It uses native rail/collapse geometry, opens menus adjacent to the left-rail gem, and keeps a top-left fallback on missing/collapsed rails. It creates no second launcher or replacement native control. Twitch and unrelated sites retain their existing slots/corner behavior. Focused coverage is `tests/reddit-site-slot.test.cjs` beside the existing Twitch slot tests; changes to this shared geometry require deliberate consumer synchronization.
 
@@ -129,3 +129,7 @@ System template: Diagnostics (Show/Copy), Report a Problem and Reset All Setting
 ## Retired-product compatibility
 
 SHIFT remains in the runtime suite contract and launcher/diagnostic compatibility maps so existing installations can coexist. `maintenance: "retired"` excludes it from `maintainedRepositories`, default Core synchronization, active visual audits and suite-local builds. Explicit legacy checks can use `EXP_INCLUDE_RETIRED=1`; explicitly named sync targets remain available for deliberate recovery, not routine rollout. Core owns shared menu themes independently. Do not delete SHIFT source, settings, tags, releases or historical evidence. New update packs must not install or enable it.
+
+## Slate Blue modes
+
+Core owns the only appearance palette. Menu and existing site-theme controls accept `light`, `dark` and `system`; legacy palette IDs normalize to System. `resolveTheme` supplies the same Slate Blue tokens to standard menus, custom shells and site renderers. System follows `prefers-color-scheme` live; explicit modes stay fixed. Custom palette input is ignored and menu opacity is fixed. Functional identity highlights, media, branding artwork and semantic status colors keep their meaning.
