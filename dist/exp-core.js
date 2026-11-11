@@ -777,10 +777,13 @@ const ExtraPotionsDiagnostics = (() => {
     output.hidden = true; output.setAttribute('role', 'region');
     output.setAttribute('aria-label', 'Page, technical, console, and plugin diagnostics'); output.tabIndex = 0;
     show.setAttribute('aria-expanded', 'false');
+    // Short visible labels beside a Diagnostics row label; the full action stays in the accessible name.
+    const name = (node, text, label) => { node.textContent = text; node.setAttribute('aria-label', label); };
+    name(show, 'Show', 'Show diagnostics'); name(copy, 'Copy', 'Copy diagnostics');
     const showClick = async () => {
       const opening = output.hidden, ticket = ++generation;
       output.hidden = !opening; output.classList.toggle('open', opening);
-      show.textContent = opening ? 'Hide Diagnostics' : 'Show Diagnostics';
+      if (opening) name(show, 'Hide', 'Hide diagnostics'); else name(show, 'Show', 'Show diagnostics');
       show.setAttribute('aria-expanded', String(opening)); show.classList.toggle('last-opened', opening);
       if (opening) {
         try { const report = await getReport(); if (ticket === generation) output.textContent = JSON.stringify(report, null, 2); }
@@ -792,9 +795,9 @@ const ExtraPotionsDiagnostics = (() => {
       copy.disabled = true; clearTimeout(timer);
       try {
         await navigator.clipboard.writeText(JSON.stringify(await getReport(), null, 2));
-        copy.textContent = 'Diagnostics Copied'; onCopy();
-      } catch { copy.textContent = 'Copy Failed'; notify('Could not copy diagnostics. Use Show Diagnostics.'); }
-      finally { copy.disabled = false; timer = setTimeout(() => { copy.textContent = 'Copy Diagnostics'; }, 1600); }
+        name(copy, 'Copied', 'Diagnostics copied'); onCopy();
+      } catch { name(copy, 'Failed', 'Copy failed'); notify('Could not copy diagnostics. Use Show.'); }
+      finally { copy.disabled = false; timer = setTimeout(() => { name(copy, 'Copy', 'Copy diagnostics'); }, 1600); }
     };
     show.addEventListener('click', showClick); copy.addEventListener('click', copyClick);
     return () => { ++generation; clearTimeout(timer); show.removeEventListener('click', showClick); copy.removeEventListener('click', copyClick); };
@@ -804,7 +807,7 @@ const ExtraPotionsDiagnostics = (() => {
     const actions = document.createElement('div'); actions.className = 'action-pair';
     const show = document.createElement('button'), copy = document.createElement('button'), output = document.createElement('pre');
     for (const button of [show, copy]) { button.type = 'button'; button.className = 'life-btn action'; }
-    show.textContent = 'Show Diagnostics'; copy.textContent = 'Copy Diagnostics'; output.className = 'diag';
+    output.className = 'diag';
     bindControls({ show, copy, output, getReport, notify });
     actions.append(show, copy); wrapper.append(actions, output); return wrapper;
   }
@@ -1492,11 +1495,11 @@ const ExtraPotionsTools = (() => {
     if(diagnostics&&typeof diagnostics==='object'){
       const review='Full diagnostics\n';
       for(const text of [JSON.stringify(diagnostics,null,2),JSON.stringify(diagnostics)]){const url=link(template+review+'```json\n'+text+'\n```\n');if(url.length<=ISSUE_URL_LIMIT)return url;}
-      const url=link(template+review+(copied?'The full diagnostics were copied to your clipboard when you selected Report a Problem. Paste them here if asked.\n':'Select Copy Diagnostics and paste the full diagnostics here if asked.\n'));
+      const url=link(template+review+(copied?'The full diagnostics were copied to your clipboard when you selected Report a problem. Paste them here if asked.\n':'Select Copy diagnostics and paste the full diagnostics here if asked.\n'));
       if(url.length<=ISSUE_URL_LIMIT||summary.length<=1500)return url;
       return productIssueUrl(id,version,{health,diagnostics,copied,summary:summary.slice(0,1500)});
     }
-    return link(template+'Diagnostics (optional)\nSelect Copy Diagnostics, paste them here, and remove anything private.\n');
+    return link(template+'Diagnostics (optional)\nSelect Copy diagnostics, paste them here, and remove anything private.\n');
   }
   const productTimelines=new Map(),resettingProducts=new Set();
   const productDataResetting=id=>resettingProducts.has(id);
@@ -1566,11 +1569,11 @@ const ExtraPotionsTools = (() => {
     // Support: Copy is the everyday action; Show stays available for review.
     const pair=diagnostics.querySelector?.('.action-pair'),buttons=pair?[...pair.querySelectorAll(':scope > button')]:[];
     const copy=buttons.find(b=>/^Copy/.test(b.textContent)),show=buttons.find(b=>/^(Show|Hide)/.test(b.textContent));
-    if(copy&&show){pair.insertBefore(show,copy);pair.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px';ExpMenuHelp.setMenuHelp(copy,'Copy a fresh diagnostic snapshot for troubleshooting. Review it for private data before sharing.');ExpMenuHelp.setMenuHelp(show,'Show or hide the diagnostic snapshot used for troubleshooting.');}
+    if(copy&&show){pair.insertBefore(show,copy);if(!pair.querySelector(':scope > [data-exp-diagnostics-label]')){const label=document.createElement('span');label.dataset.expDiagnosticsLabel='1';label.textContent='Diagnostics';pair.prepend(label);}pair.style.cssText='display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:6px';ExpMenuHelp.setMenuHelp(copy,'Copy a fresh diagnostic snapshot for troubleshooting. Review it for private data before sharing.');ExpMenuHelp.setMenuHelp(show,'Show or hide the diagnostic snapshot used for troubleshooting.');}
     const output=diagnostics.querySelector?.('pre');if(output)output.style.cssText+=';max-height:240px;overflow:auto';
     const health=()=>({label:timeline.querySelector?.('[data-exp-health-state]')?.textContent||'',reason:timeline.querySelector?.('[data-exp-health-reason]')?.textContent||''});
     // Each report takes a fresh diagnostics report, copies it, and attaches it to the issue when it fits.
-    const report=wide(button('Report a Problem',async()=>{
+    const report=wide(button('Report a problem',async()=>{
       if(report.disabled)return;report.disabled=true;
       let data=null,copied=false;
       try{const source=typeof ExtraPotionsDiagnostics==='object'?ExtraPotionsDiagnostics.reportSource?.(diagnostics):null;if(source)data=await source();}catch{}
@@ -1588,10 +1591,10 @@ const ExtraPotionsTools = (() => {
     // Reset: one tap arms, a second tap within a few seconds confirms. No browser dialogs.
     const resetStatus=note('');resetStatus.setAttribute('role','status');resetStatus.setAttribute('aria-live','polite');
     let armedUntil=0,armTimer=0;
-    const reset=wide(button('Reset All Settings',async()=>{
+    const reset=wide(button('Reset all settings',async()=>{
       if(reset.disabled)return;
       if(Date.now()>=armedUntil){
-        armedUntil=Date.now()+RESET_ARM_MS;reset.textContent='Tap Again to Reset';reset.dataset.expResetArmed='1';
+        armedUntil=Date.now()+RESET_ARM_MS;reset.textContent='Tap again to reset';reset.dataset.expResetArmed='1';
         resetStatus.textContent=`Tap again within ${RESET_ARM_MS/1000} seconds to permanently reset ${product}.`;
         clearTimeout(armTimer);armTimer=setTimeout(disarm,RESET_ARM_MS);return;
       }
@@ -1599,8 +1602,8 @@ const ExtraPotionsTools = (() => {
       try{await onReset();notify(product+' reset complete.');}catch{notify('Reset did not complete. Check storage permissions and try again.');}finally{reset.disabled=false;}
     }));
     reset.dataset.expDestructive='1';
-    function disarm(){clearTimeout(armTimer);armedUntil=0;reset.textContent='Reset All Settings';delete reset.dataset.expResetArmed;resetStatus.textContent='';}
-    reset.style.cssText+=';border:1px solid #ff2438;background:#e11428;color:#fff;font-weight:700';
+    function disarm(){clearTimeout(armTimer);armedUntil=0;reset.textContent='Reset all settings';delete reset.dataset.expResetArmed;resetStatus.textContent='';}
+    reset.style.cssText+=';font-weight:600';
     ExpMenuHelp.setMenuHelp(reset,`Clears ${product} settings and stored data on this browser. This cannot be undone. Tap twice within 4 seconds to confirm.`);
     const resetCard=document.createElement('section');resetCard.setAttribute('aria-label','Reset settings');resetCard.style.cssText='margin-block-start:12px;padding-block-start:8px';resetCard.append(reset,resetStatus);
     reset.addEventListener('blur',disarm);
@@ -1634,7 +1637,7 @@ const ExtraPotionsTools = (() => {
    (hidden) section header, so each product keeps its section code and lazy rendering. */
 const ExpMenuTabs = (() => {
   const shortLabels = Object.freeze({ appearance: 'Look', protection: 'Protect' });
-  const icons = Object.freeze({ drops: 'gift', streams: 'screen', appearance: 'brush', advanced: 'sliders', system: 'system', highlights: 'sparkle', protection: 'shield', amazon: 'bag' });
+  const icons = Object.freeze({ campaigns: 'gift', settings: 'sliders', drops: 'gift', streams: 'screen', appearance: 'brush', advanced: 'sliders', system: 'system', highlights: 'sparkle', protection: 'shield', amazon: 'bag', walmart: 'bag', ebay: 'bag', etsy: 'bag', target: 'bag', 'best buy': 'bag', retailer: 'bag' });
   // Disclosures that are inline controls, not groups, stay collapsible.
   // Products use data-exp-collapsible for groups that build expensive content when opened.
   const KEEP_COLLAPSIBLE = 'details';
@@ -2181,12 +2184,14 @@ const ExpMenuLayout = (() => {
     ${S} :is(.header-title-row h2,[data-exp-part=title],#tdh-rail-title){margin:0!important;font-size:14px!important;font-weight:600!important;line-height:1.2!important}
     ${S} :is([data-exp-part=subtitle],#tdh-rail-subtitle,.header-divider,.exp-menu-tagline){display:none!important}
     ${S} .header-actions{display:flex!important;align-items:center!important;gap:0!important;flex:none!important}
-    ${S} :is(.support-button,[data-exp-part=close],[data-exp-part=version],#tdh-header-version,#tdh-rail-close){display:grid!important;place-items:center!important;flex:none!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;margin:0 2px!important;padding:0!important;border:1px solid var(--theme-line)!important;border-radius:6px!important;background:transparent!important;color:var(--theme-text)!important;box-shadow:none!important}
+    ${S} :is(.support-button,[data-exp-part=close],[data-exp-part=version],#tdh-header-version,#tdh-rail-close){display:grid!important;place-items:center!important;flex:none!important;width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;margin:0 1px!important;padding:0!important;border:0!important;border-radius:6px!important;background:transparent!important;color:var(--theme-muted)!important;box-shadow:none!important}
+    ${S} :is(.support-button,[data-exp-part=close],[data-exp-part=version],#tdh-header-version,#tdh-rail-close):hover{background:color-mix(in srgb,var(--theme-text) 9%,transparent)!important;color:var(--theme-text)!important}
+    @media(pointer:coarse){${S} :is(.support-button,[data-exp-part=close],[data-exp-part=version],#tdh-header-version,#tdh-rail-close){width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important}}
     ${S} :is([data-exp-part=version],#tdh-header-version){position:relative!important;display:block!important;font-size:13px!important;line-height:1.4!important}
     ${S} .exp-changelog-icon{display:block;position:absolute;inset:0;margin:auto;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7}
     ${S} [data-exp-part=status]{font-size:12px!important;margin-top:2px!important}
     ${S}>nav{padding:0!important;margin:0!important}
-    ${S} .exp-menu-workspace{display:grid!important;grid-template-columns:84px minmax(0,1fr)!important;align-items:stretch!important;min-width:0!important;min-height:var(--exp-menu-navigation-height,0px)!important;overflow:hidden!important;flex:1 1 auto!important}
+    ${S} .exp-menu-workspace{display:grid!important;grid-template-columns:76px minmax(0,1fr)!important;align-items:stretch!important;min-width:0!important;min-height:var(--exp-menu-navigation-height,0px)!important;overflow:hidden!important;flex:1 1 auto!important}
     ${S} .exp-menu-rail{padding:4px!important;border-right:1px solid color-mix(in srgb,var(--theme-text) 7%,transparent)!important;background:color-mix(in srgb,var(--theme-panel) 82%,var(--theme-bg))!important;min-width:0!important;min-height:0!important;overflow:auto!important;overscroll-behavior:contain}
     ${S} .exp-section-tabs{display:flex!important;flex-direction:column!important;gap:0!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important}
     ${S} :is(.exp-section-tabs>[role=tab],.exp-menu-shortcuts>button){display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:1px!important;width:100%!important;min-width:0!important;min-height:44px!important;padding:3px 2px!important;margin:0!important;text-align:center!important;white-space:normal!important;overflow-wrap:anywhere!important;font:500 12px/1.25 -apple-system,"Segoe UI",system-ui,sans-serif!important;border:0!important;border-radius:6px!important;background:transparent!important;color:var(--theme-text)!important;box-shadow:none!important}
@@ -2215,6 +2220,7 @@ const ExpMenuLayout = (() => {
     ${C} button[role=switch][aria-checked=true]::before{background:var(--theme-accent2)!important}
     ${C} button[role=switch][aria-checked=true]::after{left:19px!important;background:var(--theme-bg)!important}
     ${C} button[role=switch]>span{display:none!important}
+    ${C} .mini-row:has(#tdh-switch-policy){grid-template-columns:minmax(0,1fr) fit-content(70%)!important}
     ${C} .exp-native-popup{position:relative!important;display:block!important;min-width:0!important;width:100%!important;max-width:100%!important;border-radius:6px!important;flex:none!important}
     ${C} .exp-native-popup>select{position:absolute!important;inset:0!important;opacity:0!important;width:100%!important;height:100%!important;min-height:0!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:0!important;z-index:1;cursor:pointer}
     ${C} .exp-select-face{position:relative;display:block;align-content:center;min-height:26px;width:auto;padding:2px 22px 2px 4px;font-size:13px!important;line-height:1.4!important;white-space:normal!important;overflow-wrap:anywhere!important;color:var(--theme-text)!important;pointer-events:none}
@@ -2228,6 +2234,10 @@ const ExpMenuLayout = (() => {
     ${C} details>summary::after{content:'';width:6px;height:6px;flex:none;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);margin-left:auto}
     ${C} details[open]>summary::after{transform:rotate(45deg)}
     ${C} details[open]>summary{border-bottom:1px solid color-mix(in srgb,var(--theme-text) 8%,transparent)!important}
+    ${C} details>summary:has(>.campaign-manager-title),${C} details>summary:has(>#tdh-eligibility-summary){display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;column-gap:4px!important;row-gap:0!important;align-items:center!important}
+    ${C} details>summary>:is(.campaign-manager-title,#tdh-eligibility-summary){grid-column:1!important;grid-row:1!important}
+    ${C} details>summary>:is(.campaign-manager-summary,.eligibility-checklist-count,.unclaimed-badge){grid-column:1!important;justify-self:start!important;text-align:left!important}
+    ${C} details>summary:is(:has(>.campaign-manager-title),:has(>#tdh-eligibility-summary))::after{grid-column:2!important;grid-row:1/span 3!important;align-self:center!important;margin-left:0!important}
     ${C} details .exp-settings-group{margin:0!important;background:transparent!important}
     ${C} :is(.actions,.button-grid,.action-pair,.settings-transfer,.rc-menu-actions,.profile-actions){display:flex!important;gap:4px!important;flex-wrap:wrap!important;padding:4px 8px!important;margin:0!important}
     ${C} :is(.actions,.button-grid,.action-pair)>*{flex:1;min-width:0}
@@ -2241,15 +2251,16 @@ const ExpMenuLayout = (() => {
     ${C} .action-stack>*{width:100%!important}
     ${C} .exp-native-popup:has(select[data-exp-full-width]){width:100%!important}
     ${C} .queue-switches{display:block!important}
-    ${C} [data-exp-system-item=support] .action-pair{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:4px!important;padding:4px 0!important}
-    ${C} [data-exp-system-item=support] .action-pair>button{padding:2px 4px!important;overflow-wrap:normal!important;word-break:normal!important}
+    ${C} [data-exp-system-item=support] .action-pair{display:grid!important;grid-template-columns:minmax(0,1fr) auto auto!important;align-items:center!important;gap:4px!important;padding:4px 0 4px 8px!important}
+    ${C} [data-exp-system-item=support] .action-pair>button{flex:none!important;padding:2px 10px!important;overflow-wrap:normal!important;word-break:normal!important}
     ${C} [data-exp-system-report]{display:block!important;width:100%!important;text-align:center!important;justify-content:center!important}
     ${C} [data-exp-system-item=preferences]{margin-top:8px!important}
     ${C} [data-exp-system-item=reset]{margin-top:12px!important;padding-top:0!important}
-    ${C} [data-exp-system-item=reset]>button{display:block!important;width:100%!important;min-height:32px!important;padding:4px 8px!important;background:#b4232a!important;color:#fff!important;border-color:#971b21!important}
+    ${C} [data-exp-system-item=reset]>button{display:block!important;width:100%!important;min-height:32px!important;padding:4px 8px!important;background:transparent!important;color:color-mix(in srgb,#d0222d 60%,var(--theme-text))!important;border:1px solid color-mix(in srgb,#d0222d 50%,transparent)!important}
+    ${C} [data-exp-system-item=reset]>button[data-exp-reset-armed]{background:#b4232a!important;color:#fff!important;border-color:#971b21!important}
+    ${C} [data-exp-diagnostics-label]{flex:none!important;font-size:13px!important;line-height:1.4!important;color:var(--theme-text)!important}
     ${C} [data-exp-system-item=reset]>p:empty{display:none!important}
     ${C} .setting-row:has(>input[aria-label="Content width (px)"]),${C} .setting-row:has(select[aria-label=Names]){grid-template-columns:minmax(0,1fr) 56px!important}
-    ${C} .setting-row:has(>input[aria-label="Content width (px)"]){padding-inline:4px!important}
     ${S} :is(button,input,select,textarea,summary):focus-visible{outline:2px solid var(--theme-focus,var(--theme-accent2))!important;outline-offset:2px!important}
     ${S} ::selection{background:var(--theme-accent)!important;color:var(--theme-text)!important}
     .exp-floating-update,.update-notice[data-placement="menu"]{max-height:calc(100dvh - 16px)!important;overflow:auto;overscroll-behavior:contain;background:var(--exp-notice-top,var(--theme-bg))!important;background-image:none!important;border-color:var(--exp-notice-border,var(--theme-muted))!important;border-radius:7px!important;box-shadow:0 4px 10px #0003!important;font-size:12px!important}
@@ -2258,8 +2269,8 @@ const ExpMenuLayout = (() => {
     ${S} [hidden]{display:none!important}
     @media(forced-colors:active){${S} :is(button,input,select,textarea,summary){forced-color-adjust:auto!important;border-color:ButtonText!important}${C} button[role=switch]::before{background:ButtonFace!important;border:1px solid ButtonText!important}${C} button[role=switch][aria-checked=true]::before{background:Highlight!important}${C} button[role=switch]::after{background:ButtonText!important}${C} [data-exp-system-item=reset]>button{background:ButtonFace!important;color:ButtonText!important}}
   `;
-  const paths={gift:'M3 7h14v4H3Zm2 4v7h10v-7M10 7v11M10 7C4 7 4 1 7 2c3 0 3 5 3 5Zm0 0c6 0 6-6 3-5-3 0-3 5-3 5Z',system:'M3 5h14M3 10h14M3 15h14M7 3v4m6 1v4m-8 1v4',brush:'m4 15 9-11 3 3-9 10H3v-3',shield:'M10 2 3 5v5c0 4 7 8 7 8s7-4 7-8V5Z',bag:'M4 6h12v12H4ZM7 6V4a3 3 0 0 1 6 0v2',sparkle:'m10 2 2 6 6 2-6 2-2 6-2-6-6-2 6-2Z',feed:'M3 3h14v14H3ZM6 6h8M6 10h8m-8 4h5',read:'M3 3h6l1 2 1-2h6v14h-6l-1 1-1-1H3Zm7 2v13',filter:'M3 4h14l-5 6v7l-4-2v-5Z',people:'M7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-5 8v-3a5 5 0 0 1 10 0v3m1-9a3 3 0 0 0 0-6m1 9a4 4 0 0 1 4 4v2'};
-  const iconFor={campaigns:'gift',drops:'gift',settings:'system',look:'brush',appearance:'brush',system:'system',protect:'shield',protection:'shield',amazon:'bag',highlights:'sparkle',feed:'feed',read:'read',filters:'filter',people:'people'};
+  const paths={gift:'M3 7h14v4H3Zm2 4v7h10v-7M10 7v11M10 7C4 7 4 1 7 2c3 0 3 5 3 5Zm0 0c6 0 6-6 3-5-3 0-3 5-3 5Z',sliders:'M3 5h14M3 10h14M3 15h14M7 3v4m6 1v4m-8 1v4',system:'M10 4.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Zm0 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm0-6v2.5m0 11V18M2 10h2.5m11 0H18M4.34 4.34l1.77 1.77m7.78 7.78 1.77 1.77m0-11.32-1.77 1.77m-7.78 7.78-1.77 1.77',brush:'m4 15 9-11 3 3-9 10H3v-3',shield:'M10 2 3 5v5c0 4 7 8 7 8s7-4 7-8V5Z',bag:'M4 6h12v12H4ZM7 6V4a3 3 0 0 1 6 0v2',sparkle:'m10 2 2 6 6 2-6 2-2 6-2-6-6-2 6-2Z',feed:'M3 3h14v14H3ZM6 6h8M6 10h8m-8 4h5',read:'M3 3h6l1 2 1-2h6v14h-6l-1 1-1-1H3Zm7 2v13',filter:'M3 4h14l-5 6v7l-4-2v-5Z',people:'M7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-5 8v-3a5 5 0 0 1 10 0v3m1-9a3 3 0 0 0 0-6m1 9a4 4 0 0 1 4 4v2'};
+  const iconFor={campaigns:'gift',drops:'gift',settings:'sliders',advanced:'sliders',look:'brush',appearance:'brush',system:'system',protect:'shield',protection:'shield',amazon:'bag',walmart:'bag',ebay:'bag',etsy:'bag',target:'bag','best buy':'bag',retailer:'bag',highlights:'sparkle',feed:'feed',read:'read',filters:'filter',people:'people'};
   function mount({panel}){
     const doc=panel.ownerDocument,view=doc.defaultView,wrapped=new Map(),groups=new Set(),moves=[];
     let frame=0;
@@ -2301,7 +2312,7 @@ const ExpMenuLayout = (() => {
 const ExpLeanMenu = (() => {
   // The shell is shared by existing products and new createProduct/createMenuController consumers.
   const template=Object.freeze({id:'extrapotions-menu',version:1,layout:'sidebar',systemLayout:'grouped',supportNavigation:'system',resetNavigation:'system',donations:'header-heart'});
-  const sectionIcons = Object.freeze({campaigns:'gift',settings:'system',drops:'gift',streams:'screen',appearance:'brush',advanced:'sliders',system:'system',highlights:'sparkle',protection:'shield',amazon:'bag'});
+  const sectionIcons = Object.freeze({campaigns:'gift',settings:'sliders',drops:'gift',streams:'screen',appearance:'brush',advanced:'sliders',system:'system',highlights:'sparkle',protection:'shield',amazon:'bag'});
   // Scoped switches outrank the older product gradient rules.
   const SWITCH='[data-exp-menu-layout="lean"][data-exp-menu-layout="lean"][data-exp-menu-layout="lean"] .toggleSwitch[role="switch"]';
   const css = ExpMenuLayout.css;
@@ -2495,7 +2506,7 @@ const ExpMenuPreferences = (() => {
   }
   function createMenuSizeControls(){
     const row=document.createElement('label');row.className='row exp-menu-size';const copy=document.createElement('span');copy.className='copy';
-    const title=document.createElement('strong');title.textContent='Menu Size';copy.append(title);
+    const title=document.createElement('strong');title.textContent='Menu size';copy.append(title);
     const select=document.createElement('select');select.setAttribute('aria-label','Menu size');select.dataset.expMenuSizeSelect='1';
     ExpMenuHelp.setMenuHelp(select,'Menu size is shared by ExtraPotions menus on this site.');
     for(const [value,label] of [['standard','Standard'],['compact','Compact'],['mini','Mini']]){const option=document.createElement('option');option.value=value;option.textContent=label;select.append(option);}
@@ -2574,7 +2585,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.11.0';
+  const version = '3.12.0';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -3807,7 +3818,8 @@ const ExtraPotionsCore = (() => {
     return !scrolls && page.scrollHeight <= page.clientHeight + 1 ? control : null;
   }
   function controlsUnder(box) {
-    const found = new Set(), step = 12;
+    // Each sample is a full hit test, so the grid is as coarse as the smallest control worth avoiding allows.
+    const found = new Set(), step = 16;
     for (let y = box.top; y <= box.bottom; y += step) for (let x = box.left; x <= box.right; x += step) {
       if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue;
       const control = pinnedControlAt(x, y);
@@ -3820,7 +3832,7 @@ const ExtraPotionsCore = (() => {
   function siteControlShift(origin, anchor) {
     if (groupDragging) return 0;
     const now = performance.now();
-    if (shiftMemo && shiftMemo.origin === origin && now - shiftMemo.at < 200) return shiftMemo.value;
+    if (shiftMemo && shiftMemo.origin === origin && now - shiftMemo.at < 1000) return shiftMemo.value;
     // The flyout launcher is one 48px tile in the corner; the grid is every launcher cell.
     const cells = ExpLauncherFlyout.flyoutActive(launcherHosts()) ? [{ offset:0, x:0 }] : [...document.querySelectorAll('[data-exp-product-launcher="1"]')].map(launcherCell);
     if (!cells.length) return 0;
@@ -3847,7 +3859,11 @@ const ExtraPotionsCore = (() => {
   // grid of points, so rechecking on every change made scrolling a long page slow. Launchers move only when the
   // shift changes.
   const SITE_CHECK_PAUSE = 300, SITE_CHECK_MAX_WAIT = 2000;
-  let siteCheckTimer = 0, siteCheckDue = 0;
+  // A page that keeps changing (rotating adverts, tickers) but gives the same answer each time is checked less and
+  // less often, up to every 4s; the first check that finds a different answer returns to the normal pace. A hidden
+  // tab is not checked at all: the next change after it is shown again checks it.
+  const SITE_CHECK_GAP_MAX = 4000;
+  let siteCheckTimer = 0, siteCheckDue = 0, siteCheckLast = 0, siteCheckGap = 0;
   function recheckSiteControls() {
     const now = performance.now();
     if (!siteCheckTimer) siteCheckDue = now + SITE_CHECK_MAX_WAIT;
@@ -3855,13 +3871,15 @@ const ExtraPotionsCore = (() => {
     siteCheckTimer = setTimeout(() => {
       siteCheckTimer = 0;
       const host = document.querySelector('[data-exp-product-launcher="1"]');
-      if (!host || groupDragging) return;
+      if (!host || groupDragging || document.hidden) return;
       const before = shiftMemo ? shiftMemo.value : 0;
       shiftMemo = null;
       const delta = Math.max(8-(innerHeight-60), Math.min(4, Number(read(GRID_DELTA,0)) || 0));
       const origin = innerHeight-60+delta, value = siteControlShift(origin, origin <= (innerHeight-48)/2 ? 'top':'bottom');
+      siteCheckLast = performance.now();
+      siteCheckGap = value !== before ? 0 : Math.min(SITE_CHECK_GAP_MAX, Math.max(1000, siteCheckGap * 2));
       if (value !== before) emit('launcher-site-controls', 'core');
-    }, Math.max(0, Math.min(SITE_CHECK_PAUSE, siteCheckDue - now)));
+    }, Math.max(0, Math.min(SITE_CHECK_PAUSE, siteCheckDue - now), siteCheckLast + siteCheckGap - now));
   }
   // Restores the default launcher order and group position for every product.
   // Shared geometry for menus and notices: the launcher that owns them, the left edge of the launcher grid,

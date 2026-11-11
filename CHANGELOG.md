@@ -1,3 +1,10 @@
+## 3.12.0 — 2026-11-11
+
+- Refresh the shared menu with borderless header buttons, a clearer side rail and separate Settings and System icons.
+- Keep Diagnostics on one row with Show and Copy, and outline Reset all settings until it is armed.
+- Use sentence-case labels across shared controls.
+- Check for the shared launcher less often on idle pages.
+
 ## 3.11.0 — 2026-11-02
 
 - Use Slate Blue Light, Dark or System across product menus and site themes.

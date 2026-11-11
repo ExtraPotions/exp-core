@@ -1,8 +1,8 @@
 {
-  "coreVersion": "3.11.0",
+  "coreVersion": "3.12.0",
   "source": {
     "source": "ExtraPotions/exp-core",
-    "sourceVersion": "3.11.0",
+    "sourceVersion": "3.12.0",
     "architecture": "core-native"
   },
   "suiteContract": {
@@ -220,25 +220,25 @@
       "rootId": "exp-prisma-root"
     }
   },
-  "bundleSha256": "a040110cf75edf360fa7e7caa9258ff002bb1ba6ce997fd05feb5de4e8b07799",
+  "bundleSha256": "44d73be21b6784f79cb2ad77ee63bfe587015c09f54dd758d76a8f1d21de19dc",
   "files": {
     "foundation.js": "e1d0a09f0e737b1c4eea62c1f43035b2ed1bb953b1c3c1655b3a03052c3f0770",
-    "diagnostic-report.js": "563d6314d8866d2655141b6d06cb3ba4dc3f964ee2c0a427dad35d3f1c81a1f6",
+    "diagnostic-report.js": "f4e8f42cc2bae3267e0fb090a82d32fd2e8988d667f4fa01473503dac3596891",
     "lifecycle.js": "2188ca81de18fabc1bcc2730ca831da9cbde5ab8ecf2be6b2b5d6d6c44fd4244",
-    "product-tools.js": "4a854c617f7ba2e76466d233992d9ddf5bd5827a683ab0743b108c2f4a91a985",
-    "menu-tabs.js": "e2968d6b3b22a7da762120f89f70121cabed266717f0adc3dd893b05e7412170",
+    "product-tools.js": "87c322845ed0651678e128ecb935bdee91234b5ee8f1448ad911da03be3aa8a9",
+    "menu-tabs.js": "cbb5a4c4bef81a849c14f56b5651277d34ff2109590a70219410572aa960ba70",
     "menu-arrangement.js": "c16ab4a821febfdb3e64d0912e273b46d86b5aa1f171402702a6a213d625b456",
     "health-summary.js": "0a876e8cf4e257773120f85389a4e0152e44053656536c278c54548e35ca685a",
     "recovery-control.js": "c9f1b6383ffda72235ca59bca1a1308bfad5b3fb6552f7ba4305795bfcbdf2af",
-    "menu-layout.js": "bf2d45d62c7e16c73d1e0555f65d4d4e57f7c19f3b0d1a4502fc27e04576e156",
-    "lean-menu.js": "ada4aa596ab9cb439a5ffe0c633e19ff52ed50c46e3c5a3c971db61225447c9e",
+    "menu-layout.js": "e26938f4b6c8817ffd900359d7864ebd0a7bbc68d66619f63d8d0baac45f557c",
+    "lean-menu.js": "4275216b32e606ba5867b83b7b1f733be02e3aa962edabd3f6d204a5ac4c13ab",
     "menu-help.js": "bbd9ba422ee11f5d854261d7e2d7d75a24972f91d58aafdb60a45ad659ad5f8e",
     "menu-typography.js": "6995f62198cd48fbf50d7951cad0a5f8c9f96d6d5d773b8edca4a06dc7400ef8",
-    "menu-preferences.js": "1ac14123207e51522527d8a568511d7f5705edd734dd79fc8e5184d879cfcd90",
+    "menu-preferences.js": "f8c3c0e223ff9b76001af93dba4282d2fc99bd29121fee3979f5de8fa34425d1",
     "site-colors.js": "e8ebc79973a1a39fc51396146154bccb77d608f9488164d57efb5b57007401bb",
     "launcher-flyout.js": "3918f47a2a0eb51f36ad33d38b6f3a2eac4a1e6d543b2e90dea1129712064061",
     "runtime.js": "d569c714b3add6935255b96482f23f3b3bd2d3b0c69980b4d1edd459339ffae9",
-    "runtime-menus.js": "442d939cb08d362002d955d227569d69a4a98ab955b080802f88986c2b61d8bd",
+    "runtime-menus.js": "9e53816a9adf90ae35579b6e07a5f53f5a19c4845a51bf1b09c76d5c1a19b8c3",
     "suite-contract.json": "48d07c705f2c5c4e1e72bc55b549593612ae251b5c4e505d96e3ea5016820894"
   }
 }

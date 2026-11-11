@@ -10,10 +10,10 @@ The launcher uses Twitch’s top bar and Thread’s Reddit rail placement where 
 
 ## Menu size and navigation
 
-Choose Standard, Compact or Mini in **Look → Menu Size**. Product sections appear in the side rail; secondary settings expand in place. Header buttons open the changelog, donations and Close. Support and Reset stay inside **System**.
+Choose Standard, Compact or Mini in **Look → Menu size**. Product sections appear in the side rail; secondary settings expand in place. Header buttons open the changelog, donations and Close. Support and Reset stay inside **System**.
 
 ## Status, help and recovery
 
-**System** shows Working, Waiting, Paused or Needs attention and offers a recovery action when available. Use Show Diagnostics or Copy Diagnostics for troubleshooting, Report a Problem for support, and Reset All Settings only when you want to clear the product’s settings.
+**System** shows Working, Waiting, Paused or Needs attention and offers a recovery action when available. Use Show or Copy beside Diagnostics for troubleshooting, Report a problem for support, and Reset all settings only when you want to clear the product’s settings.
 
 SHIFT is retired. Its repository, releases and settings are preserved, and Core retains compatibility with installed copies. It is excluded from routine maintenance and new installation packs. No other product requires SHIFT.
