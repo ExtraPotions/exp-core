@@ -1,3 +1,7 @@
+## 3.12.1 — 2026-11-12
+
+- Use sentence-case wording in update notices, changelog notices and launcher update labels.
+
 ## 3.12.0 — 2026-11-11
 
 - Refresh the shared menu with borderless header buttons, a clearer side rail and separate Settings and System icons.

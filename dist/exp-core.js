@@ -2585,7 +2585,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.12.0';
+  const version = '3.12.1';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -5193,7 +5193,7 @@ const ExtraPotionsCore = (() => {
     notice.className = 'update-notice';
     notice.dataset.expUpdateNotice = '1';
     notice.hidden = true;
-    notice.innerHTML = '<button type="button" class="update-dismiss" aria-label="Dismiss Update Notice">×</button><div class="update-head"><div class="update-heading"><div class="update-kicker">What\'s New</div><div class="update-title"></div></div><div class="update-version"></div></div><div class="update-text"></div><ul class="update-list"></ul><div class="update-footer"><a class="update-release" target="_blank" rel="noopener noreferrer">GitHub Release</a><a class="update-action" target="_blank" rel="noopener noreferrer">Install Update</a></div>';
+    notice.innerHTML = '<button type="button" class="update-dismiss" aria-label="Dismiss update notice">×</button><div class="update-head"><div class="update-heading"><div class="update-kicker">What\'s new</div><div class="update-title"></div></div><div class="update-version"></div></div><div class="update-text"></div><ul class="update-list"></ul><div class="update-footer"><a class="update-release" target="_blank" rel="noopener noreferrer">GitHub release</a><a class="update-action" target="_blank" rel="noopener noreferrer">Install update</a></div>';
     (shadow.querySelector('.exp-core-theme') || shadow).append(notice);
     const controller = createMenuNotice({
       host,
@@ -5205,7 +5205,7 @@ const ExtraPotionsCore = (() => {
       durationMs: options.durationMs ?? 30000,
     });
     function show(state = {}) {
-      notice.querySelector('.update-kicker').textContent = state.kicker || "What's New";
+      notice.querySelector('.update-kicker').textContent = state.kicker || "What's new";
       notice.querySelector('.update-title').textContent = state.title || '';
       notice.querySelector('.update-version').textContent = state.version ? 'v' + state.version : '';
       notice.querySelector('.update-text').textContent = state.text || '';
@@ -5226,7 +5226,7 @@ const ExtraPotionsCore = (() => {
       const actionUrl = state.actionUrl || options.installUrl || '';
       action.hidden = !actionUrl || state.showAction === false;
       if (actionUrl) action.href = actionUrl;
-      action.textContent = state.actionText || 'Install Update';
+      action.textContent = state.actionText || 'Install update';
       notice.dataset.noticeKind = state.kind || 'current';
       // Some products close the menu without marking the panel hidden; only a drawn panel counts as open.
       controller.setMenuOpen(!panel.hidden && panel.getClientRects().length > 0);
