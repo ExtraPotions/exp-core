@@ -1,8 +1,8 @@
 {
-  "coreVersion": "3.12.2",
+  "coreVersion": "3.13.0",
   "source": {
     "source": "ExtraPotions/exp-core",
-    "sourceVersion": "3.12.2",
+    "sourceVersion": "3.13.0",
     "architecture": "core-native"
   },
   "suiteContract": {
@@ -220,17 +220,17 @@
       "rootId": "exp-prisma-root"
     }
   },
-  "bundleSha256": "71f22f86582226f4b09b7f7a147194e793d77cf67fcd4155c36c98c09437f194",
+  "bundleSha256": "6c3be2e3fcbd051b9a185da1312501a68a372432dc635041894ba19849c07719",
   "files": {
-    "foundation.js": "b106889a78e9b12d829a53d22395c628b3e554e60443624579e19a4246550a08",
+    "foundation.js": "c843c333886c8664fbd1bdfc445da4e1adbd96957e7acf716d61f887315e66e9",
     "diagnostic-report.js": "f4e8f42cc2bae3267e0fb090a82d32fd2e8988d667f4fa01473503dac3596891",
     "lifecycle.js": "2188ca81de18fabc1bcc2730ca831da9cbde5ab8ecf2be6b2b5d6d6c44fd4244",
     "product-tools.js": "87c322845ed0651678e128ecb935bdee91234b5ee8f1448ad911da03be3aa8a9",
-    "menu-tabs.js": "cbb5a4c4bef81a849c14f56b5651277d34ff2109590a70219410572aa960ba70",
+    "menu-tabs.js": "05d070afc8e5dd8bbcdae65fd80a1b77658771ec02bab4c855f3c65ef191ba31",
     "menu-arrangement.js": "c16ab4a821febfdb3e64d0912e273b46d86b5aa1f171402702a6a213d625b456",
     "health-summary.js": "0a876e8cf4e257773120f85389a4e0152e44053656536c278c54548e35ca685a",
     "recovery-control.js": "c9f1b6383ffda72235ca59bca1a1308bfad5b3fb6552f7ba4305795bfcbdf2af",
-    "menu-layout.js": "e26938f4b6c8817ffd900359d7864ebd0a7bbc68d66619f63d8d0baac45f557c",
+    "menu-layout.js": "df64db4ecb0773e2e479f25750fddf463cfa4cf5ff379c33f58f914fabec4a6e",
     "lean-menu.js": "4275216b32e606ba5867b83b7b1f733be02e3aa962edabd3f6d204a5ac4c13ab",
     "menu-help.js": "bbd9ba422ee11f5d854261d7e2d7d75a24972f91d58aafdb60a45ad659ad5f8e",
     "menu-typography.js": "6995f62198cd48fbf50d7951cad0a5f8c9f96d6d5d773b8edca4a06dc7400ef8",
@@ -238,7 +238,7 @@
     "site-colors.js": "e8ebc79973a1a39fc51396146154bccb77d608f9488164d57efb5b57007401bb",
     "launcher-flyout.js": "3918f47a2a0eb51f36ad33d38b6f3a2eac4a1e6d543b2e90dea1129712064061",
     "runtime.js": "d569c714b3add6935255b96482f23f3b3bd2d3b0c69980b4d1edd459339ffae9",
-    "runtime-menus.js": "a03a7d5504bbbd8cb3ea145409fe80897c44363f1c64e74453e91c2b20624792",
+    "runtime-menus.js": "6a0dccfeffb35a1e298095046ea112837c6f40a81892899229cb17cbbfcecd40",
     "suite-contract.json": "48d07c705f2c5c4e1e72bc55b549593612ae251b5c4e505d96e3ea5016820894"
   }
 }

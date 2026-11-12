@@ -1,3 +1,9 @@
+## 3.13.0 — 2026-11-12
+
+- Turn product menus into filing cabinets: each section is a drawer with its icon on the front, one opens at a time, and the menu reopens on the last one used.
+- Use a charcoal menu theme with each product's own highlight colour; site colours stay Slate Blue.
+- Keep the shared launcher order when a product is switched off or added, and stop rewriting it on every page change.
+
 ## 3.12.2 — 2026-11-12
 
 - Give update and changelog notices one layout in every product: a button-style GitHub release control, even spacing and a flat panel.
