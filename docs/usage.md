@@ -4,7 +4,7 @@
 
 ## Open a product
 
-Install a product, not Core. Each product bundles the shared menu. When several products run on a page, open the shared launcher and choose one. Products keep their own features, colors and settings.
+Install a product, not Core. Each product bundles the shared menu. When several products run on a page, open the shared launcher and choose one; on Twitch each product has its own icon in the top bar. Products keep their own features, colors and settings.
 
 The launcher uses Twitch’s top bar and Thread’s Reddit rail placement where available. Elsewhere it uses a corner position; the corner launcher can be dragged vertically. Updates and Dropper progress can appear on the launcher.
 

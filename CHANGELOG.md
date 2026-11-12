@@ -1,3 +1,9 @@
+## 3.14.0 — 2026-11-12
+
+- Remove the floating page-actions bar; its actions stay in each product's menu.
+- On Twitch, give each product its own plain icon in the top bar instead of a shared launcher, and fall back to the shared launcher when the bar has no room.
+- Drop hover tips from settings that explain themselves, including Menu size, Menu theme and Show diagnostics.
+
 ## 3.13.0 — 2026-11-12
 
 - Turn product menus into filing cabinets: each section is a drawer with its icon on the front, one opens at a time, and the menu reopens on the last one used.

@@ -1400,38 +1400,6 @@ function createProductLifecycle(shared) {
 // Shared, local-only compatibility controls.
 const ExtraPotionsTools = (() => {
   const PRODUCT_ROOT_IDS = {"thread":"exp-thread-root","dropper":"tdh-root","shift":"exp-shift-root","ward":"exp-ward-root","prisma":"exp-prisma-root"};
-  function createPageActions({host,shadow,label,actions,visible=()=>true,preferVideo=false}){
-    const bar=document.createElement('div');bar.dataset.expPageActions='1';bar.setAttribute('role','group');bar.setAttribute('aria-label',label+' page actions');
-    const style=document.createElement('style');style.textContent=`[data-exp-page-actions]{pointer-events:auto;position:fixed;z-index:2147483500;display:flex;align-items:center;flex-wrap:wrap;gap:5px;max-width:calc(100vw - 24px);padding:5px;border:1px solid var(--theme-muted,#848494);border-radius:5px;background:var(--theme-bg,#18181b);color:var(--theme-text,#efeff1);font:12px/1.4 "Segoe UI",sans-serif;box-sizing:border-box}[data-exp-page-actions][hidden]{display:none!important}[data-exp-page-actions]>strong{font-size:11px;font-weight:600}[data-exp-page-actions]>button{min-height:30px;min-width:0;padding:4px 7px;border:1px solid var(--theme-muted,#848494);border-radius:5px;background:var(--theme-panel,#1f1f23);color:var(--theme-text,#efeff1);font:12px/1.4 "Segoe UI",sans-serif;white-space:normal;cursor:pointer}[data-exp-page-actions]>button:disabled{opacity:.6;cursor:default}[data-exp-page-actions]>button:focus-visible{outline:2px solid var(--theme-accent2,#bf94ff);outline-offset:2px}@media(pointer:coarse){[data-exp-page-actions]>button{min-height:36px}}`;
-    const title=document.createElement('strong');title.textContent=label;bar.append(title);
-    const buttons=actions.map(action=>{
-      const button=document.createElement('button');button.type='button';button.textContent=action.label;bar.append(button);
-      button.addEventListener('click',()=>{try{action.run?.();}finally{refresh();}});
-      if(action.hold){const release=()=>action.hold(false);button.addEventListener('pointerdown',()=>action.hold(true));for(const event of ['pointerup','pointercancel','pointerleave','blur'])button.addEventListener(event,release);button.addEventListener('keydown',event=>{if([' ','Enter'].includes(event.key)){event.preventDefault();action.hold(true);}});button.addEventListener('keyup',release);}
-      return button;
-    });
-    shadow.append(style);(shadow.querySelector('.exp-core-theme,.cluster')||shadow).append(bar);
-    let frame=0,disposed=false;
-    const releaseHeld=()=>actions.forEach(action=>action.hold?.(false));
-    const visibilityChanged=()=>{if(document.hidden)releaseHeld();};
-    addEventListener('blur',releaseHeld);document.addEventListener('visibilitychange',visibilityChanged);
-    function refresh(){if(!frame&&!disposed)frame=requestAnimationFrame(layout);}
-    function layout(){
-      frame=0;if(disposed)return;
-      let shown=false;try{shown=host.isConnected&&visible();}catch{}
-      if(bar.hidden===shown){if(!shown)actions.forEach(action=>action.hold?.(false));bar.hidden=!shown;document.dispatchEvent(new Event('exp-core:page-actions'));}
-      if(!shown)return;
-      actions.forEach((action,i)=>{buttons[i].disabled=action.enabled?!action.enabled():false;buttons[i].textContent=action.text?.()||action.label;});
-      const bars=Object.values(PRODUCT_ROOT_IDS).map(id=>document.getElementById(id)?.shadowRoot?.querySelector('[data-exp-page-actions]')).filter(node=>node&&!node.hidden);
-      const index=Math.max(0,bars.indexOf(bar)),previous=bars.slice(0,index).reduce((sum,node)=>sum+node.getBoundingClientRect().height+5,0);
-      const video=preferVideo?[...document.querySelectorAll('video')].map(node=>node.getBoundingClientRect()).find(r=>r.width>100&&r.height>80&&r.bottom>0&&r.bottom<innerHeight-90):null;
-      bar.style.left=(video?Math.max(12,Math.min(video.left,innerWidth-bar.getBoundingClientRect().width-12)):12)+'px';
-      bar.style.top=(video?Math.min(innerHeight-bar.getBoundingClientRect().height-12,video.bottom+5+previous):Math.max(12,innerHeight-bar.getBoundingClientRect().height-12-previous))+'px';
-    }
-    for(const event of ['resize','scroll'])addEventListener(event,refresh,{passive:true,capture:event==='scroll'});
-    document.addEventListener('exp-core:page-actions',refresh);document.addEventListener('exp-core:coordination',refresh);refresh();document.dispatchEvent(new Event('exp-core:page-actions'));
-    return Object.freeze({element:bar,refresh,destroy(){disposed=true;releaseHeld();removeEventListener('blur',releaseHeld);document.removeEventListener('visibilitychange',visibilityChanged);cancelAnimationFrame(frame);for(const event of ['resize','scroll'])removeEventListener(event,refresh,event==='scroll');document.removeEventListener('exp-core:page-actions',refresh);document.removeEventListener('exp-core:coordination',refresh);bar.remove();style.remove();document.dispatchEvent(new Event('exp-core:page-actions'));}});
-  }
   function placeDonationPanel(panel, trigger){
     trigger.closest('.menu-head,header')?.after(panel);
     panel.style.cssText='position:static!important;width:100%!important;max-width:100%!important;margin:7px 0;box-shadow:none';
@@ -1588,7 +1556,7 @@ const ExtraPotionsTools = (() => {
     // Support: Copy is the everyday action; Show stays available for review.
     const pair=diagnostics.querySelector?.('.action-pair'),buttons=pair?[...pair.querySelectorAll(':scope > button')]:[];
     const copy=buttons.find(b=>/^Copy/.test(b.textContent)),show=buttons.find(b=>/^(Show|Hide)/.test(b.textContent));
-    if(copy&&show){pair.insertBefore(show,copy);if(!pair.querySelector(':scope > [data-exp-diagnostics-label]')){const label=document.createElement('span');label.dataset.expDiagnosticsLabel='1';label.textContent='Diagnostics';pair.prepend(label);}pair.style.cssText='display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:6px';ExpMenuHelp.setMenuHelp(copy,'Copy a fresh diagnostic snapshot for troubleshooting. Review it for private data before sharing.');ExpMenuHelp.setMenuHelp(show,'Show or hide the diagnostic snapshot used for troubleshooting.');}
+    if(copy&&show){pair.insertBefore(show,copy);if(!pair.querySelector(':scope > [data-exp-diagnostics-label]')){const label=document.createElement('span');label.dataset.expDiagnosticsLabel='1';label.textContent='Diagnostics';pair.prepend(label);}pair.style.cssText='display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:6px';ExpMenuHelp.setMenuHelp(copy,'Copy a fresh diagnostic snapshot for troubleshooting. Review it for private data before sharing.');}
     const output=diagnostics.querySelector?.('pre');if(output)output.style.cssText+=';max-height:240px;overflow:auto';
     const health=()=>({label:timeline.querySelector?.('[data-exp-health-state]')?.textContent||'',reason:timeline.querySelector?.('[data-exp-health-reason]')?.textContent||''});
     // Each report takes a fresh diagnostics report, copies it, and attaches it to the issue when it fits.
@@ -1649,7 +1617,7 @@ const ExtraPotionsTools = (() => {
     for(const [key,node] of [['timeline',timeline],['diagnostics',diagnostics],['issue',issue],['preferences',preferences],['reset',reset]]){node.dataset.expSystemItem=key;node.style.minWidth='0';node.style.maxWidth='100%';const summary=node.tagName==='DETAILS'?node.querySelector(':scope > summary'):null;if(summary)summary.style.cssText+=';min-height:28px;padding:4px 0;box-sizing:border-box;cursor:pointer';system.append(node);}
     return system;
   }
-  return Object.freeze({createPageActions,issueSummary,productIssueUrl,productDataResetting,clearProductData,groupTimelineEntries,createProductTimeline,createProductSystem,placeDonationPanel,createBitcoinDonation,compatibilitySnapshot,createCompatibilityControls,createSuiteSiteControls});
+  return Object.freeze({issueSummary,productIssueUrl,productDataResetting,clearProductData,groupTimelineEntries,createProductTimeline,createProductSystem,placeDonationPanel,createBitcoinDonation,compatibilitySnapshot,createCompatibilityControls,createSuiteSiteControls});
 })();
 
 /* Product sections as a filing cabinet: each section header is a drawer front. The product's own header
@@ -2432,7 +2400,7 @@ const ExpMenuPreferences = (() => {
     const row=document.createElement('label');row.className='row exp-menu-size';const copy=document.createElement('span');copy.className='copy';
     const title=document.createElement('strong');title.textContent='Menu size';copy.append(title);
     const select=document.createElement('select');select.setAttribute('aria-label','Menu size');select.dataset.expMenuSizeSelect='1';
-    ExpMenuHelp.setMenuHelp(select,'Menu size is shared by ExtraPotions menus on this site.');
+    
     for(const [value,label] of [['standard','Standard'],['compact','Compact'],['mini','Mini']]){const option=document.createElement('option');option.value=value;option.textContent=label;select.append(option);}
     select.value=menuSizePreference();select.addEventListener('change',()=>setMenuSizePreference(select.value));row.append(copy,select);return row;
   }
@@ -2472,7 +2440,7 @@ const ExpSiteColors = (() => {
     const select=document.createElement('select');select.setAttribute('aria-label',label);select.dataset.expThemeMode='1';
     if(label==='Site theme')select.dataset.expSiteColorsSelect='1';
     for(const {id,name} of sitePalettes){const option=document.createElement('option');option.value=id;option.textContent=name;select.append(option);}
-    ExpMenuHelp.setMenuHelp(select,'Light and Dark use Slate Blue. System follows your device’s appearance.');
+    
     select.value=normalizeThemeMode(value);select.addEventListener('change',()=>onChange?.(select.value));row.append(copy,select);return row;
   }
   const createSiteColorControl = options => createThemeModeControl({...options,label:'Site theme'});
@@ -2482,7 +2450,8 @@ const ExpSiteColors = (() => {
 // Flyout launcher rules shared by every Core copy on a page. Each copy computes the same answer from the
 // launcher hosts' attributes alone, so products agree on one launcher without messaging each other.
 const ExpLauncherFlyout = (() => {
-  const PROTOCOL = '1';
+  // 2: a site's top bar can hold one icon per product instead of the flyout; copies on 1 keep the grid for everyone.
+  const PROTOCOL = '2';
   const SUITE_ORDER = Object.freeze(['dropper','shift','prisma','ward','thread']);
   // Products that only run on their own sites (Dropper on Twitch, WARD on retailers) lead there.
   const SITE_PRODUCTS = Object.freeze(['dropper','ward','thread']);
@@ -2509,7 +2478,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.13.0';
+  const version = '3.14.0';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -3698,7 +3667,8 @@ const ExtraPotionsCore = (() => {
     const single = singleSlot(state);
     if (single) {
       document.documentElement.dataset.expLauncherAnchor = 'top';
-      return { top: single.hub.top, right: viewWidth() - single.hub.left - single.hub.size, anchor: 'top', delta: savedDelta(), site: true, size: single.hub.size };
+      const left = state.row ? state.row.left + Math.max(0, state.order.indexOf(host?.dataset?.productId)) * (state.row.size + state.row.gap) : single.hub.left;
+      return { top: single.hub.top, right: viewWidth() - left - single.hub.size, anchor: 'top', delta: savedDelta(), site: true, size: single.hub.size };
     }
     const { offset, x } = launcherCell(host);
     const delta = Math.max(8-(innerHeight-60), Math.min(4, Number(read(GRID_DELTA,0)) || 0));
@@ -3982,8 +3952,16 @@ const ExtraPotionsCore = (() => {
   const hostLauncher = host => host?.shadowRoot?.querySelector('[data-exp-part="launcher"],.launcher') || null;
   function flyoutState() {
     const hosts = launcherHosts();
-    const active = ExpLauncherFlyout.flyoutActive(hosts);
-    return { hosts, active, lead: active ? ExpLauncherFlyout.leadProduct(hosts) : '', order: active ? ExpLauncherFlyout.flyoutOrder(hosts) : [], open: active && document.documentElement.dataset.expFlyoutOpen === '1' };
+    const row = hosts.length === 1 || (hosts.length > 1 && hosts.every(host => host.dataset.expFlyout === ExpLauncherFlyout.PROTOCOL)) ? siteRow(hosts.length) : null;
+    const active = !row && ExpLauncherFlyout.flyoutActive(hosts);
+    return { hosts, active, row, lead: active ? ExpLauncherFlyout.leadProduct(hosts) : '', order: active || row ? ExpLauncherFlyout.flyoutOrder(hosts) : [], open: active && document.documentElement.dataset.expFlyoutOpen === '1' };
+  }
+  // A top bar with room for every product's icon side by side (Twitch); otherwise null and the flyout is used.
+  function siteRow(count) {
+    const row = siteSlot()?.row;
+    if (!row || !count) return null;
+    const left = row.right - count * row.size - (count - 1) * row.gap;
+    return left >= row.minLeft ? { left, top: row.top, size: row.size, gap: row.gap } : null;
   }
   // innerWidth counts a classic page scrollbar (or a reserved gutter); fixed-position parts live in the
   // narrower area beside it, so the flyout measures that area with a fixed probe inside a launcher host.
@@ -4057,9 +4035,11 @@ const ExtraPotionsCore = (() => {
     const searchEnd = Math.max(...[...bar.children[1].querySelectorAll('input,button,a')].map(visibleBox).filter(Boolean).map(box => box.right));
     const icons = [...bar.children[2].querySelectorAll('button,a,input')].map(visibleBox).filter(Boolean);
     if (!icons.length) return null;
-    const left = Math.min(...icons.map(box => box.left)) - 16 - FLYOUT_TILE;
+    const right = Math.min(...icons.map(box => box.left)) - 16, left = right - FLYOUT_TILE;
     if (left < searchEnd + 8) return null;
-    return { left, top: Math.round(barBox.top + (barBox.height - FLYOUT_TILE) / 2) };
+    // Product icons in a row match the size of Twitch's own first icon button.
+    const first = icons.reduce((a, b) => a.left <= b.left ? a : b), size = Math.round(Math.max(28, Math.min(40, first.height)));
+    return { left, top: Math.round(barBox.top + (barBox.height - FLYOUT_TILE) / 2), row: { right, minLeft: searchEnd + 8, size, gap: 8, top: Math.round(barBox.top + (barBox.height - size) / 2) } };
   }
   // Reddit's left-rail entry belongs to THREAD. Other products alone keep their existing placement.
   // Native accessible controls/rail geometry supply coordinates; no enhancement-script anchor is used.
@@ -4105,7 +4085,10 @@ const ExtraPotionsCore = (() => {
   }
   // One product in a site slot: its own launcher sits there at tile size and its menu drops below it.
   function singleSlot(state = flyoutState()) {
-    if (state.active || state.hosts.length !== 1) return null;
+    if (state.active) return null;
+    const row = state.row;
+    if (row) { const width = state.hosts.length * row.size + (state.hosts.length - 1) * row.gap; return { hub:{ left:row.left, top:row.top, size:row.size, width, anchor:'top', site:true, row:true }, panel:null, top:row.top, bottom:row.top + row.size, down:true }; }
+    if (state.hosts.length !== 1) return null;
     const slot = siteSlot();
     return slot ? { hub:{ ...slot, size:slot.size||FLYOUT_TILE, anchor:'top', site:true }, panel:null, top:slot.top, bottom:slot.top + (slot.size||FLYOUT_TILE), down:true } : null;
   }
@@ -4195,6 +4178,12 @@ const ExtraPotionsCore = (() => {
 .exp-flyout-hub[data-shape="circle"]{border-radius:50%;background:var(--theme-panel,#181c1f);box-shadow:none}
 :host([data-exp-rail-launcher="circle"][data-exp-flyout-role="site"]) ${launcherPart}{width:var(--exp-rail-launcher-size)!important;height:var(--exp-rail-launcher-size)!important;min-width:var(--exp-rail-launcher-size)!important;min-height:var(--exp-rail-launcher-size)!important;max-width:var(--exp-rail-launcher-size)!important;max-height:var(--exp-rail-launcher-size)!important;border-radius:50%!important}
 :host([data-exp-rail-launcher="circle"][data-exp-flyout-role="site"]) ${launcherPart}>:is(img,svg,.icon):not(.launcher-ring):not(.ring){width:22px!important;height:22px!important}
+:host([data-exp-flyout-role="site"][data-exp-site-icon]) :is([data-exp-part="launcher"],.launcher){width:var(--exp-site-icon-size)!important;height:var(--exp-site-icon-size)!important;min-width:var(--exp-site-icon-size)!important;min-height:var(--exp-site-icon-size)!important;max-width:var(--exp-site-icon-size)!important;max-height:var(--exp-site-icon-size)!important;padding:0!important;border:0!important;border-radius:6px!important;background:transparent!important;box-shadow:none!important;overflow:visible!important;transition:none!important}
+:host([data-exp-flyout-role="site"][data-exp-site-icon]) :is([data-exp-part="launcher"],.launcher):hover{background:color-mix(in srgb,currentColor 16%,transparent)!important}
+:host([data-exp-flyout-role="site"][data-exp-site-icon]) :is([data-exp-part="launcher"],.launcher):focus-visible{outline:2px solid ${accent}!important;outline-offset:1px!important}
+:host([data-exp-flyout-role="site"][data-exp-site-icon]) :is([data-exp-part="launcher"],.launcher)>:is(img,svg,.icon):not(.launcher-ring):not(.ring){width:22px!important;height:22px!important}
+:host([data-exp-flyout-role="site"][data-exp-site-icon]) :is([data-exp-part="launcher"],.launcher) :is(.ring,.launcher-ring,.launcher-badge,.update-badge){display:none!important}
+:host([data-exp-flyout-role="site"][data-exp-site-icon][data-exp-update="1"]) :is([data-exp-part="launcher"],.launcher)::after{content:'';position:absolute;top:2px;right:2px;width:7px;height:7px;border-radius:2px;background:${accent};pointer-events:none}
 .exp-flyout-hub.has-ring{border-color:transparent}
 .exp-flyout-ring{position:absolute;left:-6px;top:-6px;pointer-events:none;overflow:visible}
 .exp-flyout-ring[hidden]{display:none}
@@ -4310,8 +4299,10 @@ const ExtraPotionsCore = (() => {
       else{delete host.dataset.expRailLauncher;host.style.removeProperty('--exp-rail-launcher-size');}
       if (!state.active) {
         if (singleSlot(state)) host.dataset.expFlyoutRole = 'site'; else delete host.dataset.expFlyoutRole;
+        if (state.row) { host.dataset.expSiteIcon = '1'; host.style.setProperty('--exp-site-icon-size', state.row.size + 'px'); } else { delete host.dataset.expSiteIcon; host.style.removeProperty('--exp-site-icon-size'); }
         delete host.dataset.expFlyoutSelected; removeHub(host); continue;
       }
+      delete host.dataset.expSiteIcon; host.style.removeProperty('--exp-site-icon-size');
       const role = state.open ? 'tile' : 'hidden';
       if (host.dataset.expFlyoutRole !== role) host.dataset.expFlyoutRole = role;
       if (state.open && menu === id) host.dataset.expFlyoutSelected = '1'; else delete host.dataset.expFlyoutSelected;
@@ -4328,7 +4319,7 @@ const ExtraPotionsCore = (() => {
     const on = (node,type,fn,opts) => { node.addEventListener(type,fn,opts); removers.push(() => node.removeEventListener(type,fn,opts)); };
     let startX=0,startY=0,startDelta=0,pointer=null,dragged=false,mode='',axis='',order=[];
     launcher.title = launcher.title || title || 'Drag to move the launchers. Shift+drag or Alt+Arrow keys reorder.';
-    on(launcher,'pointerdown',e=>{if(e.button!==0||(reorder&&flyoutState().active)||(!reorder&&e.shiftKey)||!canDrag())return;pointer=e.pointerId;startX=e.clientX;startY=e.clientY;startDelta=Number(read(GRID_DELTA,0))||0;mode=e.shiftKey?'order':'group';order=interactionGridOrder();if(!order.includes(id))order.push(id);dragged=false;axis='';e.preventDefault();try{launcher.setPointerCapture(e.pointerId);}catch{}});
+    on(launcher,'pointerdown',e=>{if(e.button!==0||(reorder&&(flyoutState().active||singleSlot()))||(!reorder&&e.shiftKey)||!canDrag())return;pointer=e.pointerId;startX=e.clientX;startY=e.clientY;startDelta=Number(read(GRID_DELTA,0))||0;mode=e.shiftKey?'order':'group';order=interactionGridOrder();if(!order.includes(id))order.push(id);dragged=false;axis='';e.preventDefault();try{launcher.setPointerCapture(e.pointerId);}catch{}});
     // Listen on window in the capture phase so host pages that stop pointer events (Twitch's player) cannot stall a drag.
     on(launcher,'dragstart',e=>e.preventDefault());
     on(window,'pointermove',e=>{if(e.pointerId!==pointer)return;const dx=e.clientX-startX,dy=e.clientY-startY;if(!axis&&Math.max(Math.abs(dx),Math.abs(dy))>4)axis=mode;if(!axis)return;dragged=true;groupDragging=true;e.preventDefault();launcher.classList.add('is-dragging');if(axis==='group')write(GRID_DELTA,Math.round(Math.max(8-(innerHeight-60),Math.min(4,startDelta+dy))));else{const from=order.indexOf(id),offset=Math.abs(dx)>Math.abs(dy)?Math.round(-dx/56):Math.round(dy/56)*3,to=Math.max(0,Math.min(order.length-1,from+offset)),next=[...order];next.splice(from,1);next.splice(to,0,id);write(GRID_ORDER,next);}layoutGrid();emit('launcher-grid-moved',id);layout();},{passive:false,capture:true});
