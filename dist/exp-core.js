@@ -223,7 +223,10 @@ function css() {
       }
       .update-action,
       .update-release { min-height:27px; padding:0 10px; font-size:var(--exp-font-size-small,11px); font-weight:800; }
-      .update-action { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; }
+      .update-action,
+      .update-release { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; }
+      /* The release control is a link in the shared notice; it reads as a button, not as link text. */
+      .exp-core-theme a.update-release { color:var(--theme-text); text-decoration:none; }
       .update-action[hidden],
       .update-release[hidden] { display:none; }
       .update-action {
@@ -238,7 +241,7 @@ function css() {
       }
       .update-dismiss {
         position:absolute; top:7px; right:7px; width:23px; height:23px; padding:0;
-        border-color:transparent; background:transparent; color:var(--theme-muted); font-size:15px; line-height:1;
+        border-color:transparent; background:transparent; color:var(--theme-muted); font-family:Arial,sans-serif; font-size:15px; line-height:1;
       }
       .update-action:hover,
       .update-action:focus-visible,
@@ -2585,7 +2588,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.12.1';
+  const version = '3.12.2';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -4530,7 +4533,7 @@ const ExtraPotionsCore = (() => {
     return Object.freeze(CoreFoundation.THEME_MODES.map(id => Object.freeze(semanticTheme(CoreFoundation.resolveTheme(id)))));
   }
   function focusMenuSurface(panel) { if (!(panel instanceof HTMLElement)) return false; panel.tabIndex = -1; panel.style.outline = 'none'; panel.focus({ preventScroll: true }); return true; }
-  const FLOATING_NOTICE_CSS = '.exp-floating-update{position:fixed;z-index:2147483647;box-sizing:border-box;width:min(312px,calc(100vw - 24px));max-width:calc(100vw - 24px);margin:0;padding:10px 32px 10px 10px;border:1px solid var(--exp-notice-border,#6f42b4);border-radius:10px;background:linear-gradient(180deg,var(--exp-notice-top,#251a35),var(--exp-notice-bottom,#18181d) 70%);color:var(--exp-notice-text,#f4f4f6);box-shadow:0 10px 28px #0008;font:500 var(--exp-font-size-small,11px)/1.45 system-ui,sans-serif}.exp-floating-update[hidden]{display:none!important}.exp-floating-update-dismiss{position:absolute;top:7px;right:7px;width:23px;height:23px;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;color:inherit;cursor:pointer;font:15px/1 Arial,sans-serif}.exp-floating-update-dismiss:hover,.exp-floating-update-dismiss:focus-visible{border-color:var(--exp-notice-border,#6f42b4);outline:none}';
+  const FLOATING_NOTICE_CSS = '.exp-floating-update{position:fixed;z-index:2147483647;box-sizing:border-box;width:min(312px,calc(100vw - 24px));max-width:calc(100vw - 24px);margin:0;padding:10px 32px 10px 10px;border:1px solid var(--exp-notice-border,#6f42b4);border-radius:10px;background:linear-gradient(180deg,var(--exp-notice-top,#251a35),var(--exp-notice-bottom,#18181d) 70%);color:var(--exp-notice-text,#f4f4f6);box-shadow:0 10px 28px #0008;font:500 var(--exp-font-size-small,11px)/1.45 system-ui,sans-serif}.exp-floating-update[hidden]{display:none!important}.exp-floating-update[data-exp-update-notice]{padding:10px;font:400 var(--exp-font-size-small,11px)/1.42 ui-sans-serif,system-ui,"Segoe UI",sans-serif}.exp-floating-update-dismiss{position:absolute;top:7px;right:7px;width:23px;height:23px;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;color:inherit;cursor:pointer;font:15px/1 Arial,sans-serif}.exp-floating-update-dismiss:hover,.exp-floating-update-dismiss:focus-visible{border-color:var(--exp-notice-border,#6f42b4);outline:none}';
   function ensureFloatingNoticeStyle(shadow) {
     if (!shadow.querySelector('style[data-exp-floating-notice]')) {
       injectStyle(shadow, FLOATING_NOTICE_CSS, { expFloatingNotice: '1' });
@@ -4539,8 +4542,8 @@ const ExtraPotionsCore = (() => {
   function syncNoticeTheme(notice, themeSource) {
     const theme = getComputedStyle(themeSource);
     const first = (names, fallback) => names.map(name => theme.getPropertyValue(name).trim()).find(Boolean) || fallback;
-    notice.style.setProperty('--exp-notice-border', first(['--exp-notice-border','--theme-accent','--accent','--accent2','--teal','--mb-brand'], theme.borderTopColor || '#6f42b4'));
-    notice.style.setProperty('--exp-notice-top', first(['--exp-notice-top','--theme-panel','--surface','--panel','--raised','--mb-surface','--bg','--mb-bg'], theme.backgroundColor || '#251a35'));
+    notice.style.setProperty('--exp-notice-border', first(['--exp-notice-border','--theme-muted','--theme-accent','--accent','--accent2','--teal','--mb-brand'], theme.borderTopColor || '#6f42b4'));
+    notice.style.setProperty('--exp-notice-top', first(['--exp-notice-top','--theme-bg','--theme-panel','--surface','--panel','--raised','--mb-surface','--bg','--mb-bg'], theme.backgroundColor || '#251a35'));
     notice.style.setProperty('--exp-notice-bottom', first(['--exp-notice-bottom','--theme-bg','--bg','--mb-bg','--surface','--mb-surface'], theme.backgroundColor || '#18181d'));
     notice.style.setProperty('--exp-notice-text', first(['--exp-notice-text','--theme-text','--text','--mb-ink'], theme.color || '#f4f4f6'));
   }
