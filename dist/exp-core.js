@@ -3757,7 +3757,10 @@ const ExtraPotionsCore = (() => {
     // Do not turn userscript injection timing into a saved preference. A fresh
     // install stays priority-sorted until either the complete suite is present
     // or the user explicitly reorders the visible launchers.
-    if ((Array.isArray(order) && order.length) || completeSuite) write(GRID_ORDER, ids);
+    // Products that have not loaded yet, or are switched off in the userscript manager, keep their place.
+    const kept = Array.isArray(order) ? order.filter(id => typeof id === 'string') : [];
+    const next = [...kept, ...ids.filter(id => !kept.includes(id))];
+    if ((kept.length || completeSuite) && JSON.stringify(next) !== JSON.stringify(order)) write(GRID_ORDER, next);
   }
   // The single source of launcher coordinates for every product: the saved group position
   // (GRID_DELTA) plus the launcher's grid cell. Products position their launcher from this.
@@ -5374,7 +5377,10 @@ const ExtraPotionsCore = (() => {
   // 150ms: a busy page (Twitch chat) would otherwise re-measure the top bar on every change.
   let slotStale=0;
   const markSlotStale=()=>{if(!slotStale)slotStale=setTimeout(()=>{slotStale=0;slotMemo=null;scheduleGrid();},150);};
-  const gridObserver=new MutationObserver(()=>{markSlotStale();scheduleGrid();});
+  // Launcher attributes and launchers coming or going re-lay the grid on the next frame; any other page change
+  // waits for the 150ms gate above.
+  const launcherChange=record=>record.type==='attributes'||[...record.addedNodes,...record.removedNodes].some(node=>node.dataset?.expProductLauncher==='1');
+  const gridObserver=new MutationObserver(records=>{markSlotStale();if(records.some(launcherChange))scheduleGrid();});
   const startGrid=()=>{if(!document.documentElement)return;gridObserver.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['data-exp-product-launcher','data-product-id','data-launcher-priority','data-launcher-reserved-rows','data-exp-flyout','data-exp-update','data-exp-progress','data-exp-open-menu','data-exp-flyout-open']});scheduleGrid();};
   if(document.documentElement)startGrid();else addEventListener('DOMContentLoaded',startGrid,{once:true});
   document.addEventListener('exp-core:coordination',scheduleGrid);
