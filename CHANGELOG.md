@@ -1,3 +1,8 @@
+## 3.17.1 — 2026-11-13
+
+- Changelog cards show every release note in full; long changelogs scroll in the card, inside the window.
+- The notes list no longer has its own short scroll area from the old card format.
+
 ## 3.17.0 — 2026-11-13
 
 - Shared menu labels are in Title Case, such as Report a Problem, What's New and Needs Attention.
