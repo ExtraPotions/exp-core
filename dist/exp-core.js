@@ -1,7 +1,5 @@
 // Native exp-core foundation. Shared UI primitives are owned and maintained here.
 const CoreFoundation = (() => {
-const LAUNCHER_ORDER_KEY = "exp:v3:launcher-order";
-const LAUNCHER_GRID_DELTA_KEY = "exp:v3:launcher-grid-delta";
 const THEME_MODES = Object.freeze(['light', 'dark', 'system']);
 const normalizeThemeMode = value => THEME_MODES.includes(value) ? value : 'system';
 const systemThemeMode = () => typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -2204,8 +2202,6 @@ const ExpLeanMenu = (() => {
   // The shell is shared by existing products and new createProduct/createMenuController consumers.
   const template=Object.freeze({id:'extrapotions-menu',version:1,layout:'sidebar',systemLayout:'grouped',supportNavigation:'system',resetNavigation:'system',donations:'header-heart'});
   const sectionIcons = Object.freeze({campaigns:'gift',settings:'sliders',drops:'gift',streams:'screen',appearance:'brush',advanced:'sliders',system:'system',highlights:'sparkle',protection:'shield',amazon:'bag'});
-  // Scoped switches outrank the older product gradient rules.
-  const SWITCH='[data-exp-menu-layout="lean"][data-exp-menu-layout="lean"][data-exp-menu-layout="lean"] .toggleSwitch[role="switch"]';
   const css = ExpMenuLayout.css;
   // Healthy operation needs no narration; abnormal state remains visible in the open menu.
   const statusSources=new Map(),statusPanels=new Map();
@@ -2477,7 +2473,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.15.1';
+  const version = '3.16.0';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -3532,19 +3528,6 @@ const ExtraPotionsCore = (() => {
     if (contract?.presentationPhases?.length) registerPresentationProvider({ productId });
     return result;
   }
-  function menuThemeOwner() {
-    return [...document.querySelectorAll('[data-exp-product-launcher="1"][data-product-id]')]
-      .filter(node => node.isConnected && THEME_PRIORITY[node.dataset.productId])
-      .sort((a,b) => THEME_PRIORITY[b.dataset.productId] - THEME_PRIORITY[a.dataset.productId])[0] || null;
-  }
-  function menuPalette(host) {
-    try {
-      const value = JSON.parse(host.dataset.expMenuPalette || 'null');
-      if (!value || !baseTokenNames.every(key => /^#[0-9a-f]{3,8}$/i.test(value[key]))) return null;
-      if (value.skin && (/url\(|var\(|;|\/\*/i.test(value.skin) || value.skin.length > 300)) return null;
-      return semanticTheme(value);
-    } catch { return null; }
-  }
   function publishMenuPalette(host, theme) {
     if (!host || !theme) return;
     const palette = Object.fromEntries([...tokenNames,'id','skin','skinVertical','skinMode'].map(key => [key, theme[key]]));
@@ -4461,32 +4444,6 @@ const ExtraPotionsCore = (() => {
     notice.style.setProperty('--exp-notice-bottom', first(['--exp-notice-bottom','--theme-bg','--bg','--mb-bg','--surface','--mb-surface'], theme.backgroundColor || '#18181d'));
     notice.style.setProperty('--exp-notice-text', first(['--exp-notice-text','--theme-text','--text','--mb-ink'], theme.color || '#f4f4f6'));
   }
-  function createFloatingNotice(options = {}) {
-    const { shadow, panel, notice, versionButton = null } = options;
-    const host = options.host || shadow?.host;
-    if (!(shadow instanceof ShadowRoot) || !(panel instanceof Element) || !(notice instanceof Element)) return Object.freeze({ show() {}, hide() {}, toggle() {}, layout() {}, setMenuOpen() {}, destroy() {} });
-    const durationMs = Math.max(0, Number(options.durationMs ?? 30000));
-    const manageVersion = options.manageVersion !== false;
-    let timer = 0, menuOpen = false, destroyed = false;
-    ensureFloatingNoticeStyle(shadow);
-    applyMatteToggleChrome(shadow);
-    notice.classList.add('update-notice','exp-floating-update'); notice.setAttribute('role','status');
-    let dismiss = notice.querySelector(':scope > .exp-floating-update-dismiss');
-    if (!dismiss) { dismiss=document.createElement('button'); dismiss.type='button'; dismiss.className='exp-floating-update-dismiss'; dismiss.setAttribute('aria-label','Dismiss changelog'); dismiss.textContent='×'; notice.prepend(dismiss); }
-    shadow.append(notice); const unregisterNotice = registerFloatingNotice(host, notice);
-    const themeSource = options.themeSource instanceof Element ? options.themeSource : panel;
-    const syncTheme = () => syncNoticeTheme(notice, themeSource);
-    const clearTimer=()=>{clearTimeout(timer);timer=0;};
-    function layout(){if(destroyed||notice.hidden)return;syncTheme();layoutFloatingNotices();}
-    function hide(){clearTimer();notice.hidden=true;versionButton?.setAttribute('aria-expanded','false');layoutFloatingNotices();}
-    function show(){notice.hidden=false;versionButton?.setAttribute('aria-expanded','true');clearTimer();if(durationMs)timer=setTimeout(hide,durationMs);requestAnimationFrame(layoutFloatingNotices);}
-    function toggle(){if(notice.hidden)show();else hide();}
-    function versionClick(){if(manageVersion)toggle();else if(!notice.hidden)show();}
-    function setMenuOpen(value){menuOpen=Boolean(value);if(!menuOpen)hide();else requestAnimationFrame(layout);}
-    const coordination=()=>requestAnimationFrame(layout);
-    dismiss.addEventListener('click',hide);versionButton?.addEventListener('click',versionClick);addEventListener('resize',layout,{passive:true});document.addEventListener('exp-core:coordination',coordination);
-    return Object.freeze({show,hide,toggle,layout,setMenuOpen,destroy(){destroyed=true;clearTimer();unregisterNotice();dismiss.removeEventListener('click',hide);versionButton?.removeEventListener('click',versionClick);removeEventListener('resize',layout);document.removeEventListener('exp-core:coordination',coordination);}});
-  }
   // Core-owned update and changelog cards use the canonical menu-width notice
   // geometry. The legacy floating-notice coordinator remains exported
   // for compatibility, but it no longer owns these product notices.
@@ -5271,10 +5228,6 @@ const ExtraPotionsCore = (() => {
     const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}));
     const link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
-  async function copyText(text) {
-    try { await navigator.clipboard.writeText(text); return; } catch {}
-    const area=document.createElement('textarea');area.value=text;area.style.cssText='position:fixed;left:-9999px';document.documentElement.append(area);area.select();const success=document.execCommand('copy');area.remove();if(!success)throw new Error('Clipboard unavailable');
-  }
   function createDiagnosticsControls(getReport, notify = () => {}) { return ExtraPotionsDiagnostics.createControls(getReport, notify); }
   const { normalizeHealth, createHealthControls } = ExpHealthSummary;
   const { createRecoveryGuard } = ExpRecoveryControl;
@@ -5338,6 +5291,6 @@ const ExtraPotionsCore = (() => {
     return Object.freeze({ lifecycle, diagnostics, updates });
   }
 
-  const api = Object.freeze({...ExtraPotionsTools,setMenuHelp:ExpMenuHelp.setMenuHelp,...ExpMenuPreferences,...ExpSiteColors,normalizeHealth,createHealthControls,createRecoveryGuard,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createMenuController,createProduct,menuTemplate:ExpLeanMenu.template,setMenuStatus:ExpLeanMenu.setMenuStatus,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,setLauncherUpdate,setLauncherProgress,bindLauncherDrag,launcherPlacement,placeMenu,placeNotice,resetLauncherGrid,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,isOwnedSheet,menuWidth,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,publishMenuPalette,createFloatingNotice,createMenuNotice,takeNoticeTurn,releaseNoticeTurn,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,isQuietUpgrade,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,suiteSitePaused,suiteSitePausePersisted,setSuiteSitePaused,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePresentationState,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,createCompatibilityControls:createSuiteCompatibilityControls,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,mountSubmenuTabs:ExpMenuArrangement.mountTabs,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
+  const api = Object.freeze({...ExtraPotionsTools,setMenuHelp:ExpMenuHelp.setMenuHelp,...ExpMenuPreferences,...ExpSiteColors,normalizeHealth,createHealthControls,createRecoveryGuard,version,sourceVersion,protocol,gridProtocol,reference:CoreFoundation,css:canonicalCss,themes,create,createMenuController,createProduct,menuTemplate:ExpLeanMenu.template,setMenuStatus:ExpLeanMenu.setMenuStatus,createSupportControl,createProductNotice,createLifecycle:()=>createProductLifecycle(api),createProductServices,registerLauncher,setLauncherUpdate,setLauncherProgress,bindLauncherDrag,launcherPlacement,placeMenu,placeNotice,resetLauncherGrid,layout:layoutGrid,replaceMenuContent,createDisclosure,createSystemGrid,isOwnedSheet,menuWidth,cloneSettings,applyTextGradient,injectStyle,applyTheme,applyMatteToggleChrome,applyTwoColumnSettingsGrid,applyContentDrivenMenuLayout,publishMenuPalette,createMenuNotice,takeNoticeTurn,releaseNoticeTurn,createReleaseUpdateChecker,registerFloatingNotice,layoutFloatingNotices,claimNotice,consumeVersionChange,isQuietUpgrade,focusMenuSurface,registerDiagnosticsProduct,registerSuiteProduct,suiteContract,suiteSnapshot,hasProductCapability,capabilityProviders,emitSuiteEvent,publishSuiteState,suiteStateSnapshot,latestSuiteState,subscribeSuiteState,onSuiteEvent,suiteSitePaused,suiteSitePausePersisted,setSuiteSitePaused,pageContext,observeNavigation,navigationObserverState,suiteTrust:SUITE_TRUST,registerPresentationProvider,presentationProviders,suiteHealth,readPresentationState,setPresentationState,clearPresentationState,presentationStateChain,isPresentationSuppressed,presentationPhases:PRESENTATION_PHASES,presentationChannels:PRESENTATION_CHANNELS,observePresentationState,observePage,observePageBatch,pageObserverState,suiteProducts:SUITE_PRODUCTS,suitePriority:SUITE_PRIORITY,productCompatibility:productCompatibilityReport,createCompatibilityControls:createSuiteCompatibilityControls,bindDiagnosticsControls:ExtraPotionsDiagnostics.bindControls,createDiagnosticsReport,downloadDiagnostics,createDiagnosticsControls,mountMenuArrangement:ExpMenuArrangement.mount,mountSubmenuTabs:ExpMenuArrangement.mountTabs,menuCategories:ExpMenuArrangement.categories,categorizeMenuSections:ExpMenuArrangement.describe,createMenuCategoryDisclosure:(label,category,...contents)=>ExpMenuArrangement.createDisclosure({document,label,category,contents}),collapseMenuSubmenus:ExpMenuArrangement.collapseSubmenus,compareVersions:CoreFoundation.compareVersions});
   return api;
 })();

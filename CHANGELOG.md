@@ -1,3 +1,8 @@
+## 3.16.0 — 2026-11-13
+
+- Remove createFloatingNotice, which no product used, and other unused internals and a stale source file.
+- Floating notices from an older Core copy on the same page are still placed beside the launchers.
+
 ## 3.15.1 — 2026-11-13
 
 - An update card shown inside an open menu waits its turn when the menu closes, so two products' cards never draw in the same spot.
