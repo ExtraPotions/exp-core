@@ -1,3 +1,8 @@
+## 3.15.0 — 2026-11-13
+
+- Remove the retired PRISMA and SHIFT from the shared launcher, its order, colours and product links.
+- The shared launcher order is now Dropper, WARD, Thread.
+
 ## 3.14.1 — 2026-11-13
 
 - Let a product keep its menu open longer when it is left alone, never less than 15 seconds; Dropper uses a minute.

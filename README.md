@@ -5,7 +5,6 @@ The shared launcher, menus and settings controls bundled with ExtraPotions produ
 ## Products
 
 - [Dropper for Twitch](https://github.com/ExtraPotions/Dropper) — Drops progress, campaigns and inventory.
-- [PRISMA](https://github.com/ExtraPotions/PRISMA) — LGBTQ+ identity highlights and definitions.
 - [WARD](https://github.com/ExtraPotions/WARD) — Store-page filtering and colors.
 - [Thread for Reddit](https://github.com/ExtraPotions/Thread) — Feed layouts, filters and local reading tools.
 

@@ -16,4 +16,4 @@ Choose Standard, Compact or Mini in **Look → Menu size**. Product sections are
 
 **System** shows Working, Waiting, Paused or Needs attention and offers a recovery action when available. Use Show or Copy beside Diagnostics for troubleshooting, Report a problem for support, and Reset all settings only when you want to clear the product’s settings.
 
-SHIFT is retired. Its repository, releases and settings are preserved, and Core retains compatibility with installed copies. It is excluded from routine maintenance and new installation packs. No other product requires SHIFT.
+SHIFT and PRISMA are retired; no other product requires them.

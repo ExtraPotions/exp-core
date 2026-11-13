@@ -1,8 +1,8 @@
 {
-  "coreVersion": "3.14.1",
+  "coreVersion": "3.15.0",
   "source": {
     "source": "ExtraPotions/exp-core",
-    "sourceVersion": "3.14.1",
+    "sourceVersion": "3.15.0",
     "architecture": "core-native"
   },
   "suiteContract": {
@@ -87,47 +87,6 @@
       "repository": "Dropper",
       "rootId": "tdh-root"
     },
-    "shift": {
-      "role": "product",
-      "priority": 3,
-      "launcherPriority": 100,
-      "themePriority": 3,
-      "capabilities": [
-        "appearance.theme",
-        "appearance.readability",
-        "appearance.site-profile"
-      ],
-      "presentationPhases": [
-        "theme"
-      ],
-      "state": {
-        "type": "shift.state-changed",
-        "fields": {
-          "active": "boolean",
-          "theme": "token",
-          "safeMode": "boolean",
-          "excluded": "boolean"
-        }
-      },
-      "menuSections": {
-        "appearance": [
-          "appearance",
-          "readability"
-        ],
-        "advanced": [
-          "effects",
-          "effects-integrations",
-          "profiles",
-          "profiles-sites"
-        ],
-        "system": [
-          "system"
-        ]
-      },
-      "repository": "SHIFT",
-      "rootId": "exp-shift-root",
-      "maintenance": "retired"
-    },
     "ward": {
       "role": "product",
       "priority": 2,
@@ -174,60 +133,16 @@
       },
       "repository": "WARD",
       "rootId": "exp-ward-root"
-    },
-    "prisma": {
-      "role": "product",
-      "priority": 1,
-      "launcherPriority": 40,
-      "themePriority": 2,
-      "capabilities": [
-        "text.identity-detection",
-        "text.identity-highlighting",
-        "identity.catalog"
-      ],
-      "presentationPhases": [
-        "annotate"
-      ],
-      "state": {
-        "type": "prisma.state-changed",
-        "fields": {
-          "status": "token",
-          "total": "count",
-          "temporarilyHidden": "boolean"
-        }
-      },
-      "menuSections": {
-        "main": [
-          "page",
-          "highlights"
-        ],
-        "appearance": [
-          "style",
-          "highlight-style",
-          "look",
-          "appearance"
-        ],
-        "advanced": [
-          "tools",
-          "language",
-          "sites"
-        ],
-        "system": [
-          "system"
-        ]
-      },
-      "repository": "PRISMA",
-      "rootId": "exp-prisma-root"
     }
   },
-  "bundleSha256": "2d1c3f274b9bc6674f46d676416d95850c37fe749f4cdf5d5f09f0572a2ce840",
+  "bundleSha256": "3ab1f5c4bbae8dd483c532279ea71f77b952b8d008a3f69d3b54ce08f4eafeb8",
   "files": {
-    "foundation.js": "c843c333886c8664fbd1bdfc445da4e1adbd96957e7acf716d61f887315e66e9",
-    "diagnostic-report.js": "f4e8f42cc2bae3267e0fb090a82d32fd2e8988d667f4fa01473503dac3596891",
-    "lifecycle.js": "2188ca81de18fabc1bcc2730ca831da9cbde5ab8ecf2be6b2b5d6d6c44fd4244",
-    "product-tools.js": "a33be8e5301c7249bd89bebfc59e3ab560ed9b149c2b2f99c3f202a709df0ec6",
+    "foundation.js": "0eb0bb059e13b2cb68d3acabcd2ec0718e2ddf7e64d5a0a4ba54e165cb2d66ec",
+    "diagnostic-report.js": "c50bf1a2aea3a166da68c38489ff1cd381466087eeff615b8bac6a9b9d82570c",
+    "lifecycle.js": "6347b48d7736e08afae2c22638d61175f2fcaa5230ab45c6849ccfe390672037",
+    "product-tools.js": "64317ec0780d8cc6301bdf712b131cc3ba2638b6b2a341b7707a892424f32119",
     "menu-tabs.js": "05d070afc8e5dd8bbcdae65fd80a1b77658771ec02bab4c855f3c65ef191ba31",
-    "menu-arrangement.js": "c16ab4a821febfdb3e64d0912e273b46d86b5aa1f171402702a6a213d625b456",
+    "menu-arrangement.js": "dbad01ef7a8d9c3eafdcb8603a4c24c7b9e62a2369d1d70f5d0c010b23021f57",
     "health-summary.js": "0a876e8cf4e257773120f85389a4e0152e44053656536c278c54548e35ca685a",
     "recovery-control.js": "c9f1b6383ffda72235ca59bca1a1308bfad5b3fb6552f7ba4305795bfcbdf2af",
     "menu-layout.js": "df64db4ecb0773e2e479f25750fddf463cfa4cf5ff379c33f58f914fabec4a6e",
@@ -236,9 +151,9 @@
     "menu-typography.js": "6995f62198cd48fbf50d7951cad0a5f8c9f96d6d5d773b8edca4a06dc7400ef8",
     "menu-preferences.js": "32d0e6af21c54f5918475efd9aac8f90decca925bdd2e7f19cd53fac0a49e7d6",
     "site-colors.js": "b2d21de6a78828c4a055de5f18c642d88eb69ece56a97545722c6434b5956427",
-    "launcher-flyout.js": "859d16aca01d834bb9c673041de33c7dc5b805a806ca20805eb8d5b74ca2503a",
+    "launcher-flyout.js": "670ac88b77c9ad1ed30154140a35f54bcf1abdfaf927fb7365b3c39ab368c8b1",
     "runtime.js": "d569c714b3add6935255b96482f23f3b3bd2d3b0c69980b4d1edd459339ffae9",
-    "runtime-menus.js": "94b82c45d2ab1df5ad12f9cec041ba8f94b65fcfb67be4799e914e4c4c5571cf",
-    "suite-contract.json": "48d07c705f2c5c4e1e72bc55b549593612ae251b5c4e505d96e3ea5016820894"
+    "runtime-menus.js": "cede75219b070f394a60d9cce5456648e92c88343923f9ef8af3be41b7f0a193",
+    "suite-contract.json": "99d654e31fb534d593c472f0bb9da4f359d9fcacfb5ff37b467b0015af9a15f8"
   }
 }

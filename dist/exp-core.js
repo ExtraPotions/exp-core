@@ -17,7 +17,6 @@ const CHARCOAL = Object.freeze({
 // Each product's badge colour, tuned to 4.5:1 on the panel in that mode.
 const PRODUCT_ACCENTS = Object.freeze({
   dropper: Object.freeze({light:'#862ff1',dark:'#a869f5'}),
-  prisma: Object.freeze({light:'#1d67b9',dark:'#3988e0'}),
   ward: Object.freeze({light:'#8e5c05',dark:'#f6a313'}),
   thread: Object.freeze({light:'#bd3300',dark:'#ff4500'}),
 });
@@ -539,7 +538,7 @@ return Object.freeze({ THEME_MODES, SLATE_BLUE, CHARCOAL, PRODUCT_ACCENTS, norma
 /* Local diagnostic capture shared at build time by ExtraPotions products. */
 const ExtraPotionsDiagnostics = (() => {
   const LIMIT = 100;
-  const supportedProducts = ["thread","dropper","shift","ward","prisma"];
+  const supportedProducts = ["thread","dropper","ward"];
   const protocol = 'exp-core-coordination-v1';
   const entries = [], hooks = [], registrations = new Map();
   const startedAt = new Date().toISOString();
@@ -693,7 +692,7 @@ const ExtraPotionsDiagnostics = (() => {
       const style=getComputedStyle(node),fg=rgba(style.color),bg=backdrop(node),mixed=fg.slice(0,3).map((v,i)=>v*fg[3]+bg[i]*(1-fg[3]));
       const a=luminance(mixed),b=luminance(bg);
       rows.push({ratio:Math.round((Math.max(a,b)+.05)/(Math.min(a,b)+.05)*100)/100,...name(node),textLength:text,color:style.color,background:css(bg),opacity:style.opacity,
-        ...(style.filter!=='none'?{filter:style.filter}:{}),...(node.closest('[data-exp-shift-preserve]')?{preserved:true}:{}),...(node.hasAttribute('data-exp-shift-live')?{repaired:true}:{})});
+        ...(style.filter!=='none'?{filter:style.filter}:{})});
     }
     rows.sort((x,y)=>x.ratio-y.ratio);
     const layer=node=>{const style=getComputedStyle(node);return {...name(node),background:style.backgroundColor,opacity:style.opacity,position:style.position,...(style.filter!=='none'?{filter:style.filter}:{}),...(style.backdropFilter&&style.backdropFilter!=='none'?{backdropFilter:style.backdropFilter}:{}),...(style.mixBlendMode!=='normal'?{blend:style.mixBlendMode}:{})};};
@@ -1092,7 +1091,7 @@ function createProductLifecycle(shared) {
   }
 
   // Every stylesheet Core injects begins with an empty marker rule. A constructed sheet
-  // has no owner node, and a tool such as SHIFT cannot see a JavaScript flag across
+  // has no owner node, and a theming tool cannot see a JavaScript flag across
   // userscript sandboxes, but it can always read the first rule through the CSSOM.
   const OWNED_SHEET_MARKER = '.exp-owned-sheet-marker{}';
   const ensureMarker = (text) => { const value = String(text || ''); return value.startsWith(OWNED_SHEET_MARKER) ? value : OWNED_SHEET_MARKER + value; };
@@ -1399,7 +1398,7 @@ function createProductLifecycle(shared) {
 
 // Shared, local-only compatibility controls.
 const ExtraPotionsTools = (() => {
-  const PRODUCT_ROOT_IDS = {"thread":"exp-thread-root","dropper":"tdh-root","shift":"exp-shift-root","ward":"exp-ward-root","prisma":"exp-prisma-root"};
+  const PRODUCT_ROOT_IDS = {"thread":"exp-thread-root","dropper":"tdh-root","ward":"exp-ward-root"};
   function placeDonationPanel(panel, trigger){
     trigger.closest('.menu-head,header')?.after(panel);
     panel.style.cssText='position:static!important;width:100%!important;max-width:100%!important;margin:7px 0;box-shadow:none';
@@ -1440,7 +1439,7 @@ const ExtraPotionsTools = (() => {
     const duration=document.createElement('select');duration.setAttribute('aria-label','Temporary suite pause duration');for(const [value,label] of [['15','15 minutes'],['60','1 hour'],['240','4 hours']]){const option=document.createElement('option');option.value=value;option.textContent=label;duration.append(option);}const temporary=button('Pause temporarily',()=>{ExtraPotionsCore.setSuiteSitePaused(true,location.hostname,Number(duration.value));refresh();});
     d.addEventListener('toggle',()=>{if(d.open)refresh();});d.append(row,duration,temporary,out);refresh();return d;
   }
-  const productRepositories = Object.freeze({dropper:'Dropper',shift:'SHIFT',prisma:'PRISMA',ward:'WARD',thread:'THREAD'});
+  const productRepositories = Object.freeze({dropper:'Dropper',ward:'WARD',thread:'THREAD'});
   // GitHub prefills an issue from the link; longer links fail, so a large report goes by clipboard.
   const ISSUE_URL_LIMIT=8000;
   const plain=(value,limit=200)=>String(value||'').replace(/https?:\/\/\S+/gi,'[link]').replace(/\S+@\S+/g,'[address]').replace(/\s+/g,' ').trim().slice(0,limit);
@@ -1710,7 +1709,7 @@ const ExpMenuArrangement = (() => {
     advanced: Object.freeze({ id: 'advanced', label: 'Advanced', order: 2 }),
     system: Object.freeze({ id: 'system', label: 'System', order: 3 }),
   });
-  const PRODUCT_SECTIONS = {"thread":{"main":["feed","read"],"appearance":["look"],"advanced":["filters","people"],"system":["system"]},"dropper":{"main":["drops","streams","campaigns","settings"],"appearance":["appearance"],"advanced":["advanced"],"system":["system"]},"shift":{"appearance":["appearance","readability"],"advanced":["effects","effects-integrations","profiles","profiles-sites"],"system":["system"]},"ward":{"main":["protection","amazon","tools"],"appearance":["appearance"],"advanced":["advanced","patterns","advanced-amazon"],"system":["system"]},"prisma":{"main":["page","highlights"],"appearance":["style","highlight-style","look","appearance"],"advanced":["tools","language","sites"],"system":["system"]}};
+  const PRODUCT_SECTIONS = {"thread":{"main":["feed","read"],"appearance":["look"],"advanced":["filters","people"],"system":["system"]},"dropper":{"main":["drops","streams","campaigns","settings"],"appearance":["appearance"],"advanced":["advanced"],"system":["system"]},"ward":{"main":["protection","amazon","tools"],"appearance":["appearance"],"advanced":["advanced","patterns","advanced-amazon"],"system":["system"]}};
   const GENERIC_SECTIONS = Object.freeze({
     appearance: Object.freeze(['appearance', 'readability', 'style', 'highlight-style', 'look', 'theme', 'themes']),
     advanced: Object.freeze(['advanced', 'effects', 'integrations', 'profiles', 'sites', 'language', 'patterns', 'routing', 'playback']),
@@ -1960,7 +1959,7 @@ const ExpMenuArrangement = (() => {
     const styleRoot = panel.getRootNode();
     (styleRoot instanceof view.ShadowRoot ? styleRoot : (document.head || document.documentElement)).append(style);
     // Keep feature sections together, followed by the shared Look/System utilities.
-    const nativeUtilities=panel.matches('[data-exp-menu-layout="lean"]')&&id!=='shift';
+    const nativeUtilities=panel.matches('[data-exp-menu-layout="lean"]');
     const rank = entry => nativeUtilities ? entry.category==='system'?3:/^(look|appearance)$/i.test(entry.label)?2:0 : CATEGORY_ORDER.indexOf(entry.category);
     const desired = [...entries].sort((a, b) => rank(a) - rank(b));
     function apply() {
@@ -2452,7 +2451,7 @@ const ExpSiteColors = (() => {
 const ExpLauncherFlyout = (() => {
   // 2: a site's top bar can hold one icon per product instead of the flyout; copies on 1 keep the grid for everyone.
   const PROTOCOL = '2';
-  const SUITE_ORDER = Object.freeze(['dropper','shift','prisma','ward','thread']);
+  const SUITE_ORDER = Object.freeze(['dropper','ward','thread']);
   // Products that only run on their own sites (Dropper on Twitch, WARD on retailers) lead there.
   const SITE_PRODUCTS = Object.freeze(['dropper','ward','thread']);
   const idOf = host => String(host?.dataset?.productId || '');
@@ -2478,7 +2477,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.14.1';
+  const version = '3.15.0';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -2506,7 +2505,7 @@ const ExtraPotionsCore = (() => {
       }) : null,
     })])
   ));
-  const SUITE_PRODUCTS = freezeSuiteContract({"thread":{"role":"product","priority":0,"launcherPriority":90,"themePriority":0,"capabilities":["reddit.reading","reddit.local-context","reddit.local-filtering"],"presentationPhases":["visibility","annotate"],"state":{"type":"thread.state-changed","fields":{"active":"boolean","loaded":"count"}},"menuSections":{"main":["feed","read"],"appearance":["look"],"advanced":["filters","people"],"system":["system"]},"repository":"THREAD","rootId":"exp-thread-root"},"dropper":{"role":"flagship","priority":4,"launcherPriority":110,"themePriority":4,"capabilities":["twitch.drops","twitch.campaigns","twitch.progress","twitch.claims","twitch.stream-management"],"presentationPhases":[],"state":{"type":"dropper.state-changed","fields":{"activeReward":"boolean","progressPercent":"percent-nullable","routingState":"token"}},"menuSections":{"main":["drops","streams","campaigns","settings"],"appearance":["appearance"],"advanced":["advanced"],"system":["system"]},"repository":"Dropper","rootId":"tdh-root"},"shift":{"role":"product","priority":3,"launcherPriority":100,"themePriority":3,"capabilities":["appearance.theme","appearance.readability","appearance.site-profile"],"presentationPhases":["theme"],"state":{"type":"shift.state-changed","fields":{"active":"boolean","theme":"token","safeMode":"boolean","excluded":"boolean"}},"menuSections":{"appearance":["appearance","readability"],"advanced":["effects","effects-integrations","profiles","profiles-sites"],"system":["system"]},"repository":"SHIFT","rootId":"exp-shift-root","maintenance":"retired"},"ward":{"role":"product","priority":2,"launcherPriority":60,"themePriority":1,"capabilities":["retail.classification","retail.cleanup","retail.coupons"],"presentationPhases":["classify","visibility"],"state":{"type":"ward.state-changed","fields":{"active":"boolean","pageType":"token","interventions":"count","hide":"count","dim":"count","collapse":"count","annotate":"count"}},"menuSections":{"main":["protection","amazon","tools"],"appearance":["appearance"],"advanced":["advanced","patterns","advanced-amazon"],"system":["system"]},"repository":"WARD","rootId":"exp-ward-root"},"prisma":{"role":"product","priority":1,"launcherPriority":40,"themePriority":2,"capabilities":["text.identity-detection","text.identity-highlighting","identity.catalog"],"presentationPhases":["annotate"],"state":{"type":"prisma.state-changed","fields":{"status":"token","total":"count","temporarilyHidden":"boolean"}},"menuSections":{"main":["page","highlights"],"appearance":["style","highlight-style","look","appearance"],"advanced":["tools","language","sites"],"system":["system"]},"repository":"PRISMA","rootId":"exp-prisma-root"}});
+  const SUITE_PRODUCTS = freezeSuiteContract({"thread":{"role":"product","priority":0,"launcherPriority":90,"themePriority":0,"capabilities":["reddit.reading","reddit.local-context","reddit.local-filtering"],"presentationPhases":["visibility","annotate"],"state":{"type":"thread.state-changed","fields":{"active":"boolean","loaded":"count"}},"menuSections":{"main":["feed","read"],"appearance":["look"],"advanced":["filters","people"],"system":["system"]},"repository":"THREAD","rootId":"exp-thread-root"},"dropper":{"role":"flagship","priority":4,"launcherPriority":110,"themePriority":4,"capabilities":["twitch.drops","twitch.campaigns","twitch.progress","twitch.claims","twitch.stream-management"],"presentationPhases":[],"state":{"type":"dropper.state-changed","fields":{"activeReward":"boolean","progressPercent":"percent-nullable","routingState":"token"}},"menuSections":{"main":["drops","streams","campaigns","settings"],"appearance":["appearance"],"advanced":["advanced"],"system":["system"]},"repository":"Dropper","rootId":"tdh-root"},"ward":{"role":"product","priority":2,"launcherPriority":60,"themePriority":1,"capabilities":["retail.classification","retail.cleanup","retail.coupons"],"presentationPhases":["classify","visibility"],"state":{"type":"ward.state-changed","fields":{"active":"boolean","pageType":"token","interventions":"count","hide":"count","dim":"count","collapse":"count","annotate":"count"}},"menuSections":{"main":["protection","amazon","tools"],"appearance":["appearance"],"advanced":["advanced","patterns","advanced-amazon"],"system":["system"]},"repository":"WARD","rootId":"exp-ward-root"}});
   const SUITE_PRIORITY = Object.freeze(Object.fromEntries(
     Object.entries(SUITE_PRODUCTS).map(([id, value]) => [id, value.priority])
   ));
@@ -3555,7 +3554,7 @@ const ExtraPotionsCore = (() => {
     emit('menu-theme', host.dataset.productId);
   }
   // Every stylesheet Core injects is marked as owned by ExtraPotions so theming tools
-  // such as SHIFT leave it alone. A <style> node carries data-exp-owned; a constructed
+  // leave it alone. A <style> node carries data-exp-owned; a constructed
   // sheet has no node, so it starts with an empty marker rule that any script on the
   // page can read through the CSSOM.
   const OWNED_SHEET_MARKER = '.exp-owned-sheet-marker{}';
@@ -3945,8 +3944,8 @@ const ExtraPotionsCore = (() => {
   // Flyout launcher: with two or more products on a page, one shared launcher (the hub, owned by the lead
   // product's host) opens a row of tiles, and each tile is that product's own launcher. Every Core copy derives
   // the same state from host attributes; the open state lives on <html> as data-exp-flyout-open.
-  const FLYOUT_ACCENTS = Object.freeze({ dropper:'#bc94f5', shift:'#80d7d2', prisma:'#91bfff', ward:'#e7bb75', thread:'#ff7636' });
-  const FLYOUT_NAMES = Object.freeze({ dropper:'Dropper', shift:'SHIFT', prisma:'PRISMA', ward:'WARD', thread:'THREAD' });
+  const FLYOUT_ACCENTS = Object.freeze({ dropper:'#bc94f5', ward:'#e7bb75', thread:'#ff7636' });
+  const FLYOUT_NAMES = Object.freeze({ dropper:'Dropper', ward:'WARD', thread:'THREAD' });
   const FLYOUT_TILE = 40, FLYOUT_GAP = 6, FLYOUT_PAD = 7;
   const launcherHosts = () => [...document.querySelectorAll('[data-exp-product-launcher="1"]')];
   const hostLauncher = host => host?.shadowRoot?.querySelector('[data-exp-part="launcher"],.launcher') || null;
