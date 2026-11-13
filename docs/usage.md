@@ -10,10 +10,10 @@ The launcher uses Twitch’s top bar and Thread’s Reddit rail placement where 
 
 ## Menu size and navigation
 
-Choose Standard, Compact or Mini in **Look → Menu size**. Product sections are drawers: one opens at a time, the menu reopens on the last one used, and groups inside a drawer also open one at a time. Header buttons open the changelog, donations and Close. Support and Reset stay inside **System**.
+Choose Standard, Compact or Mini in **Look → Menu Size**. Product sections are drawers: one opens at a time, the menu reopens on the last one used, and groups inside a drawer also open one at a time. Header buttons open the changelog, donations and Close. Support and Reset stay inside **System**.
 
 ## Status, help and recovery
 
-**System** shows Working, Waiting, Paused or Needs attention and offers a recovery action when available. Use Show or Copy beside Diagnostics for troubleshooting, Report a problem for support, and Reset all settings only when you want to clear the product’s settings.
+**System** shows Working, Waiting, Paused or Needs Attention and offers a recovery action when available. Use Show or Copy beside Diagnostics for troubleshooting, Report a Problem for support, and Reset All Settings only when you want to clear the product’s settings.
 
 SHIFT and PRISMA are retired; no other product requires them.

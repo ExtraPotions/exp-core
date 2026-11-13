@@ -1,3 +1,8 @@
+## 3.17.0 — 2026-11-13
+
+- Shared menu labels are in Title Case, such as Report a Problem, What's New and Needs Attention.
+- Menu options keep their place when a product changes only the capitalisation of a label.
+
 ## 3.16.0 — 2026-11-13
 
 - Remove createFloatingNotice, which no product used, and other unused internals and a stale source file.

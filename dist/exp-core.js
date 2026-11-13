@@ -795,11 +795,11 @@ const ExtraPotionsDiagnostics = (() => {
     show.setAttribute('aria-expanded', 'false');
     // Short visible labels beside a Diagnostics row label; the full action stays in the accessible name.
     const name = (node, text, label) => { node.textContent = text; node.setAttribute('aria-label', label); };
-    name(show, 'Show', 'Show diagnostics'); name(copy, 'Copy', 'Copy diagnostics');
+    name(show, 'Show', 'Show Diagnostics'); name(copy, 'Copy', 'Copy Diagnostics');
     const showClick = async () => {
       const opening = output.hidden, ticket = ++generation;
       output.hidden = !opening; output.classList.toggle('open', opening);
-      if (opening) name(show, 'Hide', 'Hide diagnostics'); else name(show, 'Show', 'Show diagnostics');
+      if (opening) name(show, 'Hide', 'Hide Diagnostics'); else name(show, 'Show', 'Show Diagnostics');
       show.setAttribute('aria-expanded', String(opening)); show.classList.toggle('last-opened', opening);
       if (opening) {
         try { const report = await getReport(); if (ticket === generation) output.textContent = JSON.stringify(report, null, 2); }
@@ -813,7 +813,7 @@ const ExtraPotionsDiagnostics = (() => {
         await navigator.clipboard.writeText(JSON.stringify(await getReport(), null, 2));
         name(copy, 'Copied', 'Diagnostics copied'); onCopy();
       } catch { name(copy, 'Failed', 'Copy failed'); notify('Could not copy diagnostics. Use Show.'); }
-      finally { copy.disabled = false; timer = setTimeout(() => { name(copy, 'Copy', 'Copy diagnostics'); }, 1600); }
+      finally { copy.disabled = false; timer = setTimeout(() => { name(copy, 'Copy', 'Copy Diagnostics'); }, 1600); }
     };
     show.addEventListener('click', showClick); copy.addEventListener('click', copyClick);
     return () => { ++generation; clearTimeout(timer); show.removeEventListener('click', showClick); copy.removeEventListener('click', copyClick); };
@@ -1405,10 +1405,10 @@ const ExtraPotionsTools = (() => {
     const address='bc1qg4xq63mwu63qc5dnqugk3qtxvulv5p3frjayna8ey8tu8ey4wpxsg92hv3';
     const details=document.createElement('details');details.className='exp-bitcoin-donation';details.style.cssText='margin-top:7px;min-width:0';
     const summary=document.createElement('summary');summary.textContent='₿ Bitcoin';summary.style.cssText='cursor:pointer;font-weight:700;padding:6px;border:1px solid var(--theme-line);border-radius:7px';
-    const code=document.createElement('code');code.textContent=address;code.setAttribute('aria-label','Bitcoin donation address');code.style.cssText='display:block;overflow-wrap:anywhere;word-break:break-all;user-select:all;margin:7px 0;font-size:var(--exp-font-size-body,13px);line-height:1.4';
+    const code=document.createElement('code');code.textContent=address;code.setAttribute('aria-label','Bitcoin Donation Address');code.style.cssText='display:block;overflow-wrap:anywhere;word-break:break-all;user-select:all;margin:7px 0;font-size:var(--exp-font-size-body,13px);line-height:1.4';
     const status=document.createElement('p');status.setAttribute('role','status');status.style.cssText='margin:5px 0 0;font-size:var(--exp-font-size-small,11px)';
-    const copy=button('Copy Bitcoin address',async()=>{try{await navigator.clipboard.writeText(address);status.textContent='Bitcoin address copied.';}catch{status.textContent='Select and copy the address above.';}});copy.style.cssText='width:100%;min-width:0;white-space:normal;border-radius:7px';
-    const wallet=document.createElement('a');wallet.href='bitcoin:'+address;wallet.textContent='Open Bitcoin wallet';
+    const copy=button('Copy Bitcoin Address',async()=>{try{await navigator.clipboard.writeText(address);status.textContent='Bitcoin address copied.';}catch{status.textContent='Select and copy the address above.';}});copy.style.cssText='width:100%;min-width:0;white-space:normal;border-radius:7px';
+    const wallet=document.createElement('a');wallet.href='bitcoin:'+address;wallet.textContent='Open Bitcoin Wallet';
     details.append(summary,code,copy,wallet,status);return details;
   }
   function compatibilitySnapshot(){
@@ -1427,14 +1427,14 @@ const ExtraPotionsTools = (() => {
   }
   const button=(label,fn)=>{const b=document.createElement('button');b.type='button';b.className='life-btn action';b.textContent=label;b.addEventListener('click',fn);return b;};
   function card(title){const d=document.createElement('details');d.className='exp-tools-card';d.style.cssText='border:1px solid var(--theme-line,var(--line,#777));border-radius:7px;padding:7px;margin-top:8px';const s=document.createElement('summary');s.textContent=title;d.append(s);return d;}
-  function createCompatibilityControls(){const d=card('Product compatibility'),out=document.createElement('div');out.setAttribute('aria-live','polite');function refresh(){out.replaceChildren();const value=compatibilitySnapshot();for(const p of value.products){const line=document.createElement('p');line.textContent=`${p.id.toUpperCase()} ${p.versions.join(', ')} · ${p.core?'core '+p.core:'native product UI'}`;out.append(line);}const status=document.createElement('p');status.textContent=value.warnings.join(' ')||'No mixed core versions or duplicate instances detected on this page.';out.append(status);const note=document.createElement('small');note.textContent='Only products running on this page are visible. This is not an online update check.';out.append(note);}d.addEventListener('toggle',()=>{if(d.open)refresh();});d.append(out,button('Refresh compatibility',refresh));return d;}
+  function createCompatibilityControls(){const d=card('Product Compatibility'),out=document.createElement('div');out.setAttribute('aria-live','polite');function refresh(){out.replaceChildren();const value=compatibilitySnapshot();for(const p of value.products){const line=document.createElement('p');line.textContent=`${p.id.toUpperCase()} ${p.versions.join(', ')} · ${p.core?'core '+p.core:'native product UI'}`;out.append(line);}const status=document.createElement('p');status.textContent=value.warnings.join(' ')||'No mixed core versions or duplicate instances detected on this page.';out.append(status);const note=document.createElement('small');note.textContent='Only products running on this page are visible. This is not an online update check.';out.append(note);}d.addEventListener('toggle',()=>{if(d.open)refresh();});d.append(out,button('Refresh Compatibility',refresh));return d;}
   function createSuiteSiteControls(){
-    const d=card('Site control'),out=document.createElement('div');out.setAttribute('aria-live','polite');
+    const d=card('Site Control'),out=document.createElement('div');out.setAttribute('aria-live','polite');
     const toggle=document.createElement('button');toggle.type='button';toggle.className='switch';toggle.setAttribute('role','switch');toggle.setAttribute('aria-label','Pause all ExtraPotions products on this site');toggle.append(document.createElement('span'));
-    const row=document.createElement('div');row.className='row';const copy=document.createElement('div');copy.className='copy';const label=document.createElement('strong');label.textContent='Pause all on this site';const help=document.createElement('small');help.className='help';help.textContent='Stops page changes from every active ExtraPotions product while keeping launchers and System recovery menus available.';copy.append(label,help);row.append(copy,toggle);
-    function refresh(){const core=ExtraPotionsCore;const paused=Boolean(core.suiteSitePaused());toggle.setAttribute('aria-checked',String(paused));out.replaceChildren();const status=document.createElement('p');status.textContent=core.suiteSitePausePersisted?.()===false?(paused?'Paused for this page. Storage is unavailable.':'Active for this page. Storage is unavailable.'):(paused?'ExtraPotions page features are paused on this site.':'ExtraPotions page features are active on this site.');out.append(status);for(const product of core.suiteSnapshot().products){const line=document.createElement('p'),state=core.latestSuiteState(product.id)?.state;line.textContent=`${product.id.toUpperCase()} · ${paused?'Site paused':state?.status|| (state?.active===false?'Inactive':'Active')}`;out.append(line);}}
+    const row=document.createElement('div');row.className='row';const copy=document.createElement('div');copy.className='copy';const label=document.createElement('strong');label.textContent='Pause All on This Site';const help=document.createElement('small');help.className='help';help.textContent='Stops page changes from every active ExtraPotions product while keeping launchers and System recovery menus available.';copy.append(label,help);row.append(copy,toggle);
+    function refresh(){const core=ExtraPotionsCore;const paused=Boolean(core.suiteSitePaused());toggle.setAttribute('aria-checked',String(paused));out.replaceChildren();const status=document.createElement('p');status.textContent=core.suiteSitePausePersisted?.()===false?(paused?'Paused for this page. Storage is unavailable.':'Active for this page. Storage is unavailable.'):(paused?'ExtraPotions page features are paused on this site.':'ExtraPotions page features are active on this site.');out.append(status);for(const product of core.suiteSnapshot().products){const line=document.createElement('p'),state=core.latestSuiteState(product.id)?.state;line.textContent=`${product.id.toUpperCase()} · ${paused?'Site Paused':state?.status|| (state?.active===false?'Inactive':'Active')}`;out.append(line);}}
     toggle.addEventListener('click',()=>{const core=ExtraPotionsCore;core.setSuiteSitePaused(!core.suiteSitePaused());refresh();});
-    const duration=document.createElement('select');duration.setAttribute('aria-label','Temporary suite pause duration');for(const [value,label] of [['15','15 minutes'],['60','1 hour'],['240','4 hours']]){const option=document.createElement('option');option.value=value;option.textContent=label;duration.append(option);}const temporary=button('Pause temporarily',()=>{ExtraPotionsCore.setSuiteSitePaused(true,location.hostname,Number(duration.value));refresh();});
+    const duration=document.createElement('select');duration.setAttribute('aria-label','Temporary Suite Pause Duration');for(const [value,label] of [['15','15 minutes'],['60','1 hour'],['240','4 hours']]){const option=document.createElement('option');option.value=value;option.textContent=label;duration.append(option);}const temporary=button('Pause Temporarily',()=>{ExtraPotionsCore.setSuiteSitePaused(true,location.hostname,Number(duration.value));refresh();});
     d.addEventListener('toggle',()=>{if(d.open)refresh();});d.append(row,duration,temporary,out);refresh();return d;
   }
   const productRepositories = Object.freeze({dropper:'Dropper',ward:'WARD',thread:'THREAD'});
@@ -1479,7 +1479,7 @@ const ExtraPotionsTools = (() => {
     if(diagnostics&&typeof diagnostics==='object'){
       const review='Full diagnostics\n';
       for(const text of [JSON.stringify(diagnostics,null,2),JSON.stringify(diagnostics)]){const url=link(template+review+'```json\n'+text+'\n```\n');if(url.length<=ISSUE_URL_LIMIT)return url;}
-      const url=link(template+review+(copied?'The full diagnostics were copied to your clipboard when you selected Report a problem. Paste them here if asked.\n':'Select Copy diagnostics and paste the full diagnostics here if asked.\n'));
+      const url=link(template+review+(copied?'The full diagnostics were copied to your clipboard when you selected Report a Problem. Paste them here if asked.\n':'Select Copy diagnostics and paste the full diagnostics here if asked.\n'));
       if(url.length<=ISSUE_URL_LIMIT||summary.length<=1500)return url;
       return productIssueUrl(id,version,{health,diagnostics,copied,summary:summary.slice(0,1500)});
     }
@@ -1533,7 +1533,7 @@ const ExtraPotionsTools = (() => {
       }
       // Status stays open so its recovery action is visible; history is one tap away.
       const activity=document.createElement('div');activity.dataset.expProductActivity='1';
-      const log=ExtraPotionsCore.createDisclosure('Recent activity',activity,rows);log.dataset.expSystemActivity='1';
+      const log=ExtraPotionsCore.createDisclosure('Recent Activity',activity,rows);log.dataset.expSystemActivity='1';
       const status=ExtraPotionsCore.createDisclosure('Status',health.element,log);status.open=true;
       status.addEventListener('toggle',()=>{if(status.open)health.refresh();});
       log.addEventListener('toggle',()=>{if(log.open)health.refresh();});
@@ -1557,7 +1557,7 @@ const ExtraPotionsTools = (() => {
     const output=diagnostics.querySelector?.('pre');if(output)output.style.cssText+=';max-height:240px;overflow:auto';
     const health=()=>({label:timeline.querySelector?.('[data-exp-health-state]')?.textContent||'',reason:timeline.querySelector?.('[data-exp-health-reason]')?.textContent||''});
     // Each report takes a fresh diagnostics report, copies it, and attaches it to the issue when it fits.
-    const report=wide(button('Report a problem',async()=>{
+    const report=wide(button('Report a Problem',async()=>{
       if(report.disabled)return;report.disabled=true;
       let data=null,copied=false;
       try{const source=typeof ExtraPotionsDiagnostics==='object'?ExtraPotionsDiagnostics.reportSource?.(diagnostics):null;if(source)data=await source();}catch{}
@@ -1571,14 +1571,14 @@ const ExtraPotionsTools = (() => {
     }));
     report.dataset.expSystemReport='1';
     ExpMenuHelp.setMenuHelp(report,'Attaches fresh diagnostics to a GitHub issue. GitHub issues are public; remove private data before submitting.');
-    const support=document.createElement('section');support.setAttribute('aria-label','Diagnostics and support');support.append(diagnostics,report);
+    const support=document.createElement('section');support.setAttribute('aria-label','Diagnostics and Support');support.append(diagnostics,report);
     // Reset: one tap arms, a second tap within a few seconds confirms. No browser dialogs.
     const resetStatus=note('');resetStatus.setAttribute('role','status');resetStatus.setAttribute('aria-live','polite');
     let armedUntil=0,armTimer=0;
-    const reset=wide(button('Reset all settings',async()=>{
+    const reset=wide(button('Reset All Settings',async()=>{
       if(reset.disabled)return;
       if(Date.now()>=armedUntil){
-        armedUntil=Date.now()+RESET_ARM_MS;reset.textContent='Tap again to reset';reset.dataset.expResetArmed='1';
+        armedUntil=Date.now()+RESET_ARM_MS;reset.textContent='Tap Again to Reset';reset.dataset.expResetArmed='1';
         resetStatus.textContent=`Tap again within ${RESET_ARM_MS/1000} seconds to permanently reset ${product}.`;
         clearTimeout(armTimer);armTimer=setTimeout(disarm,RESET_ARM_MS);return;
       }
@@ -1586,10 +1586,10 @@ const ExtraPotionsTools = (() => {
       try{await onReset();notify(product+' reset complete.');}catch{notify('Reset did not complete. Check storage permissions and try again.');}finally{reset.disabled=false;}
     }));
     reset.dataset.expDestructive='1';
-    function disarm(){clearTimeout(armTimer);armedUntil=0;reset.textContent='Reset all settings';delete reset.dataset.expResetArmed;resetStatus.textContent='';}
+    function disarm(){clearTimeout(armTimer);armedUntil=0;reset.textContent='Reset All Settings';delete reset.dataset.expResetArmed;resetStatus.textContent='';}
     reset.style.cssText+=';font-weight:600';
     ExpMenuHelp.setMenuHelp(reset,`Clears ${product} settings and stored data on this browser. This cannot be undone. Tap twice within 4 seconds to confirm.`);
-    const resetCard=document.createElement('section');resetCard.setAttribute('aria-label','Reset settings');resetCard.style.cssText='margin-block-start:12px;padding-block-start:8px';resetCard.append(reset,resetStatus);
+    const resetCard=document.createElement('section');resetCard.setAttribute('aria-label','Reset Settings');resetCard.style.cssText='margin-block-start:12px;padding-block-start:8px';resetCard.append(reset,resetStatus);
     reset.addEventListener('blur',disarm);
     for(const [key,node] of [['status',timeline],['support',support],['preferences',preferences],['reset',resetCard]]){
       if(!node)continue;node.dataset.expSystemItem=key;node.style.minWidth='0';node.style.maxWidth='100%';
@@ -1856,7 +1856,7 @@ const ExpMenuArrangement = (() => {
         }
         add(label,node);
       }
-      const order=stream?['Stream Health','Playback','Routing','Alerts']:drops?['Campaigns','History']:retailer?['Seller clarity','Coverage','Retailers','Patterns','Tools']:['Page'];
+      const order=stream?['Stream Health','Playback','Routing','Alerts']:drops?['Campaigns','History']:retailer?['Seller Clarity','Coverage','Retailers','Patterns','Tools']:['Page'];
       const rows=[...new Set([...order,...groups.keys()])].filter(label=>groups.has(label)).map(label=>({label,nodes:groups.get(label)}));
       return {home,rows};
     }
@@ -1996,7 +1996,7 @@ const ExpMenuArrangement = (() => {
 
 /* Plain health facts and safe, product-owned actions. */
 const ExpHealthSummary = (() => {
-  const labels = Object.freeze({working:'Working',waiting:'Waiting',paused:'Paused',attention:'Needs attention'});
+  const labels = Object.freeze({working:'Working',waiting:'Waiting',paused:'Paused',attention:'Needs Attention'});
   function normalizeHealth(value) {
     const valid = value && Object.hasOwn(labels, value.state);
     const state = valid ? value.state : 'waiting';
@@ -2167,7 +2167,7 @@ const ExpMenuLayout = (() => {
   const iconFor={campaigns:'gift',drops:'gift',settings:'sliders',advanced:'sliders',look:'brush',appearance:'brush',system:'system',protect:'shield',protection:'shield',amazon:'bag',walmart:'bag',ebay:'bag',etsy:'bag',target:'bag','best buy':'bag',retailer:'bag',highlights:'sparkle',feed:'feed',read:'read',filters:'filter',people:'people',streams:'screen','current site':'globe',site:'globe'};
   function mount({panel}){
     const doc=panel.ownerDocument,view=doc.defaultView,wrapped=new Map(),groups=new Set(),icons=new Set(),moves=[];
-    const updateFace=select=>{const face=wrapped.get(select)?.face;if(face){const original=select.selectedOptions[0]?.textContent||'',text=({Automatic:'Auto','Follow system':'System','Inherit global':'Global','Original text':'Original','Announce on focus':'On focus','Follow campaign order':'Campaign order','Keep an earning stream':'Keep earning','Manual stream protected':'Manual hold'})[original]||original;if(face.textContent!==text)face.textContent=text;}};
+    const updateFace=select=>{const face=wrapped.get(select)?.face;if(face){const original=select.selectedOptions[0]?.textContent||'',text=({automatic:'Auto','follow system':'System','inherit global':'Global','original text':'Original','announce on focus':'On Focus','follow campaign order':'Campaign Order','keep an earning stream':'Keep Earning','manual stream protected':'Manual Hold'})[original.toLowerCase()]||original;if(face.textContent!==text)face.textContent=text;}};
     function decorate(){
       const version=panel.querySelector('[data-exp-part=version],#tdh-header-version'),actions=panel.querySelector('.header-actions');
       if(version&&!/changelog/i.test(version.getAttribute('aria-label')||'')){const name=panel.querySelector('[data-exp-part=title],#tdh-rail-title')?.textContent.trim()||'';version.setAttribute('aria-label',('View '+name+' '+version.textContent.trim()+' Changelog').trim());}
@@ -2393,8 +2393,8 @@ const ExpMenuPreferences = (() => {
   }
   function createMenuSizeControls(){
     const row=document.createElement('label');row.className='row exp-menu-size';const copy=document.createElement('span');copy.className='copy';
-    const title=document.createElement('strong');title.textContent='Menu size';copy.append(title);
-    const select=document.createElement('select');select.setAttribute('aria-label','Menu size');select.dataset.expMenuSizeSelect='1';
+    const title=document.createElement('strong');title.textContent='Menu Size';copy.append(title);
+    const select=document.createElement('select');select.setAttribute('aria-label','Menu Size');select.dataset.expMenuSizeSelect='1';
     
     for(const [value,label] of [['standard','Standard'],['compact','Compact'],['mini','Mini']]){const option=document.createElement('option');option.value=value;option.textContent=label;select.append(option);}
     select.value=menuSizePreference();select.addEventListener('change',()=>setMenuSizePreference(select.value));row.append(copy,select);return row;
@@ -2429,16 +2429,16 @@ const ExpSiteColors = (() => {
       if(document.documentElement.getAttribute(attribute)===product){document.documentElement.removeAttribute(attribute);delete document.documentElement.dataset.expSitePalette;}}
     return Object.freeze({apply,clear,refresh:render,palette:()=>active?resolveTheme(current):null});
   }
-  function createThemeModeControl({value='system',onChange,label='Menu theme'}){
+  function createThemeModeControl({value='system',onChange,label='Menu Theme'}){
     const row=document.createElement('label');row.className='row exp-site-colors';const copy=document.createElement('span');copy.className='copy';
     const title=document.createElement('strong');title.textContent=label;copy.append(title);
     const select=document.createElement('select');select.setAttribute('aria-label',label);select.dataset.expThemeMode='1';
-    if(label==='Site theme')select.dataset.expSiteColorsSelect='1';
+    if(label==='Site Theme')select.dataset.expSiteColorsSelect='1';
     for(const {id,name} of sitePalettes){const option=document.createElement('option');option.value=id;option.textContent=name;select.append(option);}
     
     select.value=normalizeThemeMode(value);select.addEventListener('change',()=>onChange?.(select.value));row.append(copy,select);return row;
   }
-  const createSiteColorControl = options => createThemeModeControl({...options,label:'Site theme'});
+  const createSiteColorControl = options => createThemeModeControl({...options,label:'Site Theme'});
   return Object.freeze({sitePalettes,sitePalette,createSiteColors,createSiteColorControl,createThemeModeControl,normalizeThemeMode,resolveTheme});
 })();
 
@@ -2473,7 +2473,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.16.0';
+  const version = '3.17.0';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -4485,7 +4485,7 @@ const ExtraPotionsCore = (() => {
       dismiss = document.createElement('button');
       dismiss.type = 'button';
       dismiss.className = 'exp-floating-update-dismiss';
-      dismiss.setAttribute('aria-label', 'Dismiss changelog');
+      dismiss.setAttribute('aria-label', 'Dismiss Changelog');
       dismiss.textContent = '×';
       notice.prepend(dismiss);
     }
@@ -5078,7 +5078,7 @@ const ExtraPotionsCore = (() => {
     notice.className = 'update-notice';
     notice.dataset.expUpdateNotice = '1';
     notice.hidden = true;
-    notice.innerHTML = '<button type="button" class="update-dismiss" aria-label="Dismiss update notice">×</button><div class="update-head"><div class="update-heading"><div class="update-kicker">What\'s new</div><div class="update-title"></div></div><div class="update-version"></div></div><div class="update-text"></div><ul class="update-list"></ul><div class="update-footer"><a class="update-release" target="_blank" rel="noopener noreferrer">GitHub release</a><a class="update-action" target="_blank" rel="noopener noreferrer">Install update</a></div>';
+    notice.innerHTML = '<button type="button" class="update-dismiss" aria-label="Dismiss Update Notice">×</button><div class="update-head"><div class="update-heading"><div class="update-kicker">What\'s New</div><div class="update-title"></div></div><div class="update-version"></div></div><div class="update-text"></div><ul class="update-list"></ul><div class="update-footer"><a class="update-release" target="_blank" rel="noopener noreferrer">GitHub Release</a><a class="update-action" target="_blank" rel="noopener noreferrer">Install Update</a></div>';
     (shadow.querySelector('.exp-core-theme') || shadow).append(notice);
     const controller = createMenuNotice({
       host,
@@ -5090,7 +5090,7 @@ const ExtraPotionsCore = (() => {
       durationMs: options.durationMs ?? 30000,
     });
     function show(state = {}) {
-      notice.querySelector('.update-kicker').textContent = state.kicker || "What's new";
+      notice.querySelector('.update-kicker').textContent = state.kicker || "What's New";
       notice.querySelector('.update-title').textContent = state.title || '';
       notice.querySelector('.update-version').textContent = state.version ? 'v' + state.version : '';
       notice.querySelector('.update-text').textContent = state.text || '';
@@ -5111,7 +5111,7 @@ const ExtraPotionsCore = (() => {
       const actionUrl = state.actionUrl || options.installUrl || '';
       action.hidden = !actionUrl || state.showAction === false;
       if (actionUrl) action.href = actionUrl;
-      action.textContent = state.actionText || 'Install update';
+      action.textContent = state.actionText || 'Install Update';
       notice.dataset.noticeKind = state.kind || 'current';
       // Some products close the menu without marking the panel hidden; only a drawn panel counts as open.
       controller.setMenuOpen(!panel.hidden && panel.getClientRects().length > 0);
@@ -5157,13 +5157,13 @@ const ExtraPotionsCore = (() => {
     details.className = 'exp-tools-card';
     details.style.cssText = 'border:1px solid var(--theme-line,var(--line,#777));border-radius:7px;padding:7px;margin-top:8px';
     const summary = document.createElement('summary');
-    summary.textContent = 'Product compatibility';
+    summary.textContent = 'Product Compatibility';
     const output = document.createElement('div');
     output.setAttribute('aria-live', 'polite');
     const refreshButton = document.createElement('button');
     refreshButton.type = 'button';
     refreshButton.className = 'life-btn action';
-    refreshButton.textContent = 'Refresh compatibility';
+    refreshButton.textContent = 'Refresh Compatibility';
 
     const refresh = () => {
       output.replaceChildren();
@@ -5179,7 +5179,7 @@ const ExtraPotionsCore = (() => {
         const health = healthById.get(product.id);
         const line = document.createElement('p');
         const stateAge = health?.stateAgeMs == null ? '' : ` · state ${Math.max(0, Math.round(health.stateAgeMs / 1000))}s ago`;
-        line.textContent = `${product.id.toUpperCase()} ${product.version} · Core ${product.coreVersion} · ${health?.status === 'healthy' ? 'Healthy' : 'Check compatibility'}${stateAge}`;
+        line.textContent = `${product.id.toUpperCase()} ${product.version} · Core ${product.coreVersion} · ${health?.status === 'healthy' ? 'Healthy' : 'Check Compatibility'}${stateAge}`;
         output.append(line);
       }
 
