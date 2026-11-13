@@ -1,3 +1,8 @@
+## 3.14.1 — 2026-11-13
+
+- Let a product keep its menu open longer when it is left alone, never less than 15 seconds; Dropper uses a minute.
+- PRISMA, WARD and Thread keep their 15-second menu timer.
+
 ## 3.14.0 — 2026-11-12
 
 - Remove the floating page-actions bar; its actions stay in each product's menu.

@@ -2478,7 +2478,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.14.0';
+  const version = '3.14.1';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -4661,7 +4661,8 @@ const ExtraPotionsCore = (() => {
       throw new Error('Incomplete menu controller configuration');
     }
     if (menuControllers.has(host)) return menuControllers.get(host);
-    const idleTimeoutMs = 15000;
+    // How long an untouched menu stays open; a product may ask for longer (Dropper: 60 seconds).
+    const idleTimeoutMs = Math.max(15000, Number(options.idleTimeoutMs) || 0);
     let open = false, destroyed = false, timer = 0, deadline = 0;
     const removers = [];
     const on = (node, type, handler, opts) => {
