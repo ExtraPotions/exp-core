@@ -148,7 +148,7 @@ function css() {
         display:none; width:min(var(--exp-menu-width,260px), calc(100vw - 24px)); max-width:calc(100vw - 24px);
         height:max-content; min-height:0; max-height:none; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; flex:0 0 auto;
         transition:.15s width;
-        padding:9px 9px 4px; background:var(--theme-bg); border:1px solid var(--theme-line); border-radius:14px; box-shadow:0 18px 50px #0008; color-scheme:dark;
+        padding:9px 9px 4px; background:var(--theme-bg); border:1px solid var(--theme-line); border-radius:14px; box-shadow:0 18px 50px #0008;
       }
       [data-exp-part="dock"].fl-rail-open { display:block; height:max-content; min-height:0; max-height:none; }
       [data-exp-part="dock"]:focus { outline:none; }
@@ -2477,7 +2477,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.15.0';
+  const version = '3.15.1';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -4570,7 +4570,17 @@ const ExtraPotionsCore = (() => {
     }
     function toggle() { if (notice.hidden) show(); else hide(); }
     function versionClick() { if (manageVersion) toggle(); else if (!notice.hidden) show(); }
-    function setMenuOpen(value) { menuOpen = Boolean(value); queueLayout(); }
+    function setMenuOpen(value) {
+      menuOpen = Boolean(value);
+      // A notice shown inside the open menu needs the shared turn once it floats on its own; without it, it waits.
+      if (!menuOpen && !notice.hidden && !takeNoticeTurn(token)) {
+        clearTimer();
+        notice.hidden = true;
+        returnFocus?.setAttribute('aria-expanded', 'false');
+        waiting = true;
+      }
+      queueLayout();
+    }
 
     const resize = new ResizeObserver(queueLayout);
     resize.observe(panel);

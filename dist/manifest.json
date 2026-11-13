@@ -1,8 +1,8 @@
 {
-  "coreVersion": "3.15.0",
+  "coreVersion": "3.15.1",
   "source": {
     "source": "ExtraPotions/exp-core",
-    "sourceVersion": "3.15.0",
+    "sourceVersion": "3.15.1",
     "architecture": "core-native"
   },
   "suiteContract": {
@@ -135,9 +135,9 @@
       "rootId": "exp-ward-root"
     }
   },
-  "bundleSha256": "3ab1f5c4bbae8dd483c532279ea71f77b952b8d008a3f69d3b54ce08f4eafeb8",
+  "bundleSha256": "670e59bb44a6d4021e628db1e61883afa6de5c763e378cd4dc254ecbcf878fa8",
   "files": {
-    "foundation.js": "0eb0bb059e13b2cb68d3acabcd2ec0718e2ddf7e64d5a0a4ba54e165cb2d66ec",
+    "foundation.js": "ce12edbe10a0f6ee6cba7be3b7113af609cd2333d11107790c0d06424ffe4602",
     "diagnostic-report.js": "c50bf1a2aea3a166da68c38489ff1cd381466087eeff615b8bac6a9b9d82570c",
     "lifecycle.js": "6347b48d7736e08afae2c22638d61175f2fcaa5230ab45c6849ccfe390672037",
     "product-tools.js": "64317ec0780d8cc6301bdf712b131cc3ba2638b6b2a341b7707a892424f32119",
@@ -153,7 +153,7 @@
     "site-colors.js": "b2d21de6a78828c4a055de5f18c642d88eb69ece56a97545722c6434b5956427",
     "launcher-flyout.js": "670ac88b77c9ad1ed30154140a35f54bcf1abdfaf927fb7365b3c39ab368c8b1",
     "runtime.js": "d569c714b3add6935255b96482f23f3b3bd2d3b0c69980b4d1edd459339ffae9",
-    "runtime-menus.js": "cede75219b070f394a60d9cce5456648e92c88343923f9ef8af3be41b7f0a193",
+    "runtime-menus.js": "c88bd458cae7c2de030fdb279ca9c040e791e3f2a3e01d1da721930bab2e3181",
     "suite-contract.json": "99d654e31fb534d593c472f0bb9da4f359d9fcacfb5ff37b467b0015af9a15f8"
   }
 }

@@ -1,3 +1,8 @@
+## 3.15.1 — 2026-11-13
+
+- An update card shown inside an open menu waits its turn when the menu closes, so two products' cards never draw in the same spot.
+- In Light, menu select lists and scrollbars are light too.
+
 ## 3.15.0 — 2026-11-13
 
 - Remove the retired PRISMA and SHIFT from the shared launcher, its order, colours and product links.
