@@ -1,3 +1,8 @@
+## 3.17.2 — 2026-11-13
+
+- WARD's menu colour is green, matching its new emerald gem.
+- The green keeps at least 4.5:1 contrast on the menu panel in Light and Dark.
+
 ## 3.17.1 — 2026-11-13
 
 - Changelog cards show every release note in full; long changelogs scroll in the card, inside the window.

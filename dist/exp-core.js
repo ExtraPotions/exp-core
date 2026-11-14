@@ -15,7 +15,7 @@ const CHARCOAL = Object.freeze({
 // Each product's badge colour, tuned to 4.5:1 on the panel in that mode.
 const PRODUCT_ACCENTS = Object.freeze({
   dropper: Object.freeze({light:'#862ff1',dark:'#a869f5'}),
-  ward: Object.freeze({light:'#8e5c05',dark:'#f6a313'}),
+  ward: Object.freeze({light:'#0d7246',dark:'#1fbf7a'}),
   thread: Object.freeze({light:'#bd3300',dark:'#ff4500'}),
 });
 function productPalette(product, mode) {
@@ -2473,7 +2473,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.17.1';
+  const version = '3.17.2';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';

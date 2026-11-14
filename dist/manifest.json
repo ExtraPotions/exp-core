@@ -1,8 +1,8 @@
 {
-  "coreVersion": "3.17.1",
+  "coreVersion": "3.17.2",
   "source": {
     "source": "ExtraPotions/exp-core",
-    "sourceVersion": "3.17.1",
+    "sourceVersion": "3.17.2",
     "architecture": "core-native"
   },
   "suiteContract": {
@@ -135,9 +135,9 @@
       "rootId": "exp-ward-root"
     }
   },
-  "bundleSha256": "cf84bd5e234aa4a0014e969713662dc2bdd77ce6fbe31c22896d408ff3fe1c43",
+  "bundleSha256": "67619074a26a1b3c29537929e5ffbeaba20e969b0d1ab8df1ae62bd950334353",
   "files": {
-    "foundation.js": "810f1e667a45b2c845bf7e11208e9eb0f2b4345c7dbcb2f99b70102ed2e05c99",
+    "foundation.js": "c512ce6f4c55ee249641e790a2abc208379ba5d5a2fae3130b80237e5718710c",
     "diagnostic-report.js": "1d97477991bc3e5cda6484d092568096e12c0a71a92a1743de0f7b392e6f5836",
     "lifecycle.js": "6347b48d7736e08afae2c22638d61175f2fcaa5230ab45c6849ccfe390672037",
     "product-tools.js": "dba86b58df71776276b8775c41e426ae07fb1425361d2df98f4d5049fa17fd70",
