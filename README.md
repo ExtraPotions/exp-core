@@ -10,7 +10,7 @@ The shared launcher, menus and settings controls bundled with ExtraPotions produ
 
 ## Shared controls
 
-Products keep their artwork and sections. Menus use Slate Blue Light, Dark or System. Core provides one launcher when products share a page, Standard/Compact/Mini menu sizes, keyboard navigation, status and diagnostics.
+Products keep their artwork and sections. Menus are charcoal with each product's own colour, in Light, Dark or System; site themes use Slate Blue. Sections are drawers that open one at a time. Core provides one launcher when products share a page (on Twitch, one icon per product in the top bar), Standard/Compact/Mini menu sizes, keyboard navigation, status and diagnostics.
 
 See each product’s README for product-only Light, Dark and current-changelog screenshots. Core is bundled into those products and has no separate product menu.
 
