@@ -1,3 +1,8 @@
+## 3.17.3 — 2026-11-14
+
+- WARD's tile in the shared launcher is green, matching its menus and gem.
+- The launcher's update mark for WARD uses the same green.
+
 ## 3.17.2 — 2026-11-13
 
 - WARD's menu colour is green, matching its new emerald gem.

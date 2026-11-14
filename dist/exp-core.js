@@ -2473,7 +2473,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.17.2';
+  const version = '3.17.3';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -3927,7 +3927,7 @@ const ExtraPotionsCore = (() => {
   // Flyout launcher: with two or more products on a page, one shared launcher (the hub, owned by the lead
   // product's host) opens a row of tiles, and each tile is that product's own launcher. Every Core copy derives
   // the same state from host attributes; the open state lives on <html> as data-exp-flyout-open.
-  const FLYOUT_ACCENTS = Object.freeze({ dropper:'#bc94f5', ward:'#e7bb75', thread:'#ff7636' });
+  const FLYOUT_ACCENTS = Object.freeze({ dropper:'#bc94f5', ward:'#5fd9a0', thread:'#ff7636' });
   const FLYOUT_NAMES = Object.freeze({ dropper:'Dropper', ward:'WARD', thread:'THREAD' });
   const FLYOUT_TILE = 40, FLYOUT_GAP = 6, FLYOUT_PAD = 7;
   const launcherHosts = () => [...document.querySelectorAll('[data-exp-product-launcher="1"]')];
