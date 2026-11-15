@@ -1,3 +1,8 @@
+## 3.17.4 — 2026-11-14
+
+- On Kick, product icons sit in Kick's top bar, like on Twitch.
+- Twitch and Kick share the same top-bar placement.
+
 ## 3.17.3 — 2026-11-14
 
 - WARD's tile in the shared launcher is green, matching its menus and gem.

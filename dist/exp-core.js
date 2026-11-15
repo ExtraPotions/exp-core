@@ -2473,7 +2473,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.17.3';
+  const version = '3.17.4';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -4006,16 +4006,28 @@ const ExtraPotionsCore = (() => {
   function twitchSlot() {
     const bar = document.querySelector('nav[data-a-target="top-nav-container"] .top-nav__menu');
     if (bar) watchSlotNode(bar);
-    if (!bar || bar.children.length < 3) return null;
+    return bar && bar.children.length >= 3 ? topBarSlot(bar, bar.children[1], bar.children[2], 'input[type="search"],input[data-a-target="tw-input"]') : null;
+  }
+  // Kick: the same place in its wide-window top bar (collapse and logo, centred search, then its icons last).
+  // Narrow windows swap in a different bar, and theater mode hides it; both leave the launcher in the corner.
+  function kickSlot() {
+    const search = 'input[data-testid="search"]';
+    const bar = [...document.querySelectorAll('nav')].find(node => node.querySelector(search) && visibleBox(node)) || null;
+    if (bar) watchSlotNode(bar);
+    const middle = bar && [...bar.children].find(child => child.querySelector(search)), right = bar?.lastElementChild;
+    return middle && right && right !== middle ? topBarSlot(bar, middle, right, search) : null;
+  }
+  // The slot sits between the search box (in `middle`) and the first icon in `iconGroup`.
+  function topBarSlot(bar, middle, iconGroup, searchSelector) {
     const barBox = visibleBox(bar);
     if (!barBox || barBox.height < 40 || barBox.top < -1 || barBox.top > 8) return null;
-    const search = [...bar.children[1].querySelectorAll('input[type="search"],input[data-a-target="tw-input"]')].map(visibleBox).filter(Boolean);
+    const search = [...middle.querySelectorAll(searchSelector)].map(visibleBox).filter(Boolean);
     if (!search.length) return null;
     // Theater mode draws the player over the bar, which keeps its size: the bar must be on top where search is.
     const probe = document.elementFromPoint(search[0].left + search[0].width / 2, search[0].top + search[0].height / 2);
     if (!probe || !bar.contains(probe)) return null;
-    const searchEnd = Math.max(...[...bar.children[1].querySelectorAll('input,button,a')].map(visibleBox).filter(Boolean).map(box => box.right));
-    const icons = [...bar.children[2].querySelectorAll('button,a,input')].map(visibleBox).filter(Boolean);
+    const searchEnd = Math.max(...[...middle.querySelectorAll('input,button,a')].map(visibleBox).filter(Boolean).map(box => box.right));
+    const icons = [...iconGroup.querySelectorAll('button,a,input')].map(visibleBox).filter(Boolean);
     if (!icons.length) return null;
     const right = Math.min(...icons.map(box => box.left)) - 16, left = right - FLYOUT_TILE;
     if (left < searchEnd + 8) return null;
@@ -4050,7 +4062,7 @@ const ExtraPotionsCore = (() => {
     top = Math.max(8, Math.min(innerHeight - size - 8, top));
     return {left:Math.round(left),top:Math.round(top),dock:'right',size,shape:'circle'};
   }
-  const SITE_SLOTS = Object.freeze([{ host:/(^|\.)twitch\.tv$/, find:twitchSlot },{ host:/^(www|sh)\.reddit\.com$/, find:redditSlot }]);
+  const SITE_SLOTS = Object.freeze([{ host:/(^|\.)twitch\.tv$/, find:twitchSlot },{ host:/(^|\.)kick\.com$/, find:kickSlot },{ host:/^(www|sh)\.reddit\.com$/, find:redditSlot }]);
   let slotMemo = null, frozenSlot;
   function siteSlot() {
     // While the flyout is open the launcher stays put, so the open flyout never jumps under the pointer.
