@@ -1,3 +1,9 @@
+## 3.18.0 — 2026-11-20
+
+- Each product is a tab on the right edge of the window instead of a badge in the corner.
+- Several products stack as tabs; the shared launcher remains only where a top bar has room for one icon.
+- Tabs drag up and down together, and Shift+drag changes their order.
+
 ## 3.17.4 — 2026-11-14
 
 - On Kick, product icons sit in Kick's top bar, like on Twitch.

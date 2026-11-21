@@ -4,9 +4,9 @@
 
 ## Open a product
 
-Install a product, not Core. Each product bundles the shared menu. When several products run on a page, open the shared launcher and choose one; on Twitch and Kick each product has its own icon in the top bar. Products keep their own features, colors and settings.
+Install a product, not Core. Each product bundles the shared menu. Each product has a tab on the right edge of the window; on Twitch and Kick each product has its own icon in the top bar instead. Products keep their own features, colors and settings.
 
-The launcher uses Twitch’s and Kick’s top bars and Thread’s Reddit rail placement where available. Elsewhere it uses a corner position; the corner launcher can be dragged vertically. Updates and Dropper progress can appear on the launcher.
+The launcher uses Twitch’s and Kick’s top bars and Thread’s Reddit rail placement where available. Elsewhere the tabs sit on the right edge and can be dragged up and down together; Shift+drag changes their order. A tab shows a dot when its product has an update. Where a top bar has room for only one icon, the products share one launcher there.
 
 ## Menu size and navigation
 

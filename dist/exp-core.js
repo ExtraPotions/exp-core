@@ -2445,8 +2445,9 @@ const ExpSiteColors = (() => {
 // Flyout launcher rules shared by every Core copy on a page. Each copy computes the same answer from the
 // launcher hosts' attributes alone, so products agree on one launcher without messaging each other.
 const ExpLauncherFlyout = (() => {
-  // 2: a site's top bar can hold one icon per product instead of the flyout; copies on 1 keep the grid for everyone.
-  const PROTOCOL = '2';
+  // 3: away from a site's own slot every product is a tab on the window's right edge, and the flyout is used only
+  // inside a site slot. Copies on an older protocol keep the grid for everyone.
+  const PROTOCOL = '3';
   const SUITE_ORDER = Object.freeze(['dropper','ward','thread']);
   // Products that only run on their own sites (Dropper on Twitch, WARD on retailers) lead there.
   const SITE_PRODUCTS = Object.freeze(['dropper','ward','thread']);
@@ -2461,19 +2462,24 @@ const ExpLauncherFlyout = (() => {
     const list = [...hosts];
     return list.length >= 2 && list.every(host => host?.dataset?.expFlyout === PROTOCOL);
   }
+  // Edge tabs need every launcher on the page to know them; one older copy keeps the grid.
+  function tabsReady(hosts = []) {
+    const list = [...hosts];
+    return list.length >= 1 && list.every(host => host?.dataset?.expFlyout === PROTOCOL);
+  }
   function leadProduct(hosts = []) {
     const list = [...hosts];
     const site = flyoutOrder(list.filter(host => host?.dataset?.expSiteProduct === '1'));
     return site[0] || flyoutOrder(list)[0] || '';
   }
-  return Object.freeze({ PROTOCOL, SUITE_ORDER, SITE_PRODUCTS, isSiteProduct, flyoutOrder, flyoutActive, leadProduct });
+  return Object.freeze({ PROTOCOL, SUITE_ORDER, SITE_PRODUCTS, isSiteProduct, flyoutOrder, flyoutActive, tabsReady, leadProduct });
 })();
 
 // Product-neutral shared runtime. Product engines own their settings, content, and actions.
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.17.4';
+  const version = '3.18.0';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -3602,6 +3608,7 @@ const ExtraPotionsCore = (() => {
     applyMatteToggleChrome(shadow);
     return true;
   }
+  function edgeTabs() { return flyoutState().tabs; }
   function layoutGrid() {
     const order = read(GRID_ORDER, []);
     const sorted = [...document.querySelectorAll('[data-exp-product-launcher="1"]')].sort((a,b) => {
@@ -3612,16 +3619,18 @@ const ExtraPotionsCore = (() => {
       const bp = Number(b.dataset.launcherPriority || 0);
       return bp - ap || a.dataset.productId.localeCompare(b.dataset.productId);
     });
+    // Edge tabs are one column, a tab and its gap apart; the older grid is three 56px columns.
+    const tabs = edgeTabs(), pitch = tabs ? TAB_PITCH : 56;
     const assign = (node, slot, span = 1) => {
       const row = Math.floor(slot / 3), column = slot % 3;
       Object.assign(node.dataset, { launcherSlot:String(slot), launcherRow:String(row), launcherColumn:String(column), launcherSpan:String(span) });
       node.style.setProperty('--exp-launcher-x', column * 56 + 'px');
-      node.style.setProperty('--exp-launcher-y', row * 56 + 'px');
-      node.style.setProperty('--exp-launcher-offset', row * 56 + 'px');
+      node.style.setProperty('--exp-launcher-y', row * pitch + 'px');
+      node.style.setProperty('--exp-launcher-offset', row * pitch + 'px');
     };
     // Dropper's progress card spans the space to the left of the launchers, so while any launcher
     // reserves rows, every launcher stacks in the right-hand column where nothing can cover it.
-    const stacked = sorted.some(node => Number(node.dataset.launcherReservedRows) > 0);
+    const stacked = tabs || sorted.some(node => Number(node.dataset.launcherReservedRows) > 0);
     sorted.forEach((node, index) => assign(node, stacked ? index * 3 : index));
     const ids = sorted.map(node => node.dataset.productId);
     const known = new Set(Object.keys(SUITE_PRODUCTS));
@@ -3653,9 +3662,14 @@ const ExtraPotionsCore = (() => {
       return { top: single.hub.top, right: viewWidth() - left - single.hub.size, anchor: 'top', delta: savedDelta(), site: true, size: single.hub.size };
     }
     const { offset, x } = launcherCell(host);
-    const delta = Math.max(8-(innerHeight-60), Math.min(4, Number(read(GRID_DELTA,0)) || 0));
+    const delta = savedDelta();
     const origin = innerHeight-60+delta, anchor = origin <= (innerHeight-48)/2 ? 'top':'bottom';
     document.documentElement.dataset.expLauncherAnchor = anchor;
+    if (state.tabs) {
+      // A tab on the window's right edge. The bottom-anchored stack keeps the older launcher's bottom line.
+      const base = anchor === 'top' ? origin + offset : origin + 48 - TAB_HEIGHT - offset;
+      return { top: Math.max(8, Math.min(innerHeight-TAB_HEIGHT-8, base)) + siteControlShift(origin, anchor), right: 0, anchor, delta, tab: true, width: TAB_WIDTH, height: TAB_HEIGHT };
+    }
     const top = Math.max(8, Math.min(innerHeight-56, anchor === 'top' ? origin+offset : origin-offset));
     return { top: top + siteControlShift(origin, anchor), right: 12+x, anchor, delta };
   }
@@ -3712,12 +3726,14 @@ const ExtraPotionsCore = (() => {
     if (groupDragging) return 0;
     const now = performance.now();
     if (shiftMemo && shiftMemo.origin === origin && now - shiftMemo.at < 1000) return shiftMemo.value;
-    // The flyout launcher is one 48px tile in the corner; the grid is every launcher cell.
-    const cells = ExpLauncherFlyout.flyoutActive(launcherHosts()) ? [{ offset:0, x:0 }] : [...document.querySelectorAll('[data-exp-product-launcher="1"]')].map(launcherCell);
+    // Every launcher cell: a column of tabs on the edge, or the older grid 12px in from it.
+    const cells = [...document.querySelectorAll('[data-exp-product-launcher="1"]')].map(launcherCell);
     if (!cells.length) return 0;
-    const tops = cells.map(cell => Math.max(8, Math.min(innerHeight-56, anchor === 'top' ? origin+cell.offset : origin-cell.offset)));
-    const c = SITE_CONTROL_CLEARANCE;
-    const group = { top: Math.min(...tops) - c, bottom: Math.max(...tops) + 48 + c, right: innerWidth - 12 + c, left: innerWidth - 12 - 48 - Math.max(...cells.map(cell => cell.x)) - c };
+    const tabs = flyoutState().tabs, c = SITE_CONTROL_CLEARANCE;
+    const tops = cells.map(cell => tabs ? Math.max(8, Math.min(innerHeight-TAB_HEIGHT-8, anchor === 'top' ? origin+cell.offset : origin+48-TAB_HEIGHT-cell.offset)) : Math.max(8, Math.min(innerHeight-56, anchor === 'top' ? origin+cell.offset : origin-cell.offset)));
+    const group = tabs
+      ? { top: Math.min(...tops) - c, bottom: Math.max(...tops) + TAB_HEIGHT + c, right: innerWidth, left: innerWidth - TAB_REACH - c }
+      : { top: Math.min(...tops) - c, bottom: Math.max(...tops) + 48 + c, right: innerWidth - 12 + c, left: innerWidth - 12 - 48 - Math.max(...cells.map(cell => cell.x)) - c };
     const at = s => ({ ...group, top: group.top + s, bottom: group.bottom + s });
     const fits = s => at(s).top >= 8 - c && at(s).bottom <= innerHeight - 8 + c;
     const hits = (s, blockers) => blockers.some(b => b.left < group.right && b.right > group.left && b.top < at(s).bottom && b.bottom > at(s).top);
@@ -3753,7 +3769,7 @@ const ExtraPotionsCore = (() => {
       if (!host || groupDragging || document.hidden) return;
       const before = shiftMemo ? shiftMemo.value : 0;
       shiftMemo = null;
-      const delta = Math.max(8-(innerHeight-60), Math.min(4, Number(read(GRID_DELTA,0)) || 0));
+      const delta = savedDelta();
       const origin = innerHeight-60+delta, value = siteControlShift(origin, origin <= (innerHeight-48)/2 ? 'top':'bottom');
       siteCheckLast = performance.now();
       siteCheckGap = value !== before ? 0 : Math.min(SITE_CHECK_GAP_MAX, Math.max(1000, siteCheckGap * 2));
@@ -3852,6 +3868,8 @@ const ExtraPotionsCore = (() => {
     const band = [...geometry.launchers, ...(reserved ? [reserved] : [])].filter(box => box.left < innerWidth - 12 && box.right > innerWidth - 12 - width)
       .reduce((all, box) => ({ top:Math.min(all.top, box.top), bottom:Math.max(all.bottom, box.bottom) }), { top:own.top, bottom:own.bottom });
     const below = innerHeight - band.bottom - 16, above = band.top - 16;
+    // In a very short window neither side has room: the open menu takes the viewport, as it does from a site slot.
+    if (Math.max(above, below) < 160) { limitHeight(innerHeight - 16); host.dataset.openDirection = 'down'; return finish('viewport', 8, 8, panel.offsetHeight); }
     const up = anchorTop ? below < 160 && above > below : !(above < 160 && below > above);
     limitHeight(up ? above : below);
     const h = panel.offsetHeight;
@@ -3930,13 +3948,18 @@ const ExtraPotionsCore = (() => {
   const FLYOUT_ACCENTS = Object.freeze({ dropper:'#bc94f5', ward:'#5fd9a0', thread:'#ff7636' });
   const FLYOUT_NAMES = Object.freeze({ dropper:'Dropper', ward:'WARD', thread:'THREAD' });
   const FLYOUT_TILE = 40, FLYOUT_GAP = 6, FLYOUT_PAD = 7;
+  // Edge tab: 34x44 drawn, 44px of reach from the edge for touch, 4px between stacked tabs.
+  const TAB_WIDTH = 34, TAB_HEIGHT = 44, TAB_REACH = 44, TAB_PITCH = 48;
   const launcherHosts = () => [...document.querySelectorAll('[data-exp-product-launcher="1"]')];
   const hostLauncher = host => host?.shadowRoot?.querySelector('[data-exp-part="launcher"],.launcher') || null;
   function flyoutState() {
     const hosts = launcherHosts();
     const row = hosts.length === 1 || (hosts.length > 1 && hosts.every(host => host.dataset.expFlyout === ExpLauncherFlyout.PROTOCOL)) ? siteRow(hosts.length) : null;
-    const active = !row && ExpLauncherFlyout.flyoutActive(hosts);
-    return { hosts, active, row, lead: active ? ExpLauncherFlyout.leadProduct(hosts) : '', order: active || row ? ExpLauncherFlyout.flyoutOrder(hosts) : [], open: active && document.documentElement.dataset.expFlyoutOpen === '1' };
+    // Away from a site's own slot the products are edge tabs; the flyout serves a slot too small for a row of icons.
+    const slot = row ? null : siteSlot();
+    const active = !row && Boolean(slot) && ExpLauncherFlyout.flyoutActive(hosts);
+    const tabs = !row && !slot && ExpLauncherFlyout.tabsReady(hosts);
+    return { hosts, active, tabs, row, lead: active ? ExpLauncherFlyout.leadProduct(hosts) : '', order: active || row ? ExpLauncherFlyout.flyoutOrder(hosts) : [], open: active && document.documentElement.dataset.expFlyoutOpen === '1' };
   }
   // A top bar with room for every product's icon side by side (Twitch); otherwise null and the flyout is used.
   function siteRow(count) {
@@ -3969,7 +3992,13 @@ const ExtraPotionsCore = (() => {
     for (const box of boxes) if (box.top < top + height && box.bottom > top) top = down ? box.bottom + 8 : box.top - height - 8;
     return top;
   }
-  function savedDelta() { return Math.max(8-(innerHeight-60), Math.min(4, Number(read(GRID_DELTA,0)) || 0)); }
+  // The saved group position, measured from the bottom corner. Tabs that were never moved start a fifth of the
+  // way down the window, below a site's header.
+  function savedDelta() {
+    const saved = Number(read(GRID_DELTA,0)) || 0;
+    const value = !saved && flyoutState().tabs ? Math.max(64, Math.round(innerHeight * .2)) - (innerHeight-60) : saved;
+    return Math.max(8-(innerHeight-60), Math.min(4, value));
+  }
   // The shared launcher sits in the site's slot when it has one, otherwise in the bottom-right corner.
   function flyoutHubBox() {
     const slot = siteSlot();
@@ -4167,6 +4196,12 @@ const ExtraPotionsCore = (() => {
 :host([data-exp-flyout-role]) ${launcherPart} > :is(img,svg,.icon):not(.launcher-ring):not(.ring){width:26px!important;height:26px!important}
 :host([data-exp-flyout-role="hidden"]) ${launcherPart}{visibility:hidden!important;pointer-events:none!important}
 :host([data-exp-flyout-selected="1"]) ${launcherPart}{border-color:${accent}!important;box-shadow:inset 0 0 0 1px ${accent}!important}
+:host([data-exp-edge-tab]) ${launcherPart}{width:${TAB_WIDTH}px!important;height:${TAB_HEIGHT}px!important;min-width:${TAB_WIDTH}px!important;min-height:${TAB_HEIGHT}px!important;max-width:${TAB_WIDTH}px!important;max-height:${TAB_HEIGHT}px!important;border-radius:10px 0 0 10px!important;border-right-width:0!important;box-sizing:border-box!important;overflow:visible!important;transform:none!important}
+:host([data-exp-edge-tab]) ${launcherPart} > :is(img,svg,.icon):not(.launcher-ring):not(.ring){width:24px!important;height:24px!important}
+:host([data-exp-edge-tab]) ${launcherPart} :is(.ring,.launcher-ring,.launcher-badge,.update-badge){display:none!important}
+:host([data-exp-edge-tab]) ${launcherPart}::before{content:'';position:absolute;top:0;bottom:0;right:0;left:${TAB_WIDTH - TAB_REACH}px}
+:host([data-exp-edge-tab][data-exp-update="1"]) ${launcherPart}::after{content:'';position:absolute;top:3px;left:3px;width:7px;height:7px;border-radius:2px;background:${accent};pointer-events:none}
+:host([data-exp-edge-tab][data-exp-flyout-selected="1"]) ${launcherPart}{border-color:${accent}!important;box-shadow:inset 3px 0 0 ${accent}!important}
 .exp-flyout-hub{all:initial;position:fixed;z-index:2147483601;box-sizing:border-box;display:grid;place-items:center;width:48px;height:48px;border-radius:12px;background:radial-gradient(circle at 50% 35%,#1d1a24,#0c0b10 70%);border:1px solid color-mix(in srgb,${accent} 50%,#3f3f46);box-shadow:inset 0 1px 0 #ffffff12;cursor:pointer;pointer-events:auto}
 .exp-flyout-hub[data-size="40"]{border-radius:10px}
 .exp-flyout-hub[data-shape="circle"]{border-radius:50%;background:var(--theme-panel,#181c1f);box-shadow:none}
@@ -4294,8 +4329,11 @@ const ExtraPotionsCore = (() => {
       if (!state.active) {
         if (singleSlot(state)) host.dataset.expFlyoutRole = 'site'; else delete host.dataset.expFlyoutRole;
         if (state.row) { host.dataset.expSiteIcon = '1'; host.style.setProperty('--exp-site-icon-size', state.row.size + 'px'); } else { delete host.dataset.expSiteIcon; host.style.removeProperty('--exp-site-icon-size'); }
-        delete host.dataset.expFlyoutSelected; removeHub(host); continue;
+        if (state.tabs) host.dataset.expEdgeTab = '1'; else delete host.dataset.expEdgeTab;
+        if (state.tabs && menu === id) host.dataset.expFlyoutSelected = '1'; else delete host.dataset.expFlyoutSelected;
+        removeHub(host); continue;
       }
+      delete host.dataset.expEdgeTab;
       delete host.dataset.expSiteIcon; host.style.removeProperty('--exp-site-icon-size');
       const role = state.open ? 'tile' : 'hidden';
       if (host.dataset.expFlyoutRole !== role) host.dataset.expFlyoutRole = role;
@@ -4313,14 +4351,14 @@ const ExtraPotionsCore = (() => {
     const on = (node,type,fn,opts) => { node.addEventListener(type,fn,opts); removers.push(() => node.removeEventListener(type,fn,opts)); };
     let startX=0,startY=0,startDelta=0,pointer=null,dragged=false,mode='',axis='',order=[];
     launcher.title = launcher.title || title || 'Drag to move the launchers. Shift+drag or Alt+Arrow keys reorder.';
-    on(launcher,'pointerdown',e=>{if(e.button!==0||(reorder&&(flyoutState().active||singleSlot()))||(!reorder&&e.shiftKey)||!canDrag())return;pointer=e.pointerId;startX=e.clientX;startY=e.clientY;startDelta=Number(read(GRID_DELTA,0))||0;mode=e.shiftKey?'order':'group';order=interactionGridOrder();if(!order.includes(id))order.push(id);dragged=false;axis='';e.preventDefault();try{launcher.setPointerCapture(e.pointerId);}catch{}});
+    on(launcher,'pointerdown',e=>{if(e.button!==0||(reorder&&(flyoutState().active||singleSlot()))||(!reorder&&e.shiftKey)||!canDrag())return;pointer=e.pointerId;startX=e.clientX;startY=e.clientY;startDelta=savedDelta();mode=e.shiftKey?'order':'group';order=interactionGridOrder();if(!order.includes(id))order.push(id);dragged=false;axis='';e.preventDefault();try{launcher.setPointerCapture(e.pointerId);}catch{}});
     // Listen on window in the capture phase so host pages that stop pointer events (Twitch's player) cannot stall a drag.
     on(launcher,'dragstart',e=>e.preventDefault());
-    on(window,'pointermove',e=>{if(e.pointerId!==pointer)return;const dx=e.clientX-startX,dy=e.clientY-startY;if(!axis&&Math.max(Math.abs(dx),Math.abs(dy))>4)axis=mode;if(!axis)return;dragged=true;groupDragging=true;e.preventDefault();launcher.classList.add('is-dragging');if(axis==='group')write(GRID_DELTA,Math.round(Math.max(8-(innerHeight-60),Math.min(4,startDelta+dy))));else{const from=order.indexOf(id),offset=Math.abs(dx)>Math.abs(dy)?Math.round(-dx/56):Math.round(dy/56)*3,to=Math.max(0,Math.min(order.length-1,from+offset)),next=[...order];next.splice(from,1);next.splice(to,0,id);write(GRID_ORDER,next);}layoutGrid();emit('launcher-grid-moved',id);layout();},{passive:false,capture:true});
+    on(window,'pointermove',e=>{if(e.pointerId!==pointer)return;const dx=e.clientX-startX,dy=e.clientY-startY;if(!axis&&Math.max(Math.abs(dx),Math.abs(dy))>4)axis=mode;if(!axis)return;dragged=true;groupDragging=true;e.preventDefault();launcher.classList.add('is-dragging');if(axis==='group')write(GRID_DELTA,Math.round(Math.max(8-(innerHeight-60),Math.min(4,startDelta+dy))));else{const from=order.indexOf(id),offset=flyoutState().tabs?Math.round(dy/TAB_PITCH)*(document.documentElement.dataset.expLauncherAnchor==='top'?1:-1):Math.abs(dx)>Math.abs(dy)?Math.round(-dx/56):Math.round(dy/56)*3,to=Math.max(0,Math.min(order.length-1,from+offset)),next=[...order];next.splice(from,1);next.splice(to,0,id);write(GRID_ORDER,next);}layoutGrid();emit('launcher-grid-moved',id);layout();},{passive:false,capture:true});
     const end=e=>{if(e.pointerId===pointer){pointer=null;if(groupDragging){groupDragging=false;shiftMemo=null;layoutGrid();emit('launcher-grid-moved',id);layout();}launcher.classList.remove('is-dragging');try{launcher.releasePointerCapture(e.pointerId);}catch{}}};
     on(window,'pointerup',end,true);on(window,'pointercancel',end,true);on(launcher,'lostpointercapture',end);
     on(launcher,'click',e=>{if(dragged){e.preventDefault();e.stopImmediatePropagation();dragged=false;}},true);
-    on(launcher,'keydown',e=>{if(!reorder||flyoutState().active||!e.altKey||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();let next=interactionGridOrder();if(!next.includes(id))next.push(id);const from=next.indexOf(id),offset={ArrowLeft:1,ArrowRight:-1,ArrowUp:-3,ArrowDown:3}[e.key],to=Math.max(0,Math.min(next.length-1,from+offset));next=[...next];next.splice(from,1);next.splice(to,0,id);write(GRID_ORDER,next);layoutGrid();emit('launcher-grid-moved',id);layout();launcher.focus();});
+    on(launcher,'keydown',e=>{if(!reorder||flyoutState().active||!e.altKey||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();let next=interactionGridOrder();if(!next.includes(id))next.push(id);const from=next.indexOf(id),up=document.documentElement.dataset.expLauncherAnchor==='top'?-1:1,offset=flyoutState().tabs?{ArrowLeft:0,ArrowRight:0,ArrowUp:up,ArrowDown:-up}[e.key]:{ArrowLeft:1,ArrowRight:-1,ArrowUp:-3,ArrowDown:3}[e.key],to=Math.max(0,Math.min(next.length-1,from+offset));next=[...next];next.splice(from,1);next.splice(to,0,id);write(GRID_ORDER,next);layoutGrid();emit('launcher-grid-moved',id);layout();launcher.focus();});
     return () => { while (removers.length) removers.pop()(); };
   }
   function interactionGridOrder() {
@@ -4434,7 +4472,7 @@ const ExtraPotionsCore = (() => {
     document.addEventListener('exp-core:coordination', refresh);
     addEventListener('resize', refresh);
     layoutGrid(); syncFlyout(); emit('launcher-added', id);
-    const dispose = () => { stopProtect(); backdropStyle?.dispose(); flyoutStyle?.dispose(); host.shadowRoot?.removeEventListener('keydown', onTileKey); host.removeEventListener('toggle', onHostToggle); removeHub(host); delete host.dataset.expFlyoutRole; delete host.dataset.expFlyoutSelected; cancelAnimationFrame(frame); document.removeEventListener('exp-core:coordination', refresh); removeEventListener('resize', refresh); delete host.dataset.expProductLauncher; delete host.dataset.expFlyout; delete host.dataset.expSiteProduct; registrations.delete(host); layoutGrid(); emit('launcher-removed', id); };
+    const dispose = () => { stopProtect(); backdropStyle?.dispose(); flyoutStyle?.dispose(); host.shadowRoot?.removeEventListener('keydown', onTileKey); host.removeEventListener('toggle', onHostToggle); removeHub(host); delete host.dataset.expFlyoutRole; delete host.dataset.expFlyoutSelected; delete host.dataset.expEdgeTab; cancelAnimationFrame(frame); document.removeEventListener('exp-core:coordination', refresh); removeEventListener('resize', refresh); delete host.dataset.expProductLauncher; delete host.dataset.expFlyout; delete host.dataset.expSiteProduct; registrations.delete(host); layoutGrid(); emit('launcher-removed', id); };
     registrations.set(host, dispose);
     return dispose;
   }
