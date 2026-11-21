@@ -6,7 +6,7 @@
 
 Install a product, not Core. Each product bundles the shared menu. Each product has a tab on the right edge of the window; on Twitch and Kick each product has its own icon in the top bar instead. Products keep their own features, colors and settings.
 
-The launcher uses Twitch’s and Kick’s top bars and Thread’s Reddit rail placement where available. Elsewhere the tabs sit on the right edge and can be dragged up and down together; Shift+drag changes their order. A tab shows a dot when its product has an update. Where a top bar has room for only one icon, the products share one launcher there.
+The launcher uses Twitch’s and Kick’s top bars where available. Elsewhere, Reddit included, the tabs sit on the right edge and can be dragged up and down together; Shift+drag changes their order. A tab shows a dot when its product has an update. Where a top bar has room for only one icon, the products share one launcher there.
 
 ## Menu size and navigation
 

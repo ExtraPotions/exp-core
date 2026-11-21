@@ -2479,7 +2479,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.18.0';
+  const version = '3.18.1';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -3821,20 +3821,6 @@ const ExtraPotionsCore = (() => {
       return { top, right:Math.round(right), width, side };
     };
     const slot = slotBand();
-    if (slot?.hub?.dock === 'right') {
-      // A left-rail entry opens beside the rail, rather than at the window's right edge.
-      const viewport = viewWidth(), hub = slot.hub;
-      panel.style.width = Math.min(preferredWidth, Math.max(0, viewport - 16)) + 'px';
-      const w = panel.offsetWidth || preferredWidth;
-      const beside = hub.left + hub.size + 8;
-      const fitsBeside = beside + w <= viewport - 8;
-      const left = fitsBeside ? beside : Math.max(8, Math.min(viewport - w - 8, hub.left));
-      const top = fitsBeside ? (slot.bottom > hub.top + hub.size ? slot.bottom + 8 : hub.top) : slot.bottom + 8;
-      const room = innerHeight - top - 8;
-      limitHeight(room < 160 ? innerHeight - 16 : room);
-      host.dataset.openDirection = 'down';
-      return finish(room < 160 ? 'rail-viewport' : fitsBeside ? 'rail-beside' : 'rail-below', viewport - left - w, room < 160 ? 8 : top, panel.offsetHeight);
-    }
     if (slot) {
       // From the flyout or a site slot: right-aligned 8px from the window edge, beyond the launcher and its open flyout.
       const blocks=reserved&&reserved.left<innerWidth-8&&reserved.right>innerWidth-8-width;
@@ -3905,13 +3891,8 @@ const ExtraPotionsCore = (() => {
       }
     } else if (slotBand()) {
       const band = slotBand();
-      if (band.hub?.dock === 'right') {
-        const left = Math.max(8, Math.min(viewWidth() - width - 8, band.hub.left + band.hub.size + 8));
-        right = left + width; top = band.bottom + 8;
-      } else {
-        right = viewWidth() - 8;
-        top = clearReserved(band.down ? band.bottom + 8 : band.top - height - 8, height, right - width, right, band.down, notice);
-      }
+      right = viewWidth() - 8;
+      top = clearReserved(band.down ? band.bottom + 8 : band.top - height - 8, height, right - width, right, band.down, notice);
     } else if (reserved && reserved.right - 8 >= width) {
       right = reserved.right;
       top = anchorTop ? reserved.bottom + 8 : reserved.top - height - 8;
@@ -4002,14 +3983,14 @@ const ExtraPotionsCore = (() => {
   // The shared launcher sits in the site's slot when it has one, otherwise in the bottom-right corner.
   function flyoutHubBox() {
     const slot = siteSlot();
-    if (slot) return { left:slot.left, top:slot.top, size:slot.size||FLYOUT_TILE, shape:slot.shape, anchor:'top', site:true, dock:slot.dock };
+    if (slot) return { left:slot.left, top:slot.top, size:FLYOUT_TILE, anchor:'top', site:true };
     const origin = innerHeight-60+savedDelta(), anchor = origin <= (innerHeight-48)/2 ? 'top' : 'bottom';
     return { left:viewWidth()-12-48, top:Math.max(8, Math.min(innerHeight-56, origin)) + siteControlShift(origin, anchor), size:48, anchor, site:false };
   }
   function flyoutPanelBox(hub, count) {
     const width = 2 + FLYOUT_PAD*2 + FLYOUT_TILE*count + FLYOUT_GAP*Math.max(0, count-1), height = 2 + FLYOUT_PAD*2 + FLYOUT_TILE;
-    const left = Math.max(8, Math.min(viewWidth() - 8 - width, hub.dock === 'right' ? hub.left + hub.size + 6 : hub.left + hub.size - width));
-    const top = hub.dock === 'right' && hub.left + hub.size + 6 + width <= viewWidth() - 8 ? hub.top : hub.anchor === 'top' ? hub.top + hub.size + 6 : hub.top - 6 - height;
+    const left = Math.max(8, Math.min(viewWidth() - 8 - width, hub.left + hub.size - width));
+    const top = hub.anchor === 'top' ? hub.top + hub.size + 6 : hub.top - 6 - height;
     return { left, top, width, height, right:left+width, bottom:top+height };
   }
   function flyoutBand(state = flyoutState()) {
@@ -4064,38 +4045,11 @@ const ExtraPotionsCore = (() => {
     const first = icons.reduce((a, b) => a.left <= b.left ? a : b), size = Math.round(Math.max(28, Math.min(40, first.height)));
     return { left, top: Math.round(barBox.top + (barBox.height - FLYOUT_TILE) / 2), row: { right, minLeft: searchEnd + 8, size, gap: 8, top: Math.round(barBox.top + (barBox.height - size) / 2) } };
   }
-  // Reddit's left-rail entry belongs to THREAD. Other products alone keep their existing placement.
-  // Native accessible controls/rail geometry supply coordinates; no enhancement-script anchor is used.
-  function redditSlot() {
-    if (!document.querySelector('[data-exp-product-launcher="1"][data-product-id="thread"]')) return null;
-    const rail = document.querySelector('#left-sidebar-container');
-    watchSlotNode(rail);
-    const box = rail && visibleBox(rail);
-    const handles = [...document.querySelectorAll('button[aria-controls="left-sidebar-container"],button[aria-label="Collapse navigation"],button[aria-label="Collapse sidebar"],button[aria-label="Expand navigation"],button[aria-label="Expand sidebar"]')]
-      .filter(node => !node.closest('[data-exp-owned]')).map(visibleBox).filter(Boolean);
-    const handle = handles.find(r => r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < Math.min(innerWidth / 2, 420)) || null;
-    const header = document.querySelector('reddit-header-large,shreddit-header,header[role="banner"]');
-    const headerBox = header && visibleBox(header);
-    const expanded = box && box.width >= 120 && box.right <= Math.min(viewWidth() - 48, 600) && box.bottom > 80;
-    const size = handle ? Math.max(24, Math.min(48, Math.min(handle.width, handle.height))) : 32;
-    let left = expanded ? box.right - size / 2 : handle ? handle.left + (handle.width - size) / 2 : 12;
-    let top = handle ? handle.bottom + 8 : expanded ? Math.max(8, box.top) + 56 : Math.max(8, headerBox?.bottom || 48) + 12;
-    // Sidebar links retain their hit targets. Slide clear of a native control in the proposed slot.
-    const controls = [...(rail?.querySelectorAll('button,a[href]') || [])].slice(0,120).map(visibleBox).filter(Boolean);
-    for (let attempt=0;attempt<8;attempt++) {
-      const blocked = controls.find(r => r.left < left + size && r.right > left && r.top < top + size && r.bottom > top);
-      if (!blocked) break;
-      top = blocked.bottom + 8;
-    }
-    left = Math.max(8, Math.min(viewWidth() - size - 8, left));
-    top = Math.max(8, Math.min(innerHeight - size - 8, top));
-    return {left:Math.round(left),top:Math.round(top),dock:'right',size,shape:'circle'};
-  }
-  const SITE_SLOTS = Object.freeze([{ host:/(^|\.)twitch\.tv$/, find:twitchSlot },{ host:/(^|\.)kick\.com$/, find:kickSlot },{ host:/^(www|sh)\.reddit\.com$/, find:redditSlot }]);
+  const SITE_SLOTS = Object.freeze([{ host:/(^|\.)twitch\.tv$/, find:twitchSlot },{ host:/(^|\.)kick\.com$/, find:kickSlot }]);
   let slotMemo = null, frozenSlot;
   function siteSlot() {
     // While the flyout is open the launcher stays put, so the open flyout never jumps under the pointer.
-    if (frozenSlot !== undefined && frozenSlot?.dock !== 'right' && document.documentElement.dataset.expFlyoutOpen === '1') return frozenSlot;
+    if (frozenSlot !== undefined && document.documentElement.dataset.expFlyoutOpen === '1') return frozenSlot;
     const now = performance.now();
     if (!slotMemo || now - slotMemo.at > 150 || slotMemo.width !== innerWidth || slotMemo.height !== innerHeight) {
       const row = SITE_SLOTS.find(entry => entry.host.test(location.hostname));
@@ -4113,7 +4067,7 @@ const ExtraPotionsCore = (() => {
     if (row) { const width = state.hosts.length * row.size + (state.hosts.length - 1) * row.gap; return { hub:{ left:row.left, top:row.top, size:row.size, width, anchor:'top', site:true, row:true }, panel:null, top:row.top, bottom:row.top + row.size, down:true }; }
     if (state.hosts.length !== 1) return null;
     const slot = siteSlot();
-    return slot ? { hub:{ ...slot, size:slot.size||FLYOUT_TILE, anchor:'top', site:true }, panel:null, top:slot.top, bottom:slot.top + (slot.size||FLYOUT_TILE), down:true } : null;
+    return slot ? { hub:{ ...slot, size:FLYOUT_TILE, anchor:'top', site:true }, panel:null, top:slot.top, bottom:slot.top + FLYOUT_TILE, down:true } : null;
   }
   function slotBand(state = flyoutState()) { return state.active ? flyoutBand(state) : singleSlot(state); }
   function setFlyoutOpen(value) {
@@ -4204,9 +4158,6 @@ const ExtraPotionsCore = (() => {
 :host([data-exp-edge-tab][data-exp-flyout-selected="1"]) ${launcherPart}{border-color:${accent}!important;box-shadow:inset 3px 0 0 ${accent}!important}
 .exp-flyout-hub{all:initial;position:fixed;z-index:2147483601;box-sizing:border-box;display:grid;place-items:center;width:48px;height:48px;border-radius:12px;background:radial-gradient(circle at 50% 35%,#1d1a24,#0c0b10 70%);border:1px solid color-mix(in srgb,${accent} 50%,#3f3f46);box-shadow:inset 0 1px 0 #ffffff12;cursor:pointer;pointer-events:auto}
 .exp-flyout-hub[data-size="40"]{border-radius:10px}
-.exp-flyout-hub[data-shape="circle"]{border-radius:50%;background:var(--theme-panel,#181c1f);box-shadow:none}
-:host([data-exp-rail-launcher="circle"][data-exp-flyout-role="site"]) ${launcherPart}{width:var(--exp-rail-launcher-size)!important;height:var(--exp-rail-launcher-size)!important;min-width:var(--exp-rail-launcher-size)!important;min-height:var(--exp-rail-launcher-size)!important;max-width:var(--exp-rail-launcher-size)!important;max-height:var(--exp-rail-launcher-size)!important;border-radius:50%!important}
-:host([data-exp-rail-launcher="circle"][data-exp-flyout-role="site"]) ${launcherPart}>:is(img,svg,.icon):not(.launcher-ring):not(.ring){width:22px!important;height:22px!important}
 :host([data-exp-flyout-role="site"][data-exp-site-icon]) :is([data-exp-part="launcher"],.launcher){width:var(--exp-site-icon-size)!important;height:var(--exp-site-icon-size)!important;min-width:var(--exp-site-icon-size)!important;min-height:var(--exp-site-icon-size)!important;max-width:var(--exp-site-icon-size)!important;max-height:var(--exp-site-icon-size)!important;padding:0!important;border:0!important;border-radius:6px!important;background:transparent!important;box-shadow:none!important;overflow:visible!important;transition:none!important}
 :host([data-exp-flyout-role="site"][data-exp-site-icon]) :is([data-exp-part="launcher"],.launcher):hover{background:color-mix(in srgb,currentColor 16%,transparent)!important}
 :host([data-exp-flyout-role="site"][data-exp-site-icon]) :is([data-exp-part="launcher"],.launcher):focus-visible{outline:2px solid ${accent}!important;outline-offset:1px!important}
@@ -4219,7 +4170,6 @@ const ExtraPotionsCore = (() => {
 .exp-flyout-hub:focus-visible{outline:2px solid ${accent};outline-offset:3px}
 .exp-flyout-icon{display:grid;place-items:center;width:32px;height:32px;pointer-events:none}
 .exp-flyout-hub[data-size="40"] .exp-flyout-icon{width:26px;height:26px}
-.exp-flyout-hub[data-shape="circle"] .exp-flyout-icon{width:22px;height:22px}
 .exp-flyout-icon>*{display:block!important;position:static!important;width:100%!important;height:100%!important;margin:0!important}
 .exp-flyout-count{position:absolute;right:-6px;bottom:-6px;box-sizing:border-box;min-width:20px;height:16px;padding:0 4px;border-radius:4px;background:#27272a;border:1px solid #3f3f46;outline:2px solid #0e0e10;color:#fafafa;font:600 10px/14px Inter,"Segoe UI",system-ui,sans-serif;text-align:center;pointer-events:none}
 .exp-flyout-mark{position:absolute;top:-5px;right:-5px;width:10px;height:10px;box-sizing:border-box;border-radius:3px;background:var(--exp-flyout-mark,#a1a1aa);outline:2px solid #0e0e10;pointer-events:none}
@@ -4302,9 +4252,8 @@ const ExtraPotionsCore = (() => {
     mark.hidden = !updating;
     if (updating) mark.style.setProperty('--exp-flyout-mark', FLYOUT_ACCENTS[updating] || '#a1a1aa');
     const progressHost = state.order.map(id => state.hosts.find(node => node.dataset.productId === id)).find(node => node?.dataset.expProgress !== undefined);
-    renderRing(hub, box.size, box.shape === 'circle' ? box.size/2 : box.size === FLYOUT_TILE ? 10 : 12, progressHost ? { fraction:Number(progressHost.dataset.expProgress), color:FLYOUT_ACCENTS[progressHost.dataset.productId] || '#a1a1aa' } : null, Boolean(updating));
+    renderRing(hub, box.size, box.size === FLYOUT_TILE ? 10 : 12, progressHost ? { fraction:Number(progressHost.dataset.expProgress), color:FLYOUT_ACCENTS[progressHost.dataset.productId] || '#a1a1aa' } : null, Boolean(updating));
     hub.dataset.size = String(box.size);
-    hub.dataset.shape = box.shape || 'rectangle';
     hub.setAttribute('aria-expanded', String(state.open));
     // The marker and ring are visual; the name carries the same news for screen readers.
     const notes = [];
@@ -4323,9 +4272,6 @@ const ExtraPotionsCore = (() => {
     for (const host of state.hosts) {
       if (!registrations.has(host)) continue;
       const id = host.dataset.productId;
-      const slot=siteSlot();
-      if(slot?.shape==='circle'){host.dataset.expRailLauncher='circle';host.style.setProperty('--exp-rail-launcher-size',slot.size+'px');}
-      else{delete host.dataset.expRailLauncher;host.style.removeProperty('--exp-rail-launcher-size');}
       if (!state.active) {
         if (singleSlot(state)) host.dataset.expFlyoutRole = 'site'; else delete host.dataset.expFlyoutRole;
         if (state.row) { host.dataset.expSiteIcon = '1'; host.style.setProperty('--exp-site-icon-size', state.row.size + 'px'); } else { delete host.dataset.expSiteIcon; host.style.removeProperty('--exp-site-icon-size'); }
@@ -5314,7 +5260,7 @@ const ExtraPotionsCore = (() => {
   document.addEventListener('pointerdown', onFlyoutOutside, true);
   addEventListener('keydown', onFlyoutEscape, true);
   addEventListener('resize',scheduleGrid,{passive:true});
-  addEventListener('scroll',()=>{recheckSiteControls();if (/^(www|sh)\.reddit\.com$/.test(location.hostname)) markSlotStale();},{passive:true,capture:true});
+  addEventListener('scroll',recheckSiteControls,{passive:true,capture:true});
   // Core-owned product bootstrap for downstream consumers.
   function createProductServices(options = {}) {
     const productId = String(options.productId || '').toLowerCase();

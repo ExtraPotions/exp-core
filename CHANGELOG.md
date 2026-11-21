@@ -1,3 +1,8 @@
+## 3.18.1 — 2026-11-21
+
+- On Reddit, Thread is a tab on the right edge like on other sites, instead of a button in the left rail.
+- On Reddit, every product tab stacks on the right edge and they drag up and down together.
+
 ## 3.18.0 — 2026-11-20
 
 - Each product is a tab on the right edge of the window instead of a badge in the corner.
