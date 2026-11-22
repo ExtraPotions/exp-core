@@ -1,3 +1,7 @@
+## 3.18.2 — 2026-11-21
+
+- Removed hovertips that only repeated a control's label.
+
 ## 3.18.1 — 2026-11-21
 
 - On Reddit, Thread is a tab on the right edge like on other sites, instead of a button in the left rail.

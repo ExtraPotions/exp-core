@@ -1570,7 +1570,6 @@ const ExtraPotionsTools = (() => {
       finally{report.disabled=false;}
     }));
     report.dataset.expSystemReport='1';
-    ExpMenuHelp.setMenuHelp(report,'Attaches fresh diagnostics to a GitHub issue. GitHub issues are public; remove private data before submitting.');
     const support=document.createElement('section');support.setAttribute('aria-label','Diagnostics and Support');support.append(diagnostics,report);
     // Reset: one tap arms, a second tap within a few seconds confirms. No browser dialogs.
     const resetStatus=note('');resetStatus.setAttribute('role','status');resetStatus.setAttribute('aria-live','polite');
@@ -1588,7 +1587,6 @@ const ExtraPotionsTools = (() => {
     reset.dataset.expDestructive='1';
     function disarm(){clearTimeout(armTimer);armedUntil=0;reset.textContent='Reset All Settings';delete reset.dataset.expResetArmed;resetStatus.textContent='';}
     reset.style.cssText+=';font-weight:600';
-    ExpMenuHelp.setMenuHelp(reset,`Clears ${product} settings and stored data on this browser. This cannot be undone. Tap twice within 4 seconds to confirm.`);
     const resetCard=document.createElement('section');resetCard.setAttribute('aria-label','Reset Settings');resetCard.style.cssText='margin-block-start:12px;padding-block-start:8px';resetCard.append(reset,resetStatus);
     reset.addEventListener('blur',disarm);
     for(const [key,node] of [['status',timeline],['support',support],['preferences',preferences],['reset',resetCard]]){
@@ -2479,7 +2477,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.18.1';
+  const version = '3.18.2';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';
@@ -4236,7 +4234,7 @@ const ExtraPotionsCore = (() => {
       hub.addEventListener('click', event => { const opening = document.documentElement.dataset.expFlyoutOpen !== '1'; setFlyoutOpen(opening); if (opening && event.detail === 0) focusFlyout(flyoutState().order[0]); });
       hub.addEventListener('keydown', onHubKey);
       // The corner launcher keeps vertical drag and its saved position; a site slot cannot be dragged.
-      hub.expDragCleanup = bindLauncherDrag(hub, host.dataset.productId, { reorder:false, canDrag:() => !flyoutHubBox().site, title:'Drag to move the launcher.', layout:syncFlyout });
+      hub.expDragCleanup = bindLauncherDrag(hub, host.dataset.productId, { reorder:false, canDrag:() => !flyoutHubBox().site, layout:syncFlyout });
       shadow.append(panel, hub);
     }
     const icon = hub.querySelector('.exp-flyout-icon');
@@ -4296,7 +4294,7 @@ const ExtraPotionsCore = (() => {
     const removers = [];
     const on = (node,type,fn,opts) => { node.addEventListener(type,fn,opts); removers.push(() => node.removeEventListener(type,fn,opts)); };
     let startX=0,startY=0,startDelta=0,pointer=null,dragged=false,mode='',axis='',order=[];
-    launcher.title = launcher.title || title || 'Drag to move the launchers. Shift+drag or Alt+Arrow keys reorder.';
+    if (reorder || title) launcher.title = launcher.title || title || 'Drag to move the launchers. Shift+drag or Alt+Arrow keys reorder.';
     on(launcher,'pointerdown',e=>{if(e.button!==0||(reorder&&(flyoutState().active||singleSlot()))||(!reorder&&e.shiftKey)||!canDrag())return;pointer=e.pointerId;startX=e.clientX;startY=e.clientY;startDelta=savedDelta();mode=e.shiftKey?'order':'group';order=interactionGridOrder();if(!order.includes(id))order.push(id);dragged=false;axis='';e.preventDefault();try{launcher.setPointerCapture(e.pointerId);}catch{}});
     // Listen on window in the capture phase so host pages that stop pointer events (Twitch's player) cannot stall a drag.
     on(launcher,'dragstart',e=>e.preventDefault());
