@@ -1,8 +1,8 @@
 {
-  "coreVersion": "3.18.2",
+  "coreVersion": "3.18.3",
   "source": {
     "source": "ExtraPotions/exp-core",
-    "sourceVersion": "3.18.2",
+    "sourceVersion": "3.18.3",
     "architecture": "core-native"
   },
   "suiteContract": {
@@ -135,9 +135,9 @@
       "rootId": "exp-ward-root"
     }
   },
-  "bundleSha256": "98ce3c6eff8b3cf68f26977673a6a9eb502f41d16466bd915a92fefa247c7c1f",
+  "bundleSha256": "57825f2caac7ca727a9d2657ff083a9e5b9477525658f722429785cf11d2b275",
   "files": {
-    "foundation.js": "c512ce6f4c55ee249641e790a2abc208379ba5d5a2fae3130b80237e5718710c",
+    "foundation.js": "ffecb418aca4b76b778302d219eefeed86dad52399c881fa030fc6845dc05024",
     "diagnostic-report.js": "1d97477991bc3e5cda6484d092568096e12c0a71a92a1743de0f7b392e6f5836",
     "lifecycle.js": "6347b48d7736e08afae2c22638d61175f2fcaa5230ab45c6849ccfe390672037",
     "product-tools.js": "ddaeb19b04b251b156e104357b053be94baf26d0c0efe410417c4c46f31f24cb",
@@ -146,11 +146,11 @@
     "health-summary.js": "0739496e785ed7047f73a37bfaf05798964f5d8ea8ffef9756a0f34462adb61d",
     "recovery-control.js": "c9f1b6383ffda72235ca59bca1a1308bfad5b3fb6552f7ba4305795bfcbdf2af",
     "menu-layout.js": "7762b5373a1f6f74d7a76d301c2a538a1bc69d182ed3c714fa2aa98c431963ee",
-    "lean-menu.js": "e6cfe7191a4a3e042165d21ea29cb26e9f78e4d6285799638d1379fd7cd343e0",
+    "lean-menu.js": "3737494276815002be786745842d48c5af2a103e6ea0c923974d561bb2d4489b",
     "menu-help.js": "bbd9ba422ee11f5d854261d7e2d7d75a24972f91d58aafdb60a45ad659ad5f8e",
     "menu-typography.js": "6995f62198cd48fbf50d7951cad0a5f8c9f96d6d5d773b8edca4a06dc7400ef8",
     "menu-preferences.js": "15c0110c64eee2515ace7f54ed5e4c265418a9eb3aeffc022aecf80bf12106ff",
-    "site-colors.js": "6750d852bbd2887e11dccaa25416a3564f9c0db636bab42a996209af4afbe3f4",
+    "site-colors.js": "75fa7c2aa5ce5f849ca7179b1955495c49bdb5c71a3d917b90f711fd26ab78db",
     "launcher-flyout.js": "76ac0908259a69cd0c797a6634dc45e230408e7eb65c74e39c889d8c47f1d717",
     "runtime.js": "d569c714b3add6935255b96482f23f3b3bd2d3b0c69980b4d1edd459339ffae9",
     "runtime-menus.js": "1ffb63e693846a8f444e8f98525c70f0606c920f63db05c88a89d6c7fa4c58b4",

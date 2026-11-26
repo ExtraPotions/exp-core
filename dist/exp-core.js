@@ -3,11 +3,7 @@ const CoreFoundation = (() => {
 const THEME_MODES = Object.freeze(['light', 'dark', 'system']);
 const normalizeThemeMode = value => THEME_MODES.includes(value) ? value : 'system';
 const systemThemeMode = () => typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-const SLATE_BLUE = Object.freeze({
-  light: Object.freeze({bg:'#f4f6fa',panel:'#ffffff',raised:'#e6ecf5',inset:'#edf1f7',line:'#718096',text:'#182230',muted:'#4c5d73',accent:'#2459b8',accent2:'#2459b8',link:'#2459b8',focus:'#2459b8',onAccent:'#ffffff'}),
-  dark: Object.freeze({bg:'#111720',panel:'#1b2430',raised:'#283547',inset:'#0c121a',line:'#8293ab',text:'#edf2f8',muted:'#afbed1',accent:'#8cb7ff',accent2:'#8cb7ff',link:'#8cb7ff',focus:'#8cb7ff',onAccent:'#111720'}),
-});
-// Menus use charcoal neutrals with each product's own colour; store recolouring keeps Slate Blue.
+// Menus and site recolouring share charcoal neutrals with each product's own colour.
 const CHARCOAL = Object.freeze({
   light: Object.freeze({bg:'#dcdad7',panel:'#ebe9e6',raised:'#d2cfcb',inset:'#d8d5d1',line:'#86807a',text:'#1c1a19',muted:'#57524d',onAccent:'#ffffff'}),
   dark: Object.freeze({bg:'#141416',panel:'#1d1d20',raised:'#29292d',inset:'#0f0f11',line:'#6c6c74',text:'#ececee',muted:'#a8a8ae',onAccent:'#141416'}),
@@ -18,12 +14,19 @@ const PRODUCT_ACCENTS = Object.freeze({
   ward: Object.freeze({light:'#0d7246',dark:'#1fbf7a'}),
   thread: Object.freeze({light:'#bd3300',dark:'#ff4500'}),
 });
-function productPalette(product, mode) {
-  const accent = PRODUCT_ACCENTS[product]?.[mode];
-  return accent ? {...CHARCOAL[mode],accent,accent2:accent,link:accent,focus:accent} : SLATE_BLUE[mode];
+// Site recolouring puts the colour on the page and raised surfaces too, so it is shaded to 4.5:1 on bg, panel and raised.
+const SITE_ACCENTS = Object.freeze({
+  dropper: Object.freeze({light:'#7529d2',dark:'#ae74f6'}),
+  ward: Object.freeze({light:'#0c653e',dark:'#1fbf7a'}),
+  thread: Object.freeze({light:'#a62d00',dark:'#ff5414'}),
+});
+// Without a product (Core's own surfaces) the accent is the neutral text colour.
+function productPalette(product, mode, site = false) {
+  const accent = (site ? SITE_ACCENTS : PRODUCT_ACCENTS)[product]?.[mode] || CHARCOAL[mode].text;
+  return {...CHARCOAL[mode],accent,accent2:accent,link:accent,focus:accent};
 }
-function resolveTheme(value, product = '') {
-  const id=normalizeThemeMode(value),mode=id==='system'?systemThemeMode():id,p=productPalette(product,mode);
+function resolveTheme(value, product = '', {site = false} = {}) {
+  const id=normalizeThemeMode(value),mode=id==='system'?systemThemeMode():id,p=productPalette(product,mode,site);
   return {...p,id,mode,name:id[0].toUpperCase()+id.slice(1),swatch:p.accent,canvas:p.bg,surface:p.panel,primary:p.accent,companion:p.accent,counterpoint:p.accent,interactive:p.accent,skin:p.accent,skinVertical:p.accent,skinMode:'flat'};
 }
 const UI_THEMES = Object.freeze(THEME_MODES.map(id=>Object.freeze(resolveTheme(id))));
@@ -530,7 +533,7 @@ function compareVersions(a, b) {
     }
     return 0;
   }
-return Object.freeze({ THEME_MODES, SLATE_BLUE, CHARCOAL, PRODUCT_ACCENTS, normalizeThemeMode, resolveTheme, UI_THEMES, SHARED_UI_THEMES, css, supportControlCss, protectLauncherHost, compareVersions });
+return Object.freeze({ THEME_MODES, CHARCOAL, PRODUCT_ACCENTS, SITE_ACCENTS, normalizeThemeMode, resolveTheme, UI_THEMES, SHARED_UI_THEMES, css, supportControlCss, protectLauncherHost, compareVersions });
 })();
 
 /* Local diagnostic capture shared at build time by ExtraPotions products. */
@@ -2195,7 +2198,7 @@ const ExpMenuLayout = (() => {
   return Object.freeze({css,mount});
 })();
 
-// Layout and surfaces from the approved Lean menu, with the shared Slate Blue palette.
+// Layout and surfaces from the approved Lean menu, with the shared charcoal palette.
 const ExpLeanMenu = (() => {
   // The shell is shared by existing products and new createProduct/createMenuController consumers.
   const template=Object.freeze({id:'extrapotions-menu',version:1,layout:'sidebar',systemLayout:'grouped',supportNavigation:'system',resetNavigation:'system',donations:'header-heart'});
@@ -2400,18 +2403,18 @@ const ExpMenuPreferences = (() => {
   return Object.freeze({menuSizePreference,setMenuSizePreference,bindMenuSize,createMenuSizeControls,menuSizeTokens:()=>sizes[menuSizePreference()]});
 })();
 
-// Slate Blue site paint shares the menu palette and device-mode resolver.
+// Site paint uses the charcoal menu neutrals with the product's colour and the shared device-mode resolver.
 const ExpSiteColors = (() => {
   const {THEME_MODES,normalizeThemeMode,resolveTheme}=CoreFoundation;
   const sitePalettes=Object.freeze(THEME_MODES.map(id=>Object.freeze({id,name:id[0].toUpperCase()+id.slice(1)})));
-  const sitePalette = id => resolveTheme(id);
+  const sitePalette = (id, product = '') => resolveTheme(id, product, {site:true});
   function watchSystem(callback){const query=matchMedia('(prefers-color-scheme: dark)');query.addEventListener('change',callback);return ()=>query.removeEventListener('change',callback);}
   function createSiteColors({product,css,inject}){
     const attribute='data-exp-site-colors',scope=`html[${attribute}="${product}"]`,id='exp-site-colors-'+product;
     let current='system',active=false,stopWatching=null,style=null;
     function render(){
       if(!active)return;
-      const palette=resolveTheme(current),text=css(palette,scope);
+      const palette=sitePalette(current,product),text=css(palette,scope);
       if(!style?.isConnected){
         style?.remove();
         style=document.getElementById(id)||(inject?inject(text,{expSiteColors:product}):document.createElement('style'));
@@ -2420,12 +2423,12 @@ const ExpSiteColors = (() => {
       }
       if(style.textContent!==text)style.textContent=text;
       if(document.documentElement.getAttribute(attribute)!==product)document.documentElement.setAttribute(attribute,product);
-      document.documentElement.dataset.expSitePalette='slate-blue-'+palette.mode;
+      document.documentElement.dataset.expSitePalette='charcoal-'+palette.mode;
     }
     function apply(next){current=normalizeThemeMode(next);active=true;stopWatching??=watchSystem(()=>{if(current==='system')render();});render();}
     function clear(){active=false;stopWatching?.();stopWatching=null;style?.remove();document.getElementById(id)?.remove();style=null;
       if(document.documentElement.getAttribute(attribute)===product){document.documentElement.removeAttribute(attribute);delete document.documentElement.dataset.expSitePalette;}}
-    return Object.freeze({apply,clear,refresh:render,palette:()=>active?resolveTheme(current):null});
+    return Object.freeze({apply,clear,refresh:render,palette:()=>active?sitePalette(current,product):null});
   }
   function createThemeModeControl({value='system',onChange,label='Menu Theme'}){
     const row=document.createElement('label');row.className='row exp-site-colors';const copy=document.createElement('span');copy.className='copy';
@@ -2477,7 +2480,7 @@ const ExpLauncherFlyout = (() => {
 // exp-core owns shared UI, launcher, diagnostics, update, and coordination behavior.
 const ExtraPotionsCore = (() => {
   'use strict';
-  const version = '3.18.2';
+  const version = '3.18.3';
   const sourceVersion = version; // Backward-compatible alias for Core's own foundation version.
   const SUPPORT_URL = 'https://ko-fi.com/expdare';
   const protocol = 'exp-core-coordination-v1';

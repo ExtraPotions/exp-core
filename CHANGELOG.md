@@ -1,3 +1,7 @@
+## 3.18.3 — 2026-11-25
+
+- Site themes use the menus' charcoal with each product's colour instead of Slate Blue.
+
 ## 3.18.2 — 2026-11-21
 
 - Removed hovertips that only repeated a control's label.
